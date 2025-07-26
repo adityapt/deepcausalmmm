@@ -4,15 +4,13 @@ Based on Python packaging best practices for deep learning and causal inference 
 
 ```
 deepcausalmmm/
-├── 📋 Project Documentation
-│   ├── README.md                          # Main project description
+├── 📋 Root Files (Required by GitHub)
+│   ├── README.md                          # Main project description (GitHub landing page)
 │   ├── CHANGELOG.md                       # Version history
 │   ├── CONTRIBUTING.md                    # Development guidelines
 │   ├── CODE_OF_CONDUCT.md                # Community standards
 │   ├── LICENSE                            # MIT license
-│   └── CITATION.cff                       # Academic citation format
-│
-├── ⚙️ Configuration Files
+│   ├── CITATION.cff                       # Academic citation format
 │   ├── pyproject.toml                     # Modern Python packaging
 │   ├── requirements.txt                   # Core dependencies
 │   ├── requirements-dev.txt               # Development dependencies
@@ -298,3 +296,5 @@ deepcausalmmm/
 6. **Examples** (`notebooks/` and `scripts/`)
 7. **CI/CD** (`.github/workflows/`)
 8. **Research Infrastructure** (`experiments/`)
+
+This structure provides a solid foundation for a world-class Marketing Mix Modeling framework that combines deep learning with causal inference! 🎯 
