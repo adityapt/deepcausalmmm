@@ -38,7 +38,7 @@ pip install deepcausalmmm
 ### From Source
 
 ```bash
-git clone https://github.com/yourusername/deepcausalmmm.git
+git clone https://github.com/adityapt/deepcausalmmm.git
 cd deepcausalmmm
 pip install -e .
 ```
