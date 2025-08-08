@@ -2,11 +2,14 @@
 
 **Advanced Media Mix Modeling with Causal Inference and Deep Learning**
 
-[![Performance](https://img.shields.io/badge/Holdout%20R²-0.930-brightgreen)](https://github.com/deepcausalmmm)
-[![RMSE](https://img.shields.io/badge/Holdout%20RMSE-324k%20visits-blue)](https://github.com/deepcausalmmm)
-[![Gap](https://img.shields.io/badge/Performance%20Gap-3.6%25-green)](https://github.com/deepcausalmmm)
+[![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
+[![Deep Learning](https://img.shields.io/badge/Deep-Learning-blue)](https://pytorch.org)
+[![Causal DAG](https://img.shields.io/badge/Causal-DAG-purple)](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
+[![GRU](https://img.shields.io/badge/Neural-GRU-orange)](https://pytorch.org/docs/stable/generated/torch.nn.GRU.html)
+[![Zero Hardcoding](https://img.shields.io/badge/Zero-Hardcoding-green)](https://github.com/deepcausalmmm)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-1.13+-red.svg)](https://pytorch.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## 🎯 Key Features
 
