@@ -1,0 +1,184 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Beautiful Comprehensive MMM Dashboard</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+            .header { background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+            .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+            .metric-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+            .metric-value { font-size: 24px; font-weight: bold; color: #2c3e50; }
+            .metric-label { font-size: 14px; color: #666; margin-top: 5px; }
+            .plot-container { background: white; margin: 20px 0; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+            .plot-title { background: #f8f9fa; padding: 15px; border-radius: 10px 10px 0 0; font-weight: bold; color: #333; font-size: 16px; }
+            iframe { width: 100%; height: 600px; border: none; }
+            .insights { background: white; padding: 20px; border-radius: 10px; margin: 20px 0; }
+            .insight-item { margin: 10px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #2c3e50; }
+            .section-header { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 15px; border-radius: 10px; margin: 30px 0 20px 0; text-align: center; font-size: 18px; font-weight: bold; }
+            .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .channel-list { columns: 2; column-gap: 20px; }
+            .channel-item { break-inside: avoid; margin-bottom: 5px; }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>🎯 Beautiful Comprehensive MMM Dashboard</h1>
+            <h2>Config-Driven • Real Data Analysis</h2>
+            <p>Advanced Marketing Mix Modeling with Coefficient Stabilization</p>
+            <p><strong>Data:</strong> 190 regions × 109 weeks | <strong>Channels:</strong> 13 media + 7 control</p>
+        </div>
+        
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-value">230,917</div>
+                <div class="metric-label">RMSE</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">31.4%</div>
+                <div class="metric-label">Relative RMSE</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">0.971</div>
+                <div class="metric-label">R² Score</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">190</div>
+                <div class="metric-label">Regions</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">13</div>
+                <div class="metric-label">Media Channels</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">320</div>
+                <div class="metric-label">Hidden Units</div>
+            </div>
+        </div>
+        
+        <div class="insights">
+            <h3>🎯 Key Results</h3>
+            <div class="insight-item">
+                <strong>Config-Driven Success:</strong> All parameters loaded from configuration system for consistent, reproducible results.
+            </div>
+            <div class="insight-item">
+                <strong>Model Performance:</strong> Achieved RMSE of 230,917 (31.4% relative) with R² of 0.971
+            </div>
+            <div class="insight-item">
+                <strong>Advanced Stabilization:</strong> No burn-in required - all 109 weeks immediately usable for analysis
+            </div>
+            <div class="insight-item">
+                <strong>Clean Channel Names:</strong> All 13 media channels with business-friendly interpretable names
+            </div>
+            <div class="insight-item">
+                <strong>Comprehensive Analysis:</strong> Full coefficient evolution, contribution analysis, and causal relationships
+            </div>
+        </div>
+        
+        <div class="section-header">📊 Training & Performance Analysis</div>
+        
+        <div class="plot-container">
+            <div class="plot-title">Training Progress & Final Results</div>
+            <iframe src="training_progress.html"></iframe>
+        </div>
+        
+        <div class="plot-container">
+            <div class="plot-title">Actual vs Predicted Over Time (Sample Regions)</div>
+            <iframe src="actual_vs_predicted_timeseries.html"></iframe>
+        </div>
+        
+        <div class="plot-container">
+            <div class="plot-title">Total Actual vs Predicted Over Time</div>
+            <iframe src="total_actual_vs_predicted_timeseries.html"></iframe>
+        </div>
+        
+        <div class="plot-container">
+            <div class="plot-title">Scaled Data: Actual vs Predicted Over Time (Log1p Space)</div>
+            <iframe src="scaled_actual_vs_predicted_timeseries.html"></iframe>
+        </div>
+        
+        <div class="section-header">📈 Coefficient & Contribution Analysis</div>
+        
+        <div class="plot-container">
+            <div class="plot-title">Media Channel Coefficients Over Time</div>
+            <iframe src="coefficients_over_time.html"></iframe>
+        </div>
+        
+        <div class="two-column">
+            <div class="plot-container">
+                <div class="plot-title">Contributions Over Time (Stacked Area)</div>
+                <iframe src="contributions_stacked.html" style="height: 500px;"></iframe>
+            </div>
+            <div class="plot-container">
+                <div class="plot-title">Individual Channel Contributions</div>
+                <iframe src="contributions_lines.html" style="height: 500px;"></iframe>
+            </div>
+        </div>
+        
+        <div class="section-header">🎯 Channel Effectiveness & ROI</div>
+        
+        <div class="plot-container">
+            <div class="plot-title">Channel Effectiveness Analysis</div>
+            <iframe src="channel_effectiveness.html"></iframe>
+        </div>
+        
+        <div class="two-column">
+            <div class="plot-container">
+                <div class="plot-title">Contribution Share (%)</div>
+                <iframe src="contribution_percentages.html" style="height: 500px;"></iframe>
+            </div>
+            <div class="plot-container">
+                <div class="plot-title">Waterfall Chart: Marketing + Control + Baseline</div>
+                <iframe src="waterfall_chart.html" style="height: 500px;"></iframe>
+            </div>
+        </div>
+        
+        <div class="section-header">🔗 DAG & Causal Relationships</div>
+        
+        <div class="two-column">
+            <div class="plot-container">
+                <div class="plot-title">DAG Network: Channel Interactions</div>
+                <iframe src="dag_network.html" style="height: 500px;"></iframe>
+            </div>
+            <div class="plot-container">
+                <div class="plot-title">DAG Adjacency Matrix Heatmap</div>
+                <iframe src="dag_heatmap.html" style="height: 500px;"></iframe>
+            </div>
+        </div>
+        
+        <div class="section-header">🎯 Holdout Validation Performance</div>
+        
+        <div class="plot-container">
+            <div class="plot-title">Holdout Performance: Actual vs Predicted</div>
+            <iframe src="holdout_scatter.html" style="height: 500px;"></iframe>
+        </div>
+        
+        <div class="insights">
+            <h3>📋 Technical Summary</h3>
+            <div class="insight-item">
+                <strong>Config System:</strong> All parameters loaded from configuration - hidden_dim: 320, dropout: 0.08, epochs: 6500
+            </div>
+            <div class="insight-item">
+                <strong>Model Architecture:</strong> 320 hidden units, exponential coefficient stabilization, 50 warm-start epochs
+            </div>
+            <div class="insight-item">
+                <strong>Training Configuration:</strong> AdamW optimizer, ReduceLROnPlateau scheduler, minimal regularization for RMSE optimization
+            </div>
+            <div class="insight-item">
+                <strong>Data Processing:</strong> Modular train_model.py with SimpleGlobalScaler for consistent global scaling, proper inverse transformations across 190 regions
+            </div>
+            <div class="insight-item">
+                <strong>Advanced Features:</strong> Coefficient momentum (decay=0.975), data-informed initialization, no burn-in requirements
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: white; border-radius: 10px;">
+            <h3>🚀 Beautiful MMM Dashboard with Unified Pipeline</h3>
+            <p><strong>Unified pipeline comprehensive analysis complete!</strong></p>
+            <p><strong>Training Performance:</strong> Loss: 0.1 | RMSE: 230,917 (31.4%) | R²: 0.971</p>
+            <p><strong>Holdout Performance:</strong> Loss: 0.1 | RMSE: 480,793 (43.3%) | R²: 0.901 | Gap: 0.070 (7.2%)</p>
+            <p><strong>Data Split:</strong> 85% Train (92 weeks) | 15% Holdout (17 weeks)</p>
+        </div>
+    </body>
+    </html>
+    
