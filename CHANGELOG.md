@@ -5,17 +5,9 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2024-01-15
+## [1.0.0] - 2025-07-15
 
-### 🏆 PRODUCTION RELEASE - OUTSTANDING PERFORMANCE ACHIEVED
-
-**Performance Benchmarks:**
-- **Training RMSE**: 254,911 visits (34.7%)
-- **Holdout RMSE**: 324,584 visits (38.7%)
-- **Training R²**: 0.965
-- **Holdout R²**: 0.930 
-- **Performance Gap**: Only 3.6% - Exceptional generalization!
-- **Log-space R²**: 0.981
+### 🏆 PRODUCTION RELEASE - Good Performance
 
 ### Added
 - **🚀 Complete DeepCausalMMM Package**: Production-ready MMM with causal inference
