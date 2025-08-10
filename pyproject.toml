@@ -4,23 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deepcausalmmm"
-version = "0.1.0"
-description = "Deep Learning + Bayesian Networks based causal Marketing Mix Modeling"
-readme = "README.md"
-license = {text = "MIT"}
+version = "1.0.0"
+description = "Advanced Marketing Mix Modeling with SimpleGlobalScaler & Coefficient Stabilization"
 authors = [
-    {name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"}
+    {name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"},
 ]
-maintainers = [
-    {name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"}
-]
-keywords = ["marketing-mix-modeling", "causal-inference", "deep-learning", "bayesian-networks", "gru", "time-series", "marketing-analytics"]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -28,132 +23,77 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Information Analysis",
-    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-requires-python = ">=3.8"
+
 dependencies = [
-    "torch>=1.12.0",
     "numpy>=1.21.0",
     "pandas>=1.3.0",
     "scikit-learn>=1.0.0",
-    "matplotlib>=3.5.0",
-    "seaborn>=0.11.0",
-    "pgmpy>=0.1.20",
-    "networkx>=2.8.0",
-    "scipy>=1.8.0",
-    "tqdm>=4.64.0",
+    "torch>=2.0.0",
+    "plotly>=5.0.0",
+    "networkx>=2.6.0",
+    "tqdm>=4.62.0",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
+    "pytest>=6.0.0",
+    "pytest-cov>=3.0.0",
     "black>=22.0.0",
-    "flake8>=5.0.0",
-    "mypy>=0.991",
-    "pre-commit>=2.20.0",
-]
-docs = [
-    "sphinx>=5.0.0",
-    "sphinx-rtd-theme>=1.0.0",
-    "myst-parser>=0.18.0",
-]
-examples = [
-    "jupyter>=1.0.0",
+    "isort>=5.0.0",
+    "mypy>=0.950",
     "notebook>=6.4.0",
-    "plotly>=5.0.0",
+]
+
+docs = [
+    "sphinx>=4.5.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "sphinx-autodoc-typehints>=1.18.0",
+]
+
+visualization = [
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/adityapt/deepcausalmmm"
-Documentation = "https://deepcausalmmm.readthedocs.io/"
-Repository = "https://github.com/adityapt/deepcausalmmm"
-"Bug Tracker" = "https://github.com/adityapt/deepcausalmmm/issues"
-"Source Code" = "https://github.com/adityapt/deepcausalmmm"
+Repository = "https://github.com/adityapt/deepcausalmmm.git"
+Documentation = "https://github.com/adityapt/deepcausalmmm/blob/main/deepcausalmmm/README.md"
+Issues = "https://github.com/adityapt/deepcausalmmm/issues"
 
 [project.scripts]
 deepcausalmmm = "deepcausalmmm.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["deepcausalmmm*"]
+[tool.setuptools]
+packages = ["deepcausalmmm"]
 
 [tool.setuptools.package-data]
-deepcausalmmm = ["*.json", "*.yaml", "*.yml"]
+deepcausalmmm = ["*.md", "*.txt"]
 
+# Development tools configuration
 [tool.black]
 line-length = 88
-target-version = ['py38']
+target-version = ['py38', 'py39', 'py310', 'py311']
 include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
 
-[tool.flake8]
-max-line-length = 88
-extend-ignore = ["E203", "W503"]
-exclude = [
-    ".git",
-    "__pycache__",
-    "build",
-    "dist",
-    ".eggs",
-    "*.egg",
-    ".venv",
-    "venv",
-    ".tox",
-]
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["deepcausalmmm"]
 
 [tool.mypy]
 python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
-
-[[tool.mypy.overrides]]
-module = [
-    "torch.*",
-    "pgmpy.*",
-    "sklearn.*",
-    "matplotlib.*",
-    "seaborn.*",
-]
-ignore_missing_imports = true
+disallow_untyped_defs = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
 addopts = [
     "--strict-markers",
-    "--strict-config",
+    "--verbose",
     "--cov=deepcausalmmm",
-    "--cov-report=term-missing",
-    "--cov-report=html",
-    "--cov-report=xml",
 ]
-markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-] 

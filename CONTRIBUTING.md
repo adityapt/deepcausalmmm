@@ -1,278 +1,385 @@
-# Contributing to DeepCausalMMM
+# Contributing to DeepCausalMMM 🤝
 
-Thank you for your interest in contributing to DeepCausalMMM! This document outlines how you can help improve this deep learning + causal inference framework for Marketing Mix Modeling.
+Thank you for your interest in contributing to DeepCausalMMM! This document provides guidelines for contributing to our advanced Media Mix Modeling package.
 
-## 🚀 Quick Start
+## 🏆 Project Philosophy
+
+### **No Hardcoding**
+- **All parameters must be configurable** via `config.py`
+- **No magic numbers** in model code
+- **Dataset agnostic** - works on any MMM dataset
+- **Learnable parameters** preferred over fixed constants
+
+### **Code Quality Standards**
+- **Type hints** for all function parameters and returns
+- **Comprehensive docstrings** with examples
+- **Error handling** with informative messages
+- **Modular design** with clear separation of concerns
+
+## 🚀 Getting Started
 
 ### Development Setup
 
-1. **Fork and Clone**
+1. **Clone the repository**
 ```bash
 git clone https://github.com/adityapt/deepcausalmmm.git
 cd deepcausalmmm
 ```
 
-2. **Environment Setup**
-```bash
-# Create virtual environment
-python -m venv venv
+2. **Create virtual environment**
+   ```bash
+   python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install in development mode
-pip install -e .
-
-# Install development dependencies
-pip install pytest black isort flake8 mypy jupyter matplotlib seaborn
 ```
 
-3. **Verify Installation**
+3. **Install dependencies**
 ```bash
-python -c "import deepcausalmmm; print('Installation successful!')"
+pip install -r requirements-dev.txt
 ```
 
-## 🧪 Running Tests
+4. **Run tests to ensure setup**
+   ```bash
+python -m pytest tests/ -v
+   ```
 
+## 📁 Project Structure
+
+```
+deepcausalmmm/
+├── core/                           # Core model components
+│   ├── config.py                  # ⚠️ CRITICAL: All configurations
+│   ├── unified_model.py           # ⚠️ CRITICAL: Main model architecture
+│   ├── trainer.py                 # Training logic and optimization
+│   ├── data.py                    # Data processing pipeline
+│   ├── scaling.py                 # Scaling transformations
+│   └── seasonality.py             # Seasonal decomposition
+├── postprocess/                    # Analysis and visualization
+│   ├── comprehensive_analyzer.py  # Main analysis engine
+│   ├── inference.py               # Model inference utilities
+│   └── visualization.py           # Plotting and dashboard creation
+├── utils/                          # Utility functions
+├── tests/                          # Test suite
+└── examples/                       # Usage examples
+```
+
+## 🔧 Development Guidelines
+
+### **1. Configuration Management**
+
+**✅ DO:**
+```python
+# In unified_model.py
+def __init__(self, config: Dict[str, Any]):
+    self.hidden_dim = config['hidden_dim']
+    self.dropout = config['dropout']
+    self.gru_layers = config['gru_layers']
+```
+
+**❌ DON'T:**
+```python
+# NEVER hardcode values
+def __init__(self):
+    self.hidden_dim = 320  # ❌ HARDCODED
+    self.dropout = 0.08    # ❌ HARDCODED
+```
+
+### **2. Model Architecture Changes**
+
+**Before making changes to core model:**
+1. **Benchmark current performance** on test dataset
+2. **Create feature branch** with descriptive name
+3. **Implement with config parameters** - no hardcoding
+4. **Test extensively** on multiple datasets
+5. **Document performance impact**
+
+**Critical Files (Require Extra Care):**
+- `core/unified_model.py` - Main model architecture
+- `core/config.py` - All configurations
+- `core/trainer.py` - Training optimization
+
+### **3. Adding New Features**
+
+**Feature Development Process:**
+1. **Create issue** describing the feature and motivation
+2. **Design with configurability** in mind
+3. **Add config parameters** with sensible defaults
+4. **Implement with type hints** and docstrings
+5. **Add comprehensive tests**
+6. **Update documentation**
+7. **Benchmark performance impact**
+
+**Example: Adding New Loss Function**
+```python
+# 1. Add to config.py
+'use_focal_loss': False,
+'focal_alpha': 0.25,
+'focal_gamma': 2.0,
+
+# 2. Implement in trainer.py with config
+def _calculate_loss(self, predictions, targets):
+    if self.config.get('use_focal_loss', False):
+        return self._focal_loss(predictions, targets)
+    return self._huber_loss(predictions, targets)
+
+# 3. Add tests
+def test_focal_loss_calculation():
+    # Test implementation
+```
+
+### **4. Data Processing**
+
+**Scaling and Normalization Rules:**
+- **Media variables**: SOV (Share-of-Voice) scaling
+- **Control variables**: Z-score normalization  
+- **Seasonality**: Min-Max scaling per region (0-1)
+- **Target variable**: Log1p transformation
+
+**✅ DO:**
+- Use `UnifiedDataPipeline` for all data processing
+- Ensure consistent train/holdout transformations
+- Document scaling choices with business justification
+
+**❌ DON'T:**
+- Apply different scaling to train/holdout
+- Use hardcoded scaling parameters
+- Skip data validation steps
+
+### **5. Testing Requirements**
+
+**All contributions must include:**
+1. **Unit tests** for new functions/classes
+2. **Integration tests** for feature workflows
+3. **Performance regression tests**
+4. **Documentation tests** (docstring examples)
+
+**Test Categories:**
 ```bash
-# Run all tests
-pytest tests/
+# Unit tests
+python -m pytest tests/unit/
 
-# Run with coverage
-pytest --cov=deepcausalmmm tests/
+# Integration tests  
+python -m pytest tests/integration/
 
-# Run specific test categories
-pytest tests/test_model.py -v
-pytest tests/test_causal.py -v
+# Performance tests
+python -m pytest tests/performance/
+
+# All tests
+python -m pytest tests/ -v --cov=deepcausalmmm
 ```
 
-## 📊 Working with Marketing Data
+### **6. Documentation Standards**
 
-When developing features, use realistic marketing data patterns:
-
+**All functions must have comprehensive docstrings:**
 ```python
-# Example test data structure
-marketing_data = {
-    'date': pd.date_range('2020-01-01', periods=104, freq='W'),
-    'revenue': np.random.lognormal(10, 0.3, 104),
-    'tv_spend': np.random.lognormal(8, 0.5, 104),
-    'digital_spend': np.random.lognormal(7.5, 0.4, 104),
-    'price': np.random.normal(50, 2, 104),
-    'region': np.random.choice(['A', 'B', 'C'], 104)
-}
-```
-
-## 🎯 Areas for Contribution
-
-### High Priority
-- **Model Architecture**: Improvements to GRU-based time series modeling
-- **Causal Structure**: Enhancements to Bayesian network integration
-- **Performance**: Optimization of training speed and memory usage
-- **Documentation**: Examples, tutorials, and API documentation
-
-### Medium Priority  
-- **Transformations**: New adstock and saturation functions
-- **Validation**: Cross-validation and model selection methods
-- **Visualization**: Better plotting and analysis tools
-- **CLI**: Enhanced command-line interface features
-
-### Research Areas
-- **Hierarchical Models**: Multi-region/multi-product modeling
-- **Uncertainty Quantification**: Better confidence intervals
-- **Causal Discovery**: Automated structure learning
-
-## 🔬 Development Guidelines
-
-### Code Style
-```bash
-# Format code
-black deepcausalmmm/ tests/ examples/
-isort deepcausalmmm/ tests/ examples/
-
-# Lint code
-flake8 deepcausalmmm/ tests/
-
-# Type checking
-mypy deepcausalmmm/
-```
-
-### Model Development
-- **PyTorch Conventions**: Follow PyTorch best practices for model architecture
-- **Reproducibility**: Set random seeds in tests and examples
-- **GPU Support**: Ensure code works on both CPU and GPU
-- **Memory Efficiency**: Consider memory usage for large datasets
-
-### Testing Marketing Models
-- **Synthetic Data**: Create realistic synthetic marketing data for tests
-- **Edge Cases**: Test with small datasets, missing data, extreme values
-- **Statistical Properties**: Verify model outputs have expected statistical properties
-- **Convergence**: Test that training converges properly
-
-## 📈 Performance Considerations
-
-### Benchmarking
-When making performance changes, benchmark against:
-- **Training Speed**: Time to train on 1000 samples
-- **Memory Usage**: Peak memory during training
-- **Prediction Speed**: Inference time for batch predictions
-- **Model Quality**: R², MAPE, and other accuracy metrics
-
-### Example Benchmark
-```python
-import time
-import torch
-from deepcausalmmm import GRUCausalMMM
-
-# Benchmark training time
-start_time = time.time()
-model = GRUCausalMMM(...)
-model.fit(X_train, y_train)
-training_time = time.time() - start_time
-print(f"Training time: {training_time:.2f}s")
-```
-
-## 🧬 Causal Inference Guidelines
-
-### Causal Structure
-- **Domain Knowledge**: Incorporate marketing domain knowledge in causal graphs
-- **Identifiability**: Ensure causal effects are identifiable
-- **Validation**: Test causal claims against known ground truth when possible
-- **Assumptions**: Clearly document causal assumptions
-
-### Marketing-Specific Considerations
-- **Adstock Effects**: Model carryover effects properly
-- **Saturation**: Handle diminishing returns correctly
-- **Seasonality**: Account for seasonal patterns
-- **Media Interactions**: Consider channel interactions
-
-## 📚 Documentation
-
-### Code Documentation
-- **Docstrings**: Use Google-style docstrings
-- **Type Hints**: Add type hints to all functions
-- **Examples**: Include usage examples in docstrings
-
-### Example Docstring
-```python
-def calculate_adstock(media_spend: np.ndarray, 
-                     adstock_rate: float = 0.5) -> np.ndarray:
-    """Apply adstock transformation to media spending data.
+def calculate_contributions(
+    self, 
+    media_data: torch.Tensor, 
+    coefficients: torch.Tensor,
+    transform_back: bool = True
+) -> Dict[str, torch.Tensor]:
+    """
+    Calculate economic contributions for media channels.
     
     Args:
-        media_spend: Array of media spending values over time
-        adstock_rate: Adstock decay rate between 0 and 1
+        media_data: Media spend data [regions, time, channels]
+        coefficients: Learned coefficients [regions, time, channels]
+        transform_back: Whether to apply inverse log1p transform
         
     Returns:
-        Array of adstocked media values
-        
+        Dict containing:
+            - 'total_contributions': Total economic impact per channel
+            - 'regional_contributions': Contributions by region
+            - 'temporal_contributions': Contributions over time
+            
     Example:
-        >>> spend = np.array([100, 200, 150, 300])
-        >>> adstocked = calculate_adstock(spend, adstock_rate=0.3)
-        >>> print(adstocked)
-        [100.0, 230.0, 219.0, 365.7]
+        >>> contributions = model.calculate_contributions(
+        ...     media_data=processed_media,
+        ...     coefficients=learned_coeffs,
+        ...     transform_back=True
+        ... )
+        >>> print(f"Total impact: {contributions['total_contributions'].sum()}")
     """
 ```
 
-### Tutorials
-When adding new features, consider creating:
-- **Jupyter Notebooks**: Interactive examples
-- **CLI Examples**: Command-line usage
-- **Real Data Examples**: Using actual marketing datasets
+## 🧪 Performance Standards
+
+### **Benchmark Requirements**
+
+**Minimum Performance Thresholds:**
+- **Holdout R²**: ≥ 0.85 (Current: 0.930)
+- **Performance Gap**: ≤ 10% (Current: 3.6%)
+- **Holdout RMSE**: ≤ 400k visits (Current: 324k)
+- **Training Stability**: No coefficient explosion
+
+**Before Merging:**
+1. **Run full benchmark** on standard dataset
+2. **Compare against baseline** performance
+3. **Document any performance changes**
+4. **Get approval** for performance degradation >2%
+
+### **Performance Testing**
+```python
+# Example performance test
+def test_model_performance_regression():
+    """Ensure new changes don't degrade performance."""
+    config = get_config()
+    
+    # Load standard test dataset
+    data = load_benchmark_data()
+    
+    # Train model
+    results = train_and_evaluate(config, data)
+    
+    # Assert performance thresholds
+    assert results['holdout_r2'] >= 0.85
+    assert results['performance_gap'] <= 0.10
+    assert results['holdout_rmse'] <= 400000
+```
+
+## 🔄 Pull Request Process
+
+### **1. Pre-submission Checklist**
+- [ ] **Code follows zero-hardcoding principle**
+- [ ] **All tests pass** (`python -m pytest tests/`)
+- [ ] **Performance benchmarks meet thresholds**
+- [ ] **Documentation updated** (README, docstrings)
+- [ ] **Type hints added** to new functions
+- [ ] **Config parameters added** for new features
+- [ ] **No linting errors** (`flake8 deepcausalmmm/`)
+
+### **2. PR Description Template**
+```markdown
+## 🎯 Purpose
+Brief description of what this PR accomplishes.
+
+## 🔧 Changes Made
+- List of specific changes
+- New features added
+- Bug fixes included
+
+## 📊 Performance Impact
+- Benchmark results before/after
+- Any performance changes documented
+- Justification for performance changes
+
+## 🧪 Testing
+- Tests added/modified
+- Test coverage maintained
+- Performance regression tests included
+
+## 📚 Documentation
+- README updated if needed
+- Docstrings added/updated
+- Examples provided for new features
+
+## ⚠️ Breaking Changes
+- Any breaking changes listed
+- Migration guide provided if needed
+```
+
+### **3. Review Process**
+1. **Automated checks** must pass (tests, linting, performance)
+2. **Code review** by maintainers
+3. **Performance review** if core components changed
+4. **Documentation review** for clarity and completeness
+5. **Final approval** and merge
 
 ## 🐛 Bug Reports
 
-When reporting bugs, include:
-- **Environment**: Python version, PyTorch version, OS
-- **Data**: Sample data that reproduces the issue (anonymized)
-- **Expected vs Actual**: What you expected vs what happened
-- **Code**: Minimal reproducible example
-- **Error Messages**: Full traceback
-
-### Bug Report Template
+### **Issue Template**
 ```markdown
-## Bug Description
-Brief description of the issue
+## 🐛 Bug Description
+Clear description of the bug.
 
-## Environment
-- Python version: 
+## 🔄 Steps to Reproduce
+1. Step 1
+2. Step 2
+3. Step 3
+
+## 📊 Expected Behavior
+What should happen.
+
+## 📊 Actual Behavior  
+What actually happens.
+
+## 🔧 Environment
+- Python version:
 - PyTorch version:
+- Operating System:
 - DeepCausalMMM version:
-- OS:
 
-## Reproduction Code
+## 📋 Additional Context
+- Error messages
+- Stack traces
+- Sample data (if applicable)
+```
+
+## 💡 Feature Requests
+
+### **Enhancement Template**
+```markdown
+## 🎯 Feature Description
+Clear description of the proposed feature.
+
+## 🔧 Use Case
+Why is this feature needed? What problem does it solve?
+
+## 💭 Proposed Implementation
+High-level approach to implementing the feature.
+
+## 📊 Performance Considerations
+Any potential impact on model performance.
+
+## 🔗 Related Issues
+Links to related issues or discussions.
+```
+
+## 🏷️ Code Style
+
+### **Python Style Guidelines**
+- **PEP 8** compliance with 100-character line limit
+- **Type hints** for all function signatures
+- **Descriptive variable names** (no abbreviations)
+- **Consistent formatting** using `black` formatter
+
+### **Naming Conventions**
+- **Functions/variables**: `snake_case`
+- **Classes**: `PascalCase`  
+- **Constants**: `UPPER_SNAKE_CASE`
+- **Private methods**: `_leading_underscore`
+
+### **Import Organization**
 ```python
-# Minimal code to reproduce the issue
+# Standard library imports
+import os
+import sys
+from typing import Dict, List, Optional, Tuple
+
+# Third-party imports
+import torch
+import torch.nn as nn
+import pandas as pd
+import numpy as np
+
+# Local imports
+from deepcausalmmm.core.config import get_config
+from deepcausalmmm.utils.helpers import validate_data
 ```
 
-## Expected Behavior
-What should happen
+## 🎉 Recognition
 
-## Actual Behavior
-What actually happens (include error messages)
-```
-
-## 🚀 Feature Requests
-
-For new features, please describe:
-- **Use Case**: What marketing problem does this solve?
-- **Proposed Solution**: How should it work?
-- **Alternatives**: Other approaches considered
-- **Impact**: Who would benefit from this feature?
-
-## 📊 Data Privacy
-
-### Marketing Data Sensitivity
-- **No Real Data**: Never commit actual marketing spend or revenue data
-- **Synthetic Examples**: Use synthetic data for examples and tests
-- **Anonymization**: If using real data patterns, anonymize completely
-- **Documentation**: Mark any sensitive parameters clearly
-
-## ⚡ Performance Testing
-
-### Marketing Model Benchmarks
-Test your changes against these benchmarks:
-
-```python
-# Standard benchmark dataset sizes
-SMALL_DATASET = (52, 5)    # 1 year, 5 channels
-MEDIUM_DATASET = (104, 10) # 2 years, 10 channels  
-LARGE_DATASET = (208, 15)  # 4 years, 15 channels
-
-# Expected performance (approximate)
-# Training time should be < 30s for SMALL_DATASET
-# Memory usage should be < 2GB for LARGE_DATASET
-# R² should be > 0.8 on synthetic data with known structure
-```
+Contributors will be recognized in:
+- **CHANGELOG.md** for each release
+- **README.md** contributors section
+- **GitHub releases** with contributor highlights
 
 ## 🤝 Community
 
-### Getting Help
-- **GitHub Issues**: For bugs and feature requests
-- **Discussions**: For questions and general discussion
-- **Email**: For private inquiries (puttaparthy.aditya@gmail.com)
-
-### Code of Conduct
-Be respectful, inclusive, and constructive in all interactions. We welcome contributors from all backgrounds and experience levels.
-
-## 🔄 Release Process
-
-### Version Numbering
-- **Major**: Breaking API changes (1.0.0 → 2.0.0)
-- **Minor**: New features, backward compatible (1.0.0 → 1.1.0)  
-- **Patch**: Bug fixes (1.0.0 → 1.0.1)
-
-### Release Checklist
-- [ ] All tests pass
-- [ ] Documentation updated
-- [ ] CHANGELOG.md updated
-- [ ] Version bumped in setup files
-- [ ] Performance benchmarks run
-- [ ] Example notebooks tested
-
-## 📄 License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.
+- **Be respectful** and constructive in discussions
+- **Help others** learn and contribute
+- **Share knowledge** through documentation and examples
+- **Celebrate successes** and learn from failures
 
 ---
 
-**Happy Contributing!** 🎉
-
-Your contributions help advance the state of Marketing Mix Modeling and make better marketing decisions possible for everyone. 
+Thank you for contributing to DeepCausalMMM! Together we're building the future of Media Mix Modeling 🚀

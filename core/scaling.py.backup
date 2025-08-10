@@ -1,0 +1,380 @@
+"""
+Unified regional scaling implementation with proper inverse transformations.
+"""
+
+import torch
+import numpy as np
+from typing import Tuple, Dict, Optional, Any
+from dataclasses import dataclass
+
+
+@dataclass
+class ScalingParams:
+    """Store scaling parameters for each region."""
+    media_ref: np.ndarray  # [n_regions, n_channels]
+    control_ref: np.ndarray  # [n_regions, n_controls]
+    target_ref: np.ndarray  # [n_regions]
+    region_indices: np.ndarray  # [n_samples]
+
+
+class UnifiedRegionalScaler:
+    """
+    Unified regional scaling with proper inverse transformations.
+    
+    Key features:
+    - Region-specific scaling for media, control, and target variables
+    - Share of Voice (SOV) preservation for media variables
+    - Proper inverse transformation for contribution calculation
+    - Magnitude preservation within regions
+    """
+    
+    def __init__(self):
+        """Initialize the scaler."""
+        self.fitted = False
+        self.params = None
+        self.n_regions = None
+        self.n_channels = None
+        self.n_controls = None
+    
+    def fit(
+        self,
+        X_media: np.ndarray,  # [n_regions, n_timesteps, n_channels]
+        X_control: np.ndarray,  # [n_regions, n_timesteps, n_controls]
+        y: np.ndarray,  # [n_regions, n_timesteps]
+        region_indices: np.ndarray,  # [n_regions]
+    ) -> None:
+        """
+        Fit the scaler by computing regional reference values.
+        
+        Args:
+            X_media: Media variables [n_regions, n_timesteps, n_channels]
+            X_control: Control variables [n_regions, n_timesteps, n_controls]
+            y: Target variable [n_regions, n_timesteps]
+            region_indices: Region indices [n_regions]
+        """
+        self.n_regions = X_media.shape[0]  # Number of regions is first dimension
+        self.n_channels = X_media.shape[2]
+        self.n_controls = X_control.shape[2]
+        
+        # Initialize reference values
+        media_ref = np.zeros((self.n_regions, self.n_channels))
+        control_ref = np.zeros((self.n_regions, self.n_controls))
+        target_ref = np.zeros(self.n_regions)
+        
+        # Compute regional reference values
+        for r in range(self.n_regions):
+            # Media reference: mean of each channel in the region
+            media_ref[r] = X_media[r].mean(axis=0)  # Average over time
+            
+            # Control reference: mean of each control in the region
+            control_ref[r] = X_control[r].mean(axis=0)  # Average over time
+            
+            # Target reference: mean of target in the region
+            target_ref[r] = y[r].mean()  # Average over time
+        
+        # Store parameters
+        self.params = ScalingParams(
+            media_ref=media_ref,
+            control_ref=control_ref,
+            target_ref=target_ref,
+            region_indices=np.arange(self.n_regions)  # Simple sequential indices
+        )
+        
+        self.fitted = True
+    
+    def transform(
+        self,
+        X_media: np.ndarray,
+        X_control: np.ndarray,
+        y: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Transform the data using regional scaling.
+        
+        Args:
+            X_media: Media variables [n_regions, n_timesteps, n_channels]
+            X_control: Control variables [n_regions, n_timesteps, n_controls]
+            y: Target variable [n_regions, n_timesteps]
+            
+        Returns:
+            Tuple of (scaled_media, scaled_control, scaled_target)
+        """
+        if not self.fitted:
+            raise ValueError("Scaler must be fitted before transform")
+        
+        # Initialize scaled arrays
+        X_media_scaled = np.zeros_like(X_media)
+        X_control_scaled = np.zeros_like(X_control)
+        y_scaled = np.zeros_like(y)
+        
+        # Scale by region
+        for r in range(self.n_regions):
+            # Media scaling: divide each channel by its regional mean (magnitude-preserving)
+            ref_media = self.params.media_ref[r].reshape(1, -1)  # [1, n_channels]
+            X_media_scaled[r] = X_media[r] / (ref_media + 1e-8)
+            
+            # Control scaling: divide by regional mean
+            ref_target = self.params.target_ref[r]
+            X_control_scaled[r] = X_control[r] / (ref_target + 1e-8)
+            
+            # Target scaling: divide by regional mean
+            y_scaled[r] = y[r] / (ref_target + 1e-8)
+        
+        return X_media_scaled, X_control_scaled, y_scaled
+    
+    def inverse_transform_contributions(
+        self,
+        contributions: np.ndarray,  # [n_regions, n_timesteps, n_channels]
+        y_true: np.ndarray,  # [n_regions, n_timesteps]
+    ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+        """
+        Inverse transform channel contributions using target variable scaling.
+        
+        Args:
+            contributions: Channel contributions in scaled space
+            y_true: True target values for proper scaling
+            
+        Returns:
+            Tuple of (unscaled_contributions, metadata)
+        """
+        if not self.fitted:
+            raise ValueError("Scaler must be fitted before inverse transform")
+        
+        # Output tensor in original (un-scaled) space
+        unscaled_contrib = np.zeros_like(contributions)
+
+        metadata = {
+            'total_contribution': np.zeros_like(y_true),
+            'contribution_ratios': np.zeros_like(contributions)
+        }
+
+        # Inverse transform region by region
+        for r in range(self.n_regions):
+            # Dependent-variable reference for this region
+            ref_target = self.params.target_ref[r]  # scalar
+
+            # 1) Bring each channel back to original scale
+            contrib_orig = contributions[r] * ref_target  # shape [T, C]
+
+            # 2) Row-wise adjustment so the sum of all channels matches actual y
+            row_total = contrib_orig.sum(axis=1)  # [T]
+            scale = y_true[r] / (row_total + 1e-8)  # same shape
+            balanced = contrib_orig * scale[:, None]  # broadcast along C
+
+            # Save results
+            unscaled_contrib[r] = balanced
+            metadata['total_contribution'][r] = balanced.sum(axis=1)
+            metadata['contribution_ratios'][r] = balanced / (
+                balanced.sum(axis=1, keepdims=True) + 1e-8
+            )
+        
+        return unscaled_contrib, metadata
+    
+    def fit_transform(
+        self,
+        X_media: np.ndarray,
+        X_control: np.ndarray,
+        y: np.ndarray,
+        region_indices: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Convenience method to fit and transform in one step."""
+        self.fit(X_media, X_control, y, region_indices)
+        return self.transform(X_media, X_control, y)
+
+
+def balance_contributions_to_actual(
+    media_contrib: np.ndarray,
+    control_contrib: np.ndarray,
+    baseline_contrib: np.ndarray,
+    y_true: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Balance all contributions to sum to actual revenue.
+    
+    Args:
+        media_contrib: Media contributions [n_samples, n_timesteps, n_channels]
+        control_contrib: Control contributions [n_samples, n_timesteps, n_controls]
+        baseline_contrib: Baseline contribution [n_samples, n_timesteps]
+        y_true: Actual revenue [n_samples, n_timesteps]
+        
+    Returns:
+        Tuple of (balanced_media, balanced_control, balanced_baseline)
+    """
+    # Calculate total contribution
+    total_contrib = (
+        media_contrib.sum(axis=2) +
+        control_contrib.sum(axis=2) +
+        baseline_contrib
+    )
+    
+    # Calculate scaling factor
+    scale_factor = y_true / (total_contrib + 1e-8)
+    
+    # Apply scaling to each component
+    balanced_media = media_contrib * scale_factor[..., None]
+    balanced_control = control_contrib * scale_factor[..., None]
+    balanced_baseline = baseline_contrib * scale_factor
+    
+    return balanced_media, balanced_control, balanced_baseline
+
+
+@dataclass
+class RobustScalingParams:
+    """Store robust scaling parameters for each region."""
+    media_sov_scaling: bool  # Whether to use share-of-voice for media
+    control_mean: np.ndarray  # [n_controls] - global means
+    control_std: np.ndarray   # [n_controls] - global stds
+    n_regions: int
+    n_channels: int
+    n_controls: int
+
+
+class RobustRegionalScaler:
+    """
+    Robust regional scaling based on architectural improvements.
+    
+    Key features:
+    - Share-of-voice scaling for media variables (preserves relative importance)
+    - Global standardization for control variables (stable across regions)
+    - No target scaling (uses log-transformed values as-is)
+    - Proper inverse transformation for contribution calculation
+    - Based on proven architecture that achieved stable training
+    """
+    
+    def __init__(self):
+        """Initialize the robust scaler."""
+        self.fitted = False
+        self.params = None
+    
+    def fit(
+        self,
+        X_media: np.ndarray,  # [n_regions, n_timesteps, n_channels]
+        X_control: np.ndarray,  # [n_regions, n_timesteps, n_controls]
+        y: np.ndarray,  # [n_regions, n_timesteps] - already log-transformed
+        region_indices: Optional[np.ndarray] = None,  # Not used in robust approach
+    ) -> None:
+        """
+        Fit the robust scaler by computing global statistics.
+        
+        Args:
+            X_media: Media variables [n_regions, n_timesteps, n_channels]
+            X_control: Control variables [n_regions, n_timesteps, n_controls]
+            y: Target variable [n_regions, n_timesteps] - should be log-transformed
+            region_indices: Not used in robust approach (for compatibility)
+        """
+        self.n_regions = X_media.shape[0]
+        self.n_channels = X_media.shape[2]
+        self.n_controls = X_control.shape[2]
+        
+        # For control variables: compute global mean and std
+        control_flat = X_control.reshape(-1, self.n_controls)  # [n_regions*n_timesteps, n_controls]
+        control_mean = control_flat.mean(axis=0)  # [n_controls]
+        control_std = control_flat.std(axis=0)    # [n_controls]
+        
+        # Store parameters
+        self.params = RobustScalingParams(
+            media_sov_scaling=True,  # Use share-of-voice for media
+            control_mean=control_mean,
+            control_std=control_std,
+            n_regions=self.n_regions,
+            n_channels=self.n_channels,
+            n_controls=self.n_controls
+        )
+        
+        self.fitted = True
+    
+    def transform(
+        self,
+        X_media: np.ndarray,
+        X_control: np.ndarray,
+        y: np.ndarray  # Already log-transformed
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Transform the data using robust scaling.
+        
+        Args:
+            X_media: Media variables [n_regions, n_timesteps, n_channels]
+            X_control: Control variables [n_regions, n_timesteps, n_controls]
+            y: Target variable [n_regions, n_timesteps] - already log-transformed
+            
+        Returns:
+            Tuple of (scaled_media, scaled_control, y_unchanged)
+        """
+        if not self.fitted:
+            raise ValueError("Scaler must be fitted before transform")
+        
+        # Media scaling: Share-of-voice approach
+        # Sum across channels for each region/time to get total impressions
+        total_impressions = X_media.sum(axis=2, keepdims=True)  # [n_regions, n_timesteps, 1]
+        X_media_scaled = X_media / (total_impressions + 1e-8)   # [n_regions, n_timesteps, n_channels]
+        
+        # Control scaling: Global standardization
+        X_control_scaled = (X_control - self.params.control_mean) / (self.params.control_std + 1e-8)
+        
+        # Target: Use as-is (already log-transformed)
+        y_scaled = y.copy()
+        
+        return X_media_scaled, X_control_scaled, y_scaled
+    
+    def inverse_transform_contributions(
+    def inverse_transform_contributions(
+        self,
+        media_contributions: np.ndarray,  # [n_regions, n_timesteps, n_channels]
+        y_true: np.ndarray,  # [n_regions, n_timesteps] - in original scale
+    ) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
+        """
+        Inverse transform media contributions back to original scale.
+        
+        For robust scaling, contributions are already in a meaningful scale
+        since we use share-of-voice. We just need to ensure they sum to actual values.
+        
+        Args:
+            media_contributions: Media contributions in scaled space
+            y_true: True target values in original scale
+            
+        Returns:
+            Tuple of (contributions_in_original_scale, metadata)
+        """
+        if not self.fitted:
+            raise ValueError("Scaler must be fitted before inverse transform")
+        
+        # For share-of-voice scaling, contributions are already in relative terms
+        # We can scale them to match the actual target values
+        
+        # Calculate total contribution per timestep
+        total_contrib_per_time = media_contributions.sum(axis=2)  # [n_regions, n_timesteps]
+        
+        # Ensure y_true and contributions have the same timestep dimension
+        if y_true.shape[1] != media_contributions.shape[1]:
+            # If y_true has more timesteps (e.g., includes padding), trim it
+            if y_true.shape[1] > media_contributions.shape[1]:
+                y_true = y_true[:, -media_contributions.shape[1]:]  # Take last N timesteps
+            else:
+                raise ValueError(f"y_true has fewer timesteps ({y_true.shape[1]}) than contributions ({media_contributions.shape[1]})")
+        
+        # Scale contributions to match actual target values
+        # (assuming contributions should sum to a fraction of actual values)
+        scale_factor = y_true / (total_contrib_per_time + 1e-8)  # [n_regions, n_timesteps]
+        
+        # Apply scaling to each channel
+        contributions_orig = media_contributions * scale_factor[..., None]  # [n_regions, n_timesteps, n_channels]
+        
+        # Metadata for analysis
+        metadata = {
+            'total_contribution': contributions_orig.sum(axis=2),  # [n_regions, n_timesteps]
+            'contribution_ratios': contributions_orig / (contributions_orig.sum(axis=2, keepdims=True) + 1e-8),
+            'scale_factors': scale_factor
+        }
+        
+        return contributions_orig, metadata
+    
+    def fit_transform(
+        self,
+        X_media: np.ndarray,
+        X_control: np.ndarray,
+        y: np.ndarray,
+        region_indices: Optional[np.ndarray] = None
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Fit and transform in one step."""
+        self.fit(X_media, X_control, y, region_indices)
+        return self.transform(X_media, X_control, y)

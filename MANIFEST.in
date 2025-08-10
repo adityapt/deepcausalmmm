@@ -1,0 +1,37 @@
+# Include important package files
+include README.md
+include CHANGELOG.md
+include LICENSE
+include pyproject.toml
+include Makefile
+
+# Include all Python files
+recursive-include deepcausalmmm *.py
+
+# Include configuration files
+recursive-include deepcausalmmm *.yaml
+recursive-include deepcausalmmm *.yml
+recursive-include deepcausalmmm *.json
+
+# Include examples
+recursive-include examples *.py
+recursive-include examples *.md
+recursive-include examples *.ipynb
+
+# Include tests
+recursive-include tests *.py
+
+# Exclude development and temporary files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude *.so
+global-exclude .git*
+global-exclude .DS_Store
+global-exclude *.backup
+
+# Exclude build artifacts
+global-exclude build/*
+global-exclude dist/*
+global-exclude *.egg-info/*

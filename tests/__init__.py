@@ -1,3 +1,1 @@
-"""
-Test suite for DeepCausalMMM package.
-""" 
+# Tests package for mmm-monitor 
