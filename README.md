@@ -2,7 +2,7 @@
 
 **Advanced Media Mix Modeling with Causal Inference and Deep Learning**
 
-[![MMM](https://img.shields.io/badge/Marketing-Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
+[![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
 [![Deep Learning](https://img.shields.io/badge/Deep-Learning-blue)](https://pytorch.org)
 [![Causal DAG](https://img.shields.io/badge/Causal-DAG-purple)](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
 [![GRU](https://img.shields.io/badge/Neural-GRU-orange)](https://pytorch.org/docs/stable/generated/torch.nn.GRU.html)
