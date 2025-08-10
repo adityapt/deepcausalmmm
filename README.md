@@ -13,17 +13,9 @@
 
 ## 🏆 Outstanding Performance Achieved
 
-**Latest Results (Production Ready):**
-- **🚂 Training RMSE**: 254,911 visits (34.7%)
-- **🧪 Holdout RMSE**: 324,584 visits (38.7%) 
-- **🚂 Training R²**: 0.965
-- **🧪 Holdout R²**: 0.930
-- **📊 Performance Gap**: Only 3.6% - Exceptional generalization!
-- **✨ Log-space R²**: 0.981 - Outstanding model fit
-
 ## 🎯 Key Features
 
-### ✅ **Zero Hardcoding Philosophy**
+### ✅ **No Hardcoding**
 - **100% Learnable Parameters**: All model parameters learned from data
 - **Config-Driven**: Every setting configurable via `config.py`
 - **Dataset Agnostic**: Works on any MMM dataset without modifications
@@ -52,13 +44,13 @@
 
 #### From GitHub (Recommended)
 ```bash
-pip install git+https://github.com/YOUR_USERNAME/deepcausalmmm.git
+pip install git+https://github.com/adityapt/deepcausalmmm.git
 ```
 
 #### Manual Installation
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/deepcausalmmm.git
+git clone https://github.com/adityapt/deepcausalmmm.git
 cd deepcausalmmm
 pip install -e .
 ```
