@@ -4,11 +4,17 @@ Thank you for your interest in contributing to DeepCausalMMM! This document prov
 
 ## 🏆 Project Philosophy
 
-### **No Hardcoding**
+### **Zero Hardcoding Principle**
 - **All parameters must be configurable** via `config.py`
 - **No magic numbers** in model code
 - **Dataset agnostic** - works on any MMM dataset
 - **Learnable parameters** preferred over fixed constants
+
+### **Performance First**
+- **Proven configurations** should not be changed without extensive testing
+- **Benchmark against baseline** before and after changes
+- **Maintain generalization** with proper train/holdout validation
+- **Document performance impact** in pull requests
 
 ### **Code Quality Standards**
 - **Type hints** for all function parameters and returns
@@ -27,39 +33,76 @@ cd deepcausalmmm
 ```
 
 2. **Create virtual environment**
-   ```bash
-   python -m venv venv
+```bash
+python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. **Install dependencies**
+3. **Install in development mode**
 ```bash
-pip install -r requirements-dev.txt
+pip install -e .
+# Or install with development dependencies
+pip install -e .[dev]
 ```
 
-4. **Run tests to ensure setup**
-   ```bash
+4. **Verify installation**
+```bash
+python -c "from deepcausalmmm import DeepCausalMMM, get_device; print('✅ Package installed successfully!')"
+```
+
+5. **Run tests to ensure setup**
+```bash
 python -m pytest tests/ -v
-   ```
+```
 
 ## 📁 Project Structure
 
 ```
 deepcausalmmm/
-├── core/                           # Core model components
-│   ├── config.py                  # ⚠️ CRITICAL: All configurations
-│   ├── unified_model.py           # ⚠️ CRITICAL: Main model architecture
-│   ├── trainer.py                 # Training logic and optimization
-│   ├── data.py                    # Data processing pipeline
-│   ├── scaling.py                 # Scaling transformations
-│   └── seasonality.py             # Seasonal decomposition
-├── postprocess/                    # Analysis and visualization
-│   ├── comprehensive_analyzer.py  # Main analysis engine
-│   ├── inference.py               # Model inference utilities
-│   └── visualization.py           # Plotting and dashboard creation
-├── utils/                          # Utility functions
-├── tests/                          # Test suite
-└── examples/                       # Usage examples
+├── __init__.py              # Package initialization and exports
+├── cli.py                   # Command-line interface
+├── exceptions.py            # Custom exception classes
+├── pyproject.toml          # Package configuration and dependencies
+├── README.md               # Documentation
+├── LICENSE                 # MIT License
+├── CHANGELOG.md            # Version history and changes
+├── CONTRIBUTING.md         # Development guidelines (this file)
+├── Makefile               # Build and development tasks
+├── MANIFEST.in            # Package manifest for distribution
+│
+├── core/                   # ⚠️ CRITICAL: Core model components
+│   ├── __init__.py        # Core module initialization
+│   ├── config.py          # ⚠️ CRITICAL: All configurations
+│   ├── unified_model.py   # ⚠️ CRITICAL: Main model architecture
+│   ├── trainer.py         # ModelTrainer class for training
+│   ├── data.py            # UnifiedDataPipeline for data processing
+│   ├── scaling.py         # SimpleGlobalScaler for data normalization
+│   ├── seasonality.py     # Seasonal decomposition utilities
+│   ├── dag_model.py       # DAG learning and causal inference
+│   ├── inference.py       # Model inference and prediction
+│   ├── train_model.py     # Legacy training functions
+│   └── visualization.py   # Core visualization components
+│
+├── postprocess/            # Analysis and post-processing
+│   ├── __init__.py        # Postprocess module initialization
+│   ├── analysis.py        # Statistical analysis utilities
+│   ├── comprehensive_analysis.py  # Comprehensive analyzer
+│   └── dag_postprocess.py # DAG post-processing and analysis
+│
+├── utils/                  # Utility functions
+│   ├── __init__.py        # Utils module initialization
+│   ├── device.py          # GPU/CPU device detection
+│   └── data_generator.py  # Synthetic data generation
+│
+└── tests/                  # Test suite
+    ├── __init__.py        # Test package initialization
+    ├── fixtures/          # Test data and fixtures
+    ├── unit/              # Unit tests
+    │   ├── __init__.py
+    │   └── test_drift.py  # Drift detection tests
+    └── integration/       # Integration tests
+        ├── __init__.py
+        └── test_mlflow_integration.py  # MLflow integration tests
 ```
 
 ## 🔧 Development Guidelines
@@ -205,11 +248,12 @@ def calculate_contributions(
 
 ### **Benchmark Requirements**
 
-**Minimum Performance Thresholds:**
-- **Holdout R²**: ≥ 0.85 (Current: 0.930)
-- **Performance Gap**: ≤ 10% (Current: 3.6%)
-- **Holdout RMSE**: ≤ 400k visits (Current: 324k)
-- **Training Stability**: No coefficient explosion
+**Performance Standards:**
+- **Holdout R²**: Should demonstrate strong generalization
+- **Performance Gap**: Training vs holdout gap should be minimal
+- **RMSE**: Should show consistent improvement over baseline
+- **Training Stability**: No coefficient explosion or divergence
+- **Business Logic**: Contributions should be realistic and interpretable
 
 **Before Merging:**
 1. **Run full benchmark** on standard dataset
@@ -362,8 +406,8 @@ import pandas as pd
 import numpy as np
 
 # Local imports
-from deepcausalmmm.core.config import get_config
-from deepcausalmmm.utils.helpers import validate_data
+from deepcausalmmm.core.config import get_default_config
+from deepcausalmmm.utils.device import get_device
 ```
 
 ## 🎉 Recognition
