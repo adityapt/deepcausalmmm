@@ -2,6 +2,7 @@
 
 **Advanced Media Mix Modeling with Causal Inference and Deep Learning**
 
+[![Documentation](https://readthedocs.org/projects/deepcausalmmm/badge/?version=latest)](https://deepcausalmmm.readthedocs.io/en/latest/?badge=latest)
 [![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
 [![Deep Learning](https://img.shields.io/badge/Deep-Learning-blue)](https://pytorch.org)
 [![Causal DAG](https://img.shields.io/badge/Causal-DAG-purple)](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
@@ -267,6 +268,14 @@ MIT License - see [LICENSE](LICENSE) file.
 - **Issues**: Use GitHub issues for bug reports and feature requests
 - **Performance**: All configurations battle-tested and production-ready
 - **Zero Hardcoding**: Fully generalizable across different datasets and industries
+
+## 📚 Documentation
+
+- **📖 Full Documentation**: [deepcausalmmm.readthedocs.io](https://deepcausalmmm.readthedocs.io/)
+- **🚀 Quick Start Guide**: [Installation & Usage](https://deepcausalmmm.readthedocs.io/en/latest/quickstart.html)
+- **📋 API Reference**: [Complete API Documentation](https://deepcausalmmm.readthedocs.io/en/latest/api/)
+- **📝 Tutorials**: [Step-by-step Guides](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/)
+- **💡 Examples**: [Practical Use Cases](https://deepcausalmmm.readthedocs.io/en/latest/examples/)
 
 ## 🔗 Quick Links
 
