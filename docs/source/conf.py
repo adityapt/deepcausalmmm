@@ -50,7 +50,7 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'  # Use built-in theme for now
+html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 # -- Extension configuration -------------------------------------------------
@@ -89,7 +89,7 @@ intersphinx_mapping = {
 
 # -- Custom configuration ---------------------------------------------------
 
-# Add any custom configuration here
+# RTD Theme configuration
 html_theme_options = {
     'canonical_url': '',
     'analytics_id': '',
@@ -99,7 +99,7 @@ html_theme_options = {
     'style_external_links': False,
     'style_nav_header_background': '#2980B9',
     # Toc options
-    'collapse_navigation': True,
+    'collapse_navigation': False,
     'sticky_navigation': True,
     'navigation_depth': 4,
     'includehidden': True,
