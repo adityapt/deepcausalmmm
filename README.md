@@ -11,8 +11,6 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 🏆 Outstanding Performance Achieved
-
 ## 🎯 Key Features
 
 ### ✅ **No Hardcoding**
