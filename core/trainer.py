@@ -21,13 +21,64 @@ class ModelTrainer:
     """
     Reusable trainer class for DeepCausalMMM models.
     
-    Handles:
-    - Model initialization from config
-    - Training loop with progress tracking
-    - Holdout evaluation
-    - Early stopping
-    - Learning rate scheduling
-    - Gradient clipping
+    This class provides a complete training pipeline for DeepCausalMMM models with
+    advanced features including early stopping, learning rate scheduling, gradient
+    clipping, and comprehensive logging. It supports both MSE and Huber loss functions
+    with automatic device detection and mixed precision training.
+    
+    Features:
+    - Config-driven model initialization (zero hardcoding)
+    - Automatic device detection (CPU/CUDA)
+    - Multiple loss functions (MSE, Huber, optional Focal)
+    - Early stopping with patience
+    - Learning rate scheduling (StepLR, Cosine Annealing)
+    - Gradient clipping (global and parameter-specific)
+    - Comprehensive metrics tracking (RMSE, R², MAE)
+    - Progress bars with detailed statistics
+    - Holdout evaluation during training
+    
+    Parameters
+    ----------
+    config : Dict[str, Any], optional
+        Configuration dictionary containing all training parameters.
+        If None, uses default configuration from get_default_config().
+        
+    Attributes
+    ----------
+    model : DeepCausalMMM
+        The initialized model instance
+    optimizer : torch.optim.Optimizer
+        The optimizer (Adam by default)
+    scheduler : torch.optim.lr_scheduler._LRScheduler
+        Learning rate scheduler if enabled
+    device : torch.device
+        Training device (CPU or CUDA)
+    best_rmse : float
+        Best holdout RMSE achieved during training
+    train_losses : List[float]
+        Training loss history
+    train_rmses : List[float]
+        Training RMSE history
+    train_r2s : List[float]
+        Training R² history
+        
+    Examples
+    --------
+    >>> from deepcausalmmm.core.trainer import ModelTrainer
+    >>> from deepcausalmmm.core.config import get_default_config
+    >>> 
+    >>> # Initialize trainer with custom config
+    >>> config = get_default_config()
+    >>> config['n_epochs'] = 1000
+    >>> config['learning_rate'] = 0.01
+    >>> trainer = ModelTrainer(config)
+    >>> 
+    >>> # Train model (assumes processed_data is available)
+    >>> model, results = trainer.train(processed_data)
+    >>> 
+    >>> # Access training history
+    >>> print(f"Final RMSE: {results['holdout_rmse']:.0f}")
+    >>> print(f"Final R²: {results['holdout_r2']:.3f}")
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
