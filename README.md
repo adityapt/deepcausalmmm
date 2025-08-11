@@ -1,6 +1,6 @@
 # DeepCausalMMM 🚀
 
-**Advanced Media Mix Modeling with Causal Inference and Deep Learning**
+**Advanced Marketing Mix Modeling with Causal Inference and Deep Learning**
 
 [![Documentation](https://readthedocs.org/projects/deepcausalmmm/badge/?version=latest)](https://deepcausalmmm.readthedocs.io/en/latest/?badge=latest)
 [![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
@@ -284,6 +284,6 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
-**DeepCausalMMM** - Where Deep Learning meets Causal Inference for Superior Media Mix Modeling 🚀
+**DeepCausalMMM** - Where Deep Learning meets Causal Inference for Superior Marketing Mix Modeling 🚀
 
 *Built with ❤️ for the MMM community*
