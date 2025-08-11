@@ -358,15 +358,77 @@ def load_and_preprocess_data(
 
 class UnifiedDataPipeline:
     """
-    Unified data processing pipeline that ensures consistent transformations
-    between training and holdout data.
+    Unified data processing pipeline for DeepCausalMMM models.
     
-    This class handles:
-    - Data splitting (temporal)
-    - Scaling with SimpleGlobalScaler
-    - Padding for burn-in
-    - Tensor conversion
-    - Inverse transformations
+    This pipeline ensures consistent data transformations between training and holdout
+    datasets, implementing the complete preprocessing workflow required for MMM analysis.
+    It handles temporal splitting, multi-scale normalization, seasonal decomposition,
+    and tensor preparation for PyTorch models.
+    
+    Key Features:
+    - Temporal train/holdout splitting (respects time series nature)
+    - SOV (Share of Voice) scaling for media channels
+    - Z-score normalization for control variables  
+    - Min-Max scaling for seasonal components (per region)
+    - Burn-in padding for GRU stabilization
+    - Automatic tensor conversion and device handling
+    - Inverse transformation utilities for interpretation
+    - Region encoding and validation
+    
+    The pipeline maintains data integrity by:
+    - Using the same scaler fit on training data for holdout
+    - Preserving temporal order in all transformations
+    - Handling missing values and outliers appropriately
+    - Ensuring consistent tensor shapes across regions
+    
+    Parameters
+    ----------
+    config : Dict[str, Any]
+        Configuration dictionary containing:
+        - 'holdout_ratio': Fraction of data for holdout (default 0.08)
+        - 'burn_in_weeks': Number of weeks for padding (default 6)
+        - 'random_seed': Seed for reproducible operations (default 42)
+        - Media channel names, control variable names, etc.
+        
+    Attributes
+    ----------
+    scaler : SimpleGlobalScaler
+        Fitted scaler for consistent transformations
+    seasonal_detector : DetectSeasonality
+        Seasonal decomposition utility
+    media_columns : List[str]
+        Names of media channel columns
+    control_columns : List[str]
+        Names of control variable columns
+    region_column : str
+        Name of region identifier column
+    target_column : str
+        Name of target variable column
+        
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from deepcausalmmm.core.data import UnifiedDataPipeline
+    >>> from deepcausalmmm.core.config import get_default_config
+    >>> 
+    >>> # Load your MMM dataset
+    >>> df = pd.read_csv('mmm_data.csv')
+    >>> config = get_default_config()
+    >>> 
+    >>> # Initialize and fit pipeline
+    >>> pipeline = UnifiedDataPipeline(config)
+    >>> processed_data = pipeline.fit_transform(df)
+    >>> 
+    >>> # Access processed tensors
+    >>> X_media_train = processed_data['X_media_train']
+    >>> y_train = processed_data['y_train']
+    >>> 
+    >>> # Get holdout data
+    >>> X_media_holdout = processed_data['X_media_holdout']
+    >>> y_holdout = processed_data['y_holdout']
+    >>> 
+    >>> print(f"Training shape: {X_media_train.shape}")
+    >>> print(f"Holdout shape: {X_media_holdout.shape}")
     """
     
     def __init__(self, config: Dict[str, Any]):
