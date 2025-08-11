@@ -5,7 +5,22 @@
 
 import os
 import sys
+
+# Add the package to Python path
 sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../../'))
+
+# Mock imports for modules that might not be available during docs build
+autodoc_mock_imports = [
+    'torch',
+    'numpy',
+    'pandas',
+    'sklearn',
+    'plotly',
+    'networkx',
+    'tqdm',
+    'statsmodels',
+]
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
