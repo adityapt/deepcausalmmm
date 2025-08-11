@@ -13,7 +13,103 @@ from .seasonality import DetectSeasonality
 
 
 class DeepCausalMMM(nn.Module):
-    """Deep Causal Marketing Mix Model with DAG structure and channel interactions."""
+    """
+    Deep Causal Marketing Mix Model with DAG structure and channel interactions.
+    
+    This model combines deep learning with causal inference to understand the impact 
+    of marketing channels on business KPIs while learning causal relationships between 
+    channels through a Directed Acyclic Graph (DAG).
+    
+    The model features:
+    - GRU-based temporal modeling for time-varying coefficients
+    - Learnable coefficient bounds for realistic attribution
+    - DAG learning for causal channel interactions
+    - Adstock and saturation transformations
+    - Multi-region support with shared and region-specific parameters
+    - Zero hardcoding philosophy - all parameters are learnable or configurable
+    
+    Parameters
+    ----------
+    n_media : int, default=10
+        Number of media channels in the dataset
+    ctrl_dim : int, default=15
+        Number of control variables (weather, events, etc.)
+    hidden : int, default=32
+        Hidden dimension size for GRU and MLP layers
+    n_regions : int, default=2
+        Number of geographic regions or DMAs
+    dropout : float, default=0.1
+        Dropout rate for regularization during training
+    sparsity_weight : float, default=0.01
+        Weight for sparsity regularization on coefficients
+    enable_dag : bool, default=True
+        Whether to enable DAG learning for channel interactions
+    enable_interactions : bool, default=True
+        Whether to enable channel interaction modeling
+    l1_weight : float, default=0.001
+        L1 regularization weight for coefficient sparsity
+    l2_weight : float, default=0.001
+        L2 regularization weight for coefficient smoothness
+    burn_in_weeks : int, default=4
+        Number of initial weeks for GRU stabilization
+    use_coefficient_momentum : bool, default=True
+        Whether to use momentum for coefficient stabilization
+    momentum_decay : float, default=0.9
+        Decay rate for coefficient momentum
+    use_warm_start : bool, default=True
+        Whether to use warm start training initialization
+    warm_start_epochs : int, default=50
+        Number of epochs for warm start phase
+    stabilization_method : str, default="exponential"
+        Method for coefficient stabilization ("linear", "exponential", "sigmoid")
+    coeff_l2_weight : float, default=0.1
+        L2 regularization specifically for media coefficients
+    coeff_gen_l2_weight : float, default=0.05
+        L2 regularization for coefficient generation layers
+    gru_layers : int, default=1
+        Number of GRU layers (configured, not hardcoded)
+    ctrl_hidden_ratio : float, default=0.5
+        Control hidden size as ratio of main hidden dimension
+        
+    Attributes
+    ----------
+    media_coeffs : torch.nn.Parameter
+        Time-varying coefficients for media channels
+    ctrl_coeffs : torch.nn.Parameter
+        Coefficients for control variables
+    dag_matrix : torch.nn.Parameter
+        Learnable DAG adjacency matrix for channel interactions
+    region_baseline : torch.nn.Parameter
+        Region-specific baseline contributions
+    seasonal_coeff : torch.nn.Parameter
+        Learnable coefficient for seasonal component
+        
+    Examples
+    --------
+    >>> import torch
+    >>> from deepcausalmmm import DeepCausalMMM
+    >>> 
+    >>> # Initialize model
+    >>> model = DeepCausalMMM(
+    ...     n_media=5, 
+    ...     ctrl_dim=3, 
+    ...     n_regions=2,
+    ...     hidden=64
+    ... )
+    >>> 
+    >>> # Prepare data tensors
+    >>> media_data = torch.randn(2, 104, 5)    # [regions, weeks, channels]
+    >>> control_data = torch.randn(2, 104, 3)  # [regions, weeks, controls]
+    >>> regions = torch.arange(2).unsqueeze(1).repeat(1, 104)
+    >>> 
+    >>> # Forward pass
+    >>> predictions, baseline, seasonality, outputs = model(
+    ...     media_data, control_data, regions
+    ... )
+    >>> 
+    >>> print(f"Predictions shape: {predictions.shape}")
+    >>> print(f"Media contributions: {outputs['media_contributions'].shape}")
+    """
     
     def __init__(
         self,
@@ -590,7 +686,80 @@ class DeepCausalMMM(nn.Module):
         Xc: torch.Tensor,
         R: torch.Tensor
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, Dict[str, Any]]:
-        """Forward pass through the model."""
+        """
+        Forward pass through the DeepCausalMMM model.
+        
+        Processes media and control variables through the neural network to generate
+        predictions, baseline contributions, seasonal effects, and detailed outputs
+        including channel-specific contributions and DAG interactions.
+        
+        Parameters
+        ----------
+        Xm : torch.Tensor
+            Media data tensor of shape [batch_size, time_steps, n_media]
+            Should be SOV-scaled (Share of Voice) normalized to [0, 1] range
+        Xc : torch.Tensor
+            Control variables tensor of shape [batch_size, time_steps, ctrl_dim]
+            Should be standardized (z-score normalized)
+        R : torch.Tensor
+            Region indicators tensor of shape [batch_size, time_steps]
+            Integer values representing region/DMA IDs
+            
+        Returns
+        -------
+        predictions : torch.Tensor
+            Model predictions of shape [batch_size, time_steps, 1]
+            Final KPI predictions combining all effects
+        baseline : torch.Tensor
+            Baseline contributions of shape [batch_size, time_steps, 1]
+            Region-specific baseline effects including global bias
+        seasonality : torch.Tensor
+            Seasonal contributions of shape [batch_size, time_steps, 1]
+            Learned seasonal patterns applied to data
+        outputs : Dict[str, Any]
+            Dictionary containing detailed model outputs:
+            - 'media_contributions': Media channel contributions [batch, time, n_media]
+            - 'control_contributions': Control variable contributions [batch, time, ctrl_dim]
+            - 'media_coefficients': Time-varying media coefficients [batch, time, n_media]
+            - 'control_coefficients': Control coefficients [batch, time, ctrl_dim]
+            - 'dag_matrix': Current DAG adjacency matrix [n_media, n_media]
+            - 'adstocked_media': Adstock-transformed media [batch, time, n_media]
+            - 'saturated_media': Saturation-transformed media [batch, time, n_media]
+            - 'interacted_media': DAG-interacted media [batch, time, n_media]
+            
+        Examples
+        --------
+        >>> import torch
+        >>> model = DeepCausalMMM(n_media=3, ctrl_dim=2, n_regions=2)
+        >>> 
+        >>> # Prepare input tensors
+        >>> media = torch.rand(2, 52, 3)  # 2 regions, 52 weeks, 3 channels
+        >>> control = torch.randn(2, 52, 2)  # 2 control variables
+        >>> regions = torch.tensor([[0]*52, [1]*52])  # Region indicators
+        >>> 
+        >>> # Forward pass
+        >>> pred, baseline, seasonal, outputs = model(media, control, regions)
+        >>> 
+        >>> # Access detailed outputs
+        >>> media_contrib = outputs['media_contributions']
+        >>> dag_matrix = outputs['dag_matrix']
+        >>> print(f"DAG sparsity: {(dag_matrix == 0).float().mean():.2f}")
+        
+        Notes
+        -----
+        The forward pass applies the following transformations in order:
+        1. Media processing: Adstock -> Hill saturation -> DAG interactions
+        2. Feature processing: Media features + Control features -> GRU
+        3. Coefficient generation: Time-varying coefficients from GRU states
+        4. Contribution calculation: Features * Coefficients
+        5. Final prediction: Baseline + Seasonality + Media + Control contributions
+        
+        The model enforces several constraints:
+        - DAG acyclicity through upper triangular masking
+        - Non-negative baseline and seasonal contributions
+        - Learnable coefficient bounds to prevent explosion
+        - Burn-in period stabilization for initial weeks
+        """
         B, T, _ = Xm.shape
         
         # Process media variables
