@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "deepcausalmmm"
 version = "1.0.0"
-description = "Advanced Marketing Mix Modeling with SimpleGlobalScaler & Coefficient Stabilization"
+description = "Advanced Marketing Mix Modeling using Deep Causal Modeling"
 authors = [
     {name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"},
 ]
