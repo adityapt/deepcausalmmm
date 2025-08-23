@@ -16,6 +16,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Debug directory structure
+      run: |
+        pwd
+        ls -la
+        echo "Looking for Python files:"
+        find . -name "*.py" | head -10
+        echo "Looking for deepcausalmmm directory:"
+        find . -name "deepcausalmmm" -type d
+        echo "Contents of current directory:"
+        ls -la deepcausalmmm/ || echo "deepcausalmmm directory not found"
+    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -24,7 +35,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        # Install the package and all dependencies
         pip install -e .
+        # Verify installation
+        python -c "import deepcausalmmm; print('Package installed successfully')"
+        # Install test dependencies
         pip install pytest
         
     - name: Run tests
