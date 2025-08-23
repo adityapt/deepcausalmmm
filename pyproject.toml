@@ -98,6 +98,5 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = [
     "--strict-markers",
-    "--verbose",
-    "--cov=deepcausalmmm",
+    "--verbose"
 ]
