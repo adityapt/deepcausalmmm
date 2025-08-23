@@ -1,75 +1,33 @@
-# pyproject.toml — deepcausalmmm
-# ----------------------------------------------------------
-# Build with:  python -m build
-# Upload with: twine upload dist/*   (testpypi first!)
-# ----------------------------------------------------------
-
 [build-system]
-requires      = ["setuptools>=70", "wheel"]
+requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
-#
-# ---- Core project metadata (PEP 621) ----------------------
-#
 [project]
-name            = "deepcausalmmm"
-version         = "1.0.0"               # ↑ bump each release
-description     = "Causal Deep Learning marketing-mix modeling library"
-readme          = "README.md"
+name = "deepcausalmmm"
+version = "1.0.0"
+description = "Causal Deep Learning marketing-mix modeling library"
+readme = "README.md"
 requires-python = ">=3.9"
-license         = { text = "MIT" }
+license = {text = "MIT"}
+authors = [{name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"}]
 
-authors = [
-  { name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com" }
-]
-
-classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Topic :: Scientific/Engineering :: Artificial Intelligence",
-  "Topic :: Scientific/Engineering :: Information Analysis",
-]
-
-#
-# ---- Runtime dependencies --------------------------------
-#
 dependencies = [
-  "torch>=2.2",        # CUDA builds supported by PyPI wheels
-  "pandas>=2.0",
-  "numpy>=2.0",
-  "plotly>=6.0",
-  "networkx>=3.0",
-  "scikit-learn>=1.4",
-  "statsmodels>=0.14",
-  "tqdm>=4.60",
+    "torch>=2.0",
+    "pandas>=1.5", 
+    "numpy>=1.21,<2.0",
+    "plotly>=5.0",
+    "networkx>=2.6",
+    "scikit-learn>=1.0",
+    "statsmodels>=0.13",
+    "tqdm>=4.60",
 ]
 
-#
-# ---- Optional / extra requirements -----------------------
-#
 [project.optional-dependencies]
-dev  = ["pytest>=8", "pytest-cov", "black", "ruff", "pre-commit"]
-docs = ["sphinx>=7", "sphinx-rtd-theme", "sphinx-autodoc-typehints", "myst-parser"]
 test = ["pytest>=8", "pytest-cov"]
 
-#
-# ---- CLI Scripts ------------------------------------------
-#
 [project.scripts]
-deepcausalmmm = "cli:main"
+deepcausalmmm = "deepcausalmmm.cli:main"
 
-#
-# ---- Setuptools configuration ----------------------------
-#
 [tool.setuptools]
-# Treat the repository root as the package
-py-modules = ["cli", "exceptions"]
-packages = ["core", "postprocess", "utils"]
-include-package-data = true
+package-dir = {"deepcausalmmm" = "."}
+packages = ["deepcausalmmm"]
