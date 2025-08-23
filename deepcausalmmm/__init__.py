@@ -17,16 +17,16 @@ Main Components:
 __version__ = "1.0.0"
 
 # Core model (essential)
-from .core.unified_model import DeepCausalMMM
-from .core.config import get_default_config, update_config
+from deepcausalmmm.core.unified_model import DeepCausalMMM
+from deepcausalmmm.core.config import get_default_config, update_config
 
 # Post-processing (essential)
-from .postprocess import ComprehensiveAnalyzer
+from deepcausalmmm.postprocess import ComprehensiveAnalyzer
 # Scaling (essential)
-from .core.scaling import SimpleGlobalScaler, GlobalScaler
+from deepcausalmmm.core.scaling import SimpleGlobalScaler, GlobalScaler
 
 # Utilities (essential)
-from .utils.device import get_device
+from deepcausalmmm.utils.device import get_device
 
 __all__ = [
     # Core model

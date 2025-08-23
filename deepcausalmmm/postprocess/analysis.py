@@ -8,9 +8,9 @@ from plotly.subplots import make_subplots
 from typing import Dict, List, Optional, Any
 import os
 
-from ..core.inference import InferenceManager, ModelInference  # ModelInference for legacy compatibility
-from ..core.scaling import SimpleGlobalScaler
-from ..core.config import get_default_config
+from deepcausalmmm.core.inference import InferenceManager, ModelInference  # ModelInference for legacy compatibility
+from deepcausalmmm.core.scaling import SimpleGlobalScaler
+from deepcausalmmm.core.config import get_default_config
 import torch
 
 

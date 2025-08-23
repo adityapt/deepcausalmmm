@@ -8,8 +8,8 @@ import torch.nn.functional as F
 from typing import Tuple, Optional, Dict, Any
 import numpy as np
 
-from .dag_model import NodeToEdge, EdgeToNode, DAGConstraint
-from .seasonality import DetectSeasonality
+from deepcausalmmm.core.dag_model import NodeToEdge, EdgeToNode, DAGConstraint
+from deepcausalmmm.core.seasonality import DetectSeasonality
 
 
 class DeepCausalMMM(nn.Module):

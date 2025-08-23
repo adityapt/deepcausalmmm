@@ -9,11 +9,11 @@ from typing import Dict, List, Optional, Tuple, Any
 from tqdm import tqdm
 from sklearn.metrics import r2_score, mean_squared_error
 
-from .unified_model import DeepCausalMMM, create_unified_mmm
-from .config import get_default_config, update_config
-from .scaling import SimpleGlobalScaler, GlobalScaler
-from .data import UnifiedDataPipeline
-from .trainer import ModelTrainer
+from deepcausalmmm.core.unified_model import DeepCausalMMM, create_unified_mmm
+from deepcausalmmm.core.config import get_default_config, update_config
+from deepcausalmmm.core.scaling import SimpleGlobalScaler, GlobalScaler
+from deepcausalmmm.core.data import UnifiedDataPipeline
+from deepcausalmmm.core.trainer import ModelTrainer
 # Device utilities available but not needed for this implementation
 
 

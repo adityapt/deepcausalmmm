@@ -7,7 +7,7 @@ This module provides a CLI for training and using the model.
 import argparse
 import json
 import sys
-from .core.config import get_default_config
+from deepcausalmmm.core.config import get_default_config
 
 
 def main():
@@ -77,7 +77,7 @@ def version_command(args):
         Parsed command line arguments from argparse
     """
     try:
-        from . import __version__
+        from deepcausalmmm import __version__
         print(f"DeepCausalMMM version {__version__}")
     except ImportError:
         print("DeepCausalMMM version 1.0.0")

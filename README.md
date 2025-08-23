@@ -65,7 +65,7 @@ import pandas as pd
 from deepcausalmmm import DeepCausalMMM, get_device
 from deepcausalmmm.core import get_default_config
 from deepcausalmmm.core.trainer import ModelTrainer
-from deepcausalmmm.data import UnifiedDataPipeline
+from deepcausalmmm.core.data import UnifiedDataPipeline
 
 # Load your data
 data = pd.read_csv('your_mmm_data.csv')
@@ -110,51 +110,70 @@ print(f"Device: {get_device()}")
 ## 📁 Project Structure
 
 ```
-deepcausalmmm/
-├── __init__.py              # Package initialization and exports
-├── cli.py                   # Command-line interface
-├── exceptions.py            # Custom exception classes
-├── pyproject.toml          # Package configuration and dependencies
-├── README.md               # This documentation
-├── LICENSE                 # MIT License
-├── CHANGELOG.md            # Version history and changes
-├── CONTRIBUTING.md         # Development guidelines
-├── Makefile               # Build and development tasks
-├── MANIFEST.in            # Package manifest for distribution
+deepcausalmmm/                      # Project root
+├── pyproject.toml                  # Package configuration and dependencies
+├── README.md                       # This documentation
+├── LICENSE                         # MIT License
+├── CHANGELOG.md                    # Version history and changes
+├── CONTRIBUTING.md                 # Development guidelines
+├── CODE_OF_CONDUCT.md              # Code of conduct
+├── Makefile                        # Build and development tasks
+├── MANIFEST.in                     # Package manifest for distribution
+├── setup.py                        # Setup script for package installation
+├── dashboard_rmse_optimized.py     # Main dashboard script
 │
-├── core/                   # Core model components
-│   ├── __init__.py        # Core module initialization
-│   ├── config.py          # Optimized configuration parameters
-│   ├── unified_model.py   # Main DeepCausalMMM model architecture
-│   ├── trainer.py         # ModelTrainer class for training
-│   ├── data.py            # UnifiedDataPipeline for data processing
-│   ├── scaling.py         # SimpleGlobalScaler for data normalization
-│   ├── seasonality.py     # Seasonal decomposition utilities
-│   ├── dag_model.py       # DAG learning and causal inference
-│   ├── inference.py       # Model inference and prediction
-│   ├── train_model.py     # Legacy training functions
-│   └── visualization.py   # Core visualization components
+├── deepcausalmmm/                  # Main package directory
+│   ├── __init__.py                 # Package initialization and exports
+│   ├── cli.py                      # Command-line interface
+│   ├── exceptions.py               # Custom exception classes
+│   │
+│   ├── core/                       # Core model components
+│   │   ├── __init__.py            # Core module initialization
+│   │   ├── config.py              # Optimized configuration parameters
+│   │   ├── unified_model.py       # Main DeepCausalMMM model architecture
+│   │   ├── trainer.py             # ModelTrainer class for training
+│   │   ├── data.py                # UnifiedDataPipeline for data processing
+│   │   ├── scaling.py             # SimpleGlobalScaler for data normalization
+│   │   ├── seasonality.py         # Seasonal decomposition utilities
+│   │   ├── dag_model.py           # DAG learning and causal inference
+│   │   ├── inference.py           # Model inference and prediction
+│   │   ├── train_model.py         # Training functions and utilities
+│   │   └── visualization.py       # Core visualization components
+│   │
+│   ├── postprocess/                # Analysis and post-processing
+│   │   ├── __init__.py            # Postprocess module initialization
+│   │   ├── analysis.py            # Statistical analysis utilities
+│   │   ├── comprehensive_analysis.py  # Comprehensive analyzer
+│   │   └── dag_postprocess.py     # DAG post-processing and analysis
+│   │
+│   └── utils/                      # Utility functions
+│       ├── __init__.py            # Utils module initialization
+│       ├── device.py              # GPU/CPU device detection
+│       └── data_generator.py      # Synthetic data generation
 │
-├── postprocess/            # Analysis and post-processing
-│   ├── __init__.py        # Postprocess module initialization
-│   ├── analysis.py        # Statistical analysis utilities
-│   ├── comprehensive_analysis.py  # Comprehensive analyzer
-│   └── dag_postprocess.py # DAG post-processing and analysis
+├── tests/                          # Test suite
+│   ├── __init__.py                # Test package initialization
+│   ├── unit/                      # Unit tests
+│   │   ├── __init__.py
+│   │   ├── test_config.py         # Configuration tests
+│   │   ├── test_model.py          # Model architecture tests
+│   │   └── test_scaling.py        # Data scaling tests
+│   └── integration/               # Integration tests
+│       ├── __init__.py
+│       └── test_end_to_end.py     # End-to-end integration tests
 │
-├── utils/                  # Utility functions
-│   ├── __init__.py        # Utils module initialization
-│   ├── device.py          # GPU/CPU device detection
-│   └── data_generator.py  # Synthetic data generation
-│
-└── tests/                  # Test suite
-    ├── __init__.py        # Test package initialization
-    ├── fixtures/          # Test data and fixtures
-    ├── unit/              # Unit tests
-    │   ├── __init__.py
-    │   └── test_drift.py  # Drift detection tests
-    └── integration/       # Integration tests
-        ├── __init__.py
-        └── test_mlflow_integration.py  # MLflow integration tests
+└── docs/                           # Documentation
+    ├── Makefile                   # Documentation build tasks
+    ├── make.bat                   # Windows documentation build
+    ├── requirements.txt           # Documentation dependencies
+    └── source/                    # Sphinx documentation source
+        ├── conf.py               # Sphinx configuration
+        ├── index.rst             # Documentation index
+        ├── installation.rst      # Installation guide
+        ├── quickstart.rst        # Quick start guide
+        ├── api/                  # API documentation
+        ├── examples/             # Example documentation
+        └── tutorials/            # Tutorial documentation
 ```
 
 ## 🎨 Dashboard Features
@@ -280,7 +299,7 @@ MIT License - see [LICENSE](LICENSE) file.
 - **Main Dashboard**: `dashboard_rmse_optimized.py` - Complete analysis pipeline
 - **Core Model**: `deepcausalmmm/core/unified_model.py` - DeepCausalMMM architecture
 - **Configuration**: `deepcausalmmm/core/config.py` - All tunable parameters
-- **Data Pipeline**: `deepcausalmmm/data/` - Data processing and scaling
+- **Data Pipeline**: `deepcausalmmm/core/data.py` - Data processing and scaling
 
 ---
 

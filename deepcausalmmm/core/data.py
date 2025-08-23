@@ -15,8 +15,8 @@ from typing import Dict, List, Tuple, Optional, Any
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
 
-from ..exceptions import DataError, BayesianNetworkError, ValidationError
-from .scaling import SimpleGlobalScaler
+from deepcausalmmm.exceptions import DataError, BayesianNetworkError, ValidationError
+from deepcausalmmm.core.scaling import SimpleGlobalScaler
 
 # Try to import pgmpy, fallback to simpler approach if not available
 try:

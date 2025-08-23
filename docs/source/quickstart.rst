@@ -15,7 +15,7 @@ Here's a complete example of training a DeepCausalMMM model:
     from deepcausalmmm import DeepCausalMMM, get_device
     from deepcausalmmm.core import get_default_config
     from deepcausalmmm.core.trainer import ModelTrainer
-    from deepcausalmmm.data import UnifiedDataPipeline
+    from deepcausalmmm.core.data import UnifiedDataPipeline
 
     # 1. Load your data
     df = pd.read_csv('your_mmm_data.csv')

@@ -16,9 +16,9 @@ import matplotlib.pyplot as plt
 from typing import Dict, List, Optional, Any, Tuple
 import os
 from datetime import datetime
-from ..core.config import get_default_config
-from ..core.inference import InferenceManager
-from ..core.visualization import VisualizationManager
+from deepcausalmmm.core.config import get_default_config
+from deepcausalmmm.core.inference import InferenceManager
+from deepcausalmmm.core.visualization import VisualizationManager
 
 
 class ComprehensiveAnalyzer:

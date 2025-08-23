@@ -8,11 +8,11 @@ import numpy as np
 from typing import Dict, Any, List, Optional, Tuple
 import warnings
 
-from .unified_model import DeepCausalMMM
-from .data import UnifiedDataPipeline
-from .scaling import SimpleGlobalScaler
-from .config import get_default_config
-from ..utils.device import get_device
+from deepcausalmmm.core.unified_model import DeepCausalMMM
+from deepcausalmmm.core.data import UnifiedDataPipeline
+from deepcausalmmm.core.scaling import SimpleGlobalScaler
+from deepcausalmmm.core.config import get_default_config
+from deepcausalmmm.utils.device import get_device
 
 
 class InferenceManager:

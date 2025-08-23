@@ -13,7 +13,7 @@ import networkx as nx
 from typing import Dict, Any, List, Optional, Tuple
 import os
 
-from .config import get_default_config
+from deepcausalmmm.core.config import get_default_config
 
 
 class VisualizationManager:

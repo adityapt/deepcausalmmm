@@ -29,4 +29,5 @@ test = ["pytest>=8", "pytest-cov"]
 deepcausalmmm = "deepcausalmmm.cli:main"
 
 [tool.setuptools]
-packages = ["deepcausalmmm"]
+packages = {find = {where = ["."], include = ["deepcausalmmm*"]}}
+include-package-data = true

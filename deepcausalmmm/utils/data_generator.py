@@ -5,7 +5,7 @@ Replaces hardcoded data generation with configurable parameters.
 
 import numpy as np
 from typing import Dict, Any, Tuple, Optional
-from ..core.config import get_default_config
+from deepcausalmmm.core.config import get_default_config
 
 
 class ConfigurableDataGenerator:

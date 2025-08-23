@@ -12,9 +12,9 @@ from typing import Dict, Any, Tuple, List, Optional
 from tqdm import tqdm
 from sklearn.metrics import mean_squared_error, r2_score
 
-from .unified_model import DeepCausalMMM
-from .config import get_default_config
-from ..utils.device import get_device
+from deepcausalmmm.core.unified_model import DeepCausalMMM
+from deepcausalmmm.core.config import get_default_config
+from deepcausalmmm.utils.device import get_device
 
 
 class ModelTrainer:

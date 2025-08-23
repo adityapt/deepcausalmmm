@@ -7,7 +7,7 @@ import torch
 import numpy as np
 from typing import Tuple, Dict, Optional, Any
 from dataclasses import dataclass
-from .config import get_default_config
+from deepcausalmmm.core.config import get_default_config
 
 
 @dataclass
