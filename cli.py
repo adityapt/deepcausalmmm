@@ -104,7 +104,17 @@ Examples:
 
 
 def train_command(args):
-    """Handle train command."""
+    """
+    Train a new DeepCausalMMM model from command line arguments.
+    
+    Handles data loading, preprocessing, model training, and result saving.
+    Supports custom configurations and parameter overrides.
+    
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command line arguments from argparse
+    """    
     print("Loading configuration...")
     
     # Load configuration
@@ -267,7 +277,14 @@ def train_command(args):
 
 
 def predict_command(args):
-    """Handle predict command."""
+    """
+    Generate predictions using a trained model.
+    
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command line arguments from argparse
+    """
     print("Loading trained model...")
     
     # Load model and config
@@ -326,7 +343,14 @@ def predict_command(args):
 
 
 def forecast_command(args):
-    """Handle forecast command."""
+    """
+    Generate future forecasts using a trained model.
+    
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command line arguments from argparse
+    """
     print("Loading trained model...")
     
     # Load model and config
@@ -397,7 +421,14 @@ def forecast_command(args):
 
 
 def analyze_command(args):
-    """Handle analyze command."""
+    """
+    Generate comprehensive analysis and visualizations for a trained model.
+    
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command line arguments from argparse
+    """
     print("Loading trained model...")
     
     # Load model and config
