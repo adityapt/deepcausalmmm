@@ -10,16 +10,16 @@ authors = [
     {name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"},
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 license = "MIT"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
@@ -32,6 +32,8 @@ dependencies = [
     "plotly>=5.0.0",
     "networkx>=2.6.0",
     "tqdm>=4.62.0",
+    "statsmodels>=0.13.0",
+    "matplotlib>=3.5.0",
 ]
 
 [project.optional-dependencies]
