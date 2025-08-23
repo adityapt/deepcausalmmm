@@ -50,7 +50,12 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
+# Use RTD theme for Read the Docs, fallback to alabaster locally
+try:
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+except ImportError:
+    html_theme = 'alabaster'  # Fallback for local builds
 html_static_path = ['_static']
 
 # -- Extension configuration -------------------------------------------------
