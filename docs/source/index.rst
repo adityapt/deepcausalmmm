@@ -34,7 +34,7 @@ between channels through Directed Acyclic Graphs (DAGs).
 🚀 **Key Features**
 -------------------
 
-* **No Hardcoding**: All parameters are learnable or configurable
+* **Zero Hardcoding Philosophy**: All parameters are learnable or configurable
 * **GRU-Based Temporal Modeling**: Captures complex time-varying effects  
 * **DAG Learning**: Discovers causal relationships between channels
 * **Multi-Region Support**: Handle geographic segmentation naturally
