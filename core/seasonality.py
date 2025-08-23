@@ -5,8 +5,15 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from typing import Tuple, Optional
 
 class DetectSeasonality:
+    """
+    Seasonality detection and decomposition for time series data.
+    
+    Provides methods for extracting seasonal patterns from time series,
+    with support for multi-region analysis in marketing mix modeling.
+    """
     
     def __init__(self):
+        """Initialize the seasonality detector."""
         pass
     
     def decompose(self, X, period=52):
