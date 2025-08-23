@@ -25,26 +25,10 @@ DAG Model
    :undoc-members:
    :show-inheritance:
 
-Seasonality
------------
-
-.. automodule:: deepcausalmmm.core.seasonality
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Scaling
 -------
 
 .. automodule:: deepcausalmmm.core.scaling
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Visualization
--------------
-
-.. automodule:: deepcausalmmm.core.visualization
    :members:
    :undoc-members:
    :show-inheritance:
