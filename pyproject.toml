@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "deepcausalmmm"
 version = "1.0.0"
-description = "Advanced Marketing Mix Modeling using Causal Deep Learning"
+description = "Advanced Marketing Mix Modeling using Causal DeepLearning"
 authors = [
     {name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"},
 ]
@@ -70,7 +70,11 @@ Issues = "https://github.com/adityapt/deepcausalmmm/issues"
 deepcausalmmm = "deepcausalmmm.cli:main"
 
 [tool.setuptools]
-packages = ["deepcausalmmm"]
+packages = {find = {}}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["deepcausalmmm*"]
 
 [tool.setuptools.package-data]
 deepcausalmmm = ["*.md", "*.txt"]
