@@ -109,32 +109,37 @@ def test_clean_build():
     return True
 
 def test_build_package():
-    """Test package building."""
+    """Test package building in isolated environment."""
     print("\n🔍 Testing package build...")
     
-    # Clean previous builds
-    for path in ["build", "dist", "*.egg-info"]:
-        success, output, error = run_command(f"rm -rf {path}")
-    
-    # Build package
-    success, output, error = run_command("python -m build --wheel --no-isolation")
-    if success:
-        # Check what version was built
-        success, files, error = run_command("ls dist/*.whl")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_repo = Path(temp_dir) / "repo"
+        
+        # Clone the current repository
+        success, output, error = run_command(f"git clone . {temp_repo}")
+        if not success:
+            print(f"❌ Failed to clone repository: {error}")
+            return False
+        
+        # Build package in clean clone
+        success, output, error = run_command("python -m build --wheel --no-isolation", cwd=temp_repo)
         if success:
-            wheel_file = files.split('\n')[0] if files else ""
-            print(f"✅ Built wheel: {os.path.basename(wheel_file)}")
-            
-            # Extract version from filename
-            if ".dev" in wheel_file:
-                print("⚠️  WARNING: Built package has development version!")
+            # Check what version was built
+            success, files, error = run_command("ls dist/*.whl", cwd=temp_repo)
+            if success:
+                wheel_file = files.split('\n')[0] if files else ""
+                print(f"✅ Built wheel: {os.path.basename(wheel_file)}")
+                
+                # Extract version from filename
+                if ".dev" in wheel_file:
+                    print("⚠️  WARNING: Built package has development version!")
+                    return False
+            else:
+                print("❌ No wheel file found")
                 return False
         else:
-            print("❌ No wheel file found")
+            print(f"❌ Package build failed: {error}")
             return False
-    else:
-        print(f"❌ Package build failed: {error}")
-        return False
     
     return True
 
