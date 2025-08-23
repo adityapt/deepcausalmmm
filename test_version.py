@@ -115,8 +115,13 @@ def test_build_package():
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_repo = Path(temp_dir) / "repo"
         
-        # Clone the current repository
-        success, output, error = run_command(f"git clone . {temp_repo}")
+        # Clone the current repository at the current tag
+        success, current_tag, error = run_command("git describe --exact-match --tags HEAD")
+        if success:
+            success, output, error = run_command(f"git clone --branch {current_tag} . {temp_repo}")
+        else:
+            success, output, error = run_command(f"git clone . {temp_repo}")
+        
         if not success:
             print(f"❌ Failed to clone repository: {error}")
             return False
