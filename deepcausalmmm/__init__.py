@@ -14,7 +14,15 @@ Main Components:
 - Configuration system for reproducible experiments
 """
 
-__version__ = "1.0.0"
+try:
+    from deepcausalmmm._version import version as __version__
+except ImportError:
+    # Fallback for development installations without setuptools-scm
+    try:
+        from importlib.metadata import version
+        __version__ = version("deepcausalmmm")
+    except ImportError:
+        __version__ = "unknown"
 
 # Core model (essential)
 from deepcausalmmm.core.unified_model import DeepCausalMMM

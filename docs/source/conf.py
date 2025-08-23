@@ -28,8 +28,16 @@ autodoc_mock_imports = [
 project = 'DeepCausalMMM'
 copyright = '2024, Aditya Puttaparthi Tirumala'
 author = 'Aditya Puttaparthi Tirumala'
-release = '1.0.0'
-version = '1.0.0'
+
+# Get version dynamically from the package
+try:
+    import deepcausalmmm
+    release = deepcausalmmm.__version__
+    version = deepcausalmmm.__version__
+except ImportError:
+    # Fallback version if package can't be imported during docs build
+    release = '1.0.0'
+    version = '1.0.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

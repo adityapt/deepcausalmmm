@@ -2,12 +2,14 @@
 
 **Advanced Marketing Mix Modeling with Causal Inference and Deep Learning**
 
+[![PyPI version](https://badge.fury.io/py/deepcausalmmm.svg)](https://badge.fury.io/py/deepcausalmmm)
+[![PyPI downloads](https://img.shields.io/pypi/dm/deepcausalmmm.svg)](https://pypi.org/project/deepcausalmmm/)
 [![Documentation](https://readthedocs.org/projects/deepcausalmmm/badge/?version=latest)](https://deepcausalmmm.readthedocs.io/en/latest/?badge=latest)
 [![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
 [![Deep Learning](https://img.shields.io/badge/Deep-Learning-blue)](https://pytorch.org)
 [![Causal DAG](https://img.shields.io/badge/Causal-DAG-purple)](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
 [![GRU](https://img.shields.io/badge/Neural-GRU-orange)](https://pytorch.org/docs/stable/generated/torch.nn.GRU.html)
-[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -40,7 +42,12 @@
 
 ### Installation
 
-#### From GitHub (Recommended)
+#### From PyPI (Recommended)
+```bash
+pip install deepcausalmmm
+```
+
+#### From GitHub (Development Version)
 ```bash
 pip install git+https://github.com/adityapt/deepcausalmmm.git
 ```
