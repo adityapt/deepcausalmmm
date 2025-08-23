@@ -69,9 +69,6 @@ Issues = "https://github.com/adityapt/deepcausalmmm/issues"
 [project.scripts]
 deepcausalmmm = "deepcausalmmm.cli:main"
 
-[tool.setuptools]
-packages = {find = {}}
-
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["deepcausalmmm*"]
