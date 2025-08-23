@@ -29,5 +29,4 @@ test = ["pytest>=8", "pytest-cov"]
 deepcausalmmm = "deepcausalmmm.cli:main"
 
 [tool.setuptools]
-package-dir = {"deepcausalmmm" = "."}
 packages = ["deepcausalmmm"]
