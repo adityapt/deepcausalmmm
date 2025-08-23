@@ -34,3 +34,4 @@ include-package-data = true
 
 [tool.setuptools_scm]
 write_to = "deepcausalmmm/_version.py"
+local_scheme = "no-local-version"
