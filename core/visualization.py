@@ -18,10 +18,16 @@ from .config import get_default_config
 
 class VisualizationManager:
     """
-    Reusable visualization manager for creating consistent plots.
+    Visualization manager for creating consistent plots in DeepCausalMMM analysis.
     
-    All plot parameters are driven by configuration to ensure consistency
-    and easy customization across the entire package.
+    Provides a unified interface for creating training progress, coefficient analysis,
+    contribution plots, DAG visualizations, and other MMM-related charts.
+    All plot parameters are driven by configuration for consistency.
+    
+    Parameters
+    ----------
+    config : Dict[str, Any], optional
+        Configuration dictionary. If None, uses default configuration.
     """
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
