@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
 import networkx as nx
-import matplotlib.pyplot as plt
+
 from typing import Dict, List, Optional, Any, Tuple
 import os
 from datetime import datetime
