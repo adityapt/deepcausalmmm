@@ -2,8 +2,6 @@
 
 **Advanced Marketing Mix Modeling with Causal Inference and Deep Learning**
 
-[![PyPI version](https://badge.fury.io/py/deepcausalmmm.svg)](https://badge.fury.io/py/deepcausalmmm)
-[![PyPI downloads](https://img.shields.io/pypi/dm/deepcausalmmm.svg)](https://pypi.org/project/deepcausalmmm/)
 [![Documentation](https://readthedocs.org/projects/deepcausalmmm/badge/?version=latest)](https://deepcausalmmm.readthedocs.io/en/latest/?badge=latest)
 [![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
 [![Deep Learning](https://img.shields.io/badge/Deep-Learning-blue)](https://pytorch.org)
