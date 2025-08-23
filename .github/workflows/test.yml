@@ -35,18 +35,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        # Show what we're working with
-        echo "Current directory contents:"
-        ls -la
-        echo "pyproject.toml exists:"
-        cat pyproject.toml | head -20
-        # Install the package with test dependencies
-        pip install -e ".[test]" -v
-        # Verify installation (run from a different directory to avoid import conflicts)
-        cd /tmp
-        python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
-        python -c "import deepcausalmmm; print('DeepCausalMMM package installed successfully')"
-        cd -
+        pip install -e ".[test]"
         
     - name: Run tests
       run: |
