@@ -5,94 +5,86 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "deepcausalmmm"
 version = "1.0.0"
-description = "Advanced Marketing Mix Modeling using Deep Causal Modeling"
-authors = [
-    {name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"},
-]
+description = "Deep Causal Marketing Mix Modeling"
 readme = "README.md"
-requires-python = ">=3.8"
-license = "MIT"
+license = {text = "MIT"}
+authors = [
+    {name = "Aditya Puttaparthi Tirumala", email = "puttaparthy.aditya@gmail.com"}
+]
+keywords = ["marketing", "marketing-mix-modeling", "causal-inference", "deep-learning", "pytorch"]
 classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Science/Research",
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Data Scientists",
+    "Intended Audience :: Marketing Professionals", 
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Office/Business :: Marketing",
 ]
-
+requires-python = ">=3.8"
 dependencies = [
+    "torch>=1.12.0",
     "numpy>=1.21.0",
     "pandas>=1.3.0",
     "scikit-learn>=1.0.0",
-    "torch>=2.0.0",
     "plotly>=5.0.0",
+    "tqdm>=4.60.0",
+    "scipy>=1.7.0",
     "networkx>=2.6.0",
-    "tqdm>=4.62.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=6.0.0",
-    "pytest-cov>=3.0.0",
-    "black>=22.0.0",
-    "isort>=5.0.0",
-    "mypy>=0.950",
+    "pytest-cov>=2.12.0",
+    "black>=21.0.0",
+    "flake8>=3.9.0",
+    "mypy>=0.910",
+    "jupyter>=1.0.0",
     "notebook>=6.4.0",
 ]
-
-docs = [
-    "sphinx>=4.5.0",
-    "sphinx-rtd-theme>=1.0.0",
-    "sphinx-autodoc-typehints>=1.18.0",
-]
-
-visualization = [
-    "matplotlib>=3.5.0",
-    "seaborn>=0.11.0",
+viz = [
+    "kaleido>=0.2.1",
+    "plotly>=5.0.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/adityapt/deepcausalmmm"
-Repository = "https://github.com/adityapt/deepcausalmmm.git"
-Documentation = "https://github.com/adityapt/deepcausalmmm/blob/main/deepcausalmmm/README.md"
+Documentation = "https://deepcausalmmm.readthedocs.io"
+Repository = "https://github.com/adityapt/deepcausalmmm"
 Issues = "https://github.com/adityapt/deepcausalmmm/issues"
 
 [project.scripts]
 deepcausalmmm = "deepcausalmmm.cli:main"
 
-[tool.setuptools]
-packages = ["deepcausalmmm"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["deepcausalmmm*"]
+exclude = ["tests*", "examples*", "docs*"]
 
 [tool.setuptools.package-data]
-deepcausalmmm = ["*.md", "*.txt"]
+deepcausalmmm = ["*.yaml", "*.yml", "*.json"]
 
-# Development tools configuration
 [tool.black]
 line-length = 88
-target-version = ['py38', 'py39', 'py310', 'py311']
-include = '\.pyi?$'
+target-version = ['py38']
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-known_first_party = ["deepcausalmmm"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--verbose"
+]
 
 [tool.mypy]
 python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
-disallow_untyped_defs = false
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-addopts = [
-    "--strict-markers",
-    "--verbose",
-    "--cov=deepcausalmmm",
-]
+disallow_untyped_defs = true
