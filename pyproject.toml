@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools-scm>=6.2"]
+requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "deepcausalmmm"
-dynamic = ["version"]
+version = "1.0.15"
 description = "Causal Deep Learning marketing-mix modeling library"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -32,7 +32,4 @@ deepcausalmmm = "deepcausalmmm.cli:main"
 packages = {find = {where = ["."], include = ["deepcausalmmm*"]}}
 include-package-data = true
 
-[tool.setuptools_scm]
-write_to = "deepcausalmmm/_version.py"
-version_scheme = "python-simplified-semver"
-local_scheme = "no-local-version"
+

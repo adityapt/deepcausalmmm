@@ -15,13 +15,21 @@ Main Components:
 """
 
 try:
-    from deepcausalmmm._version import version as __version__
+    from importlib.metadata import version
+    __version__ = version("deepcausalmmm")
 except ImportError:
-    # Fallback for development installations without setuptools-scm
+    # Fallback: read from pyproject.toml using simple parsing
     try:
-        from importlib.metadata import version
-        __version__ = version("deepcausalmmm")
-    except ImportError:
+        from pathlib import Path
+        pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+        with open(pyproject_path, "r") as f:
+            for line in f:
+                if line.strip().startswith('version = '):
+                    __version__ = line.split('=')[1].strip().strip('"\'')
+                    break
+            else:
+                __version__ = "unknown"
+    except Exception:
         __version__ = "unknown"
 
 # Core model (essential)
