@@ -54,7 +54,8 @@ def test_model_trainer_basic_training(synthetic_mmm_data):
         n_regions=media_data.shape[0]
     )
     
-    # Note: ModelTrainer handles optimizer creation internally during training
+    # Create optimizer and scheduler (required before training)
+    trainer.create_optimizer_and_scheduler()
     
     # Convert to tensors
     X_media = torch.FloatTensor(media_data)
@@ -86,18 +87,19 @@ def test_unified_data_pipeline(synthetic_mmm_data):
     pipeline = UnifiedDataPipeline(config)
     
     # Test temporal split functionality  
-    split_idx = pipeline.temporal_split(target, 0.8)
+    train_data, holdout_data = pipeline.temporal_split(media_data, control_data, target, 0.2)
     
-    # Check that split index is reasonable
-    assert isinstance(split_idx, int)
-    assert 0 < split_idx < target.shape[1]
+    # Check that split data is reasonable
+    assert isinstance(train_data, dict)
+    assert isinstance(holdout_data, dict)
+    assert 'X_media' in train_data
+    assert 'X_control' in train_data
+    assert 'y' in train_data
     
-    # Test that we can create training data dict
-    train_data = {
-        'X_media': media_data[:, :split_idx, :],
-        'X_control': control_data.transpose(0, 2, 1)[:, :split_idx, :],
-        'y': target[:, :split_idx]
-    }
+    # Check shapes are reasonable
+    assert train_data['X_media'].shape[1] > 0  # Has some training weeks
+    assert holdout_data['X_media'].shape[1] > 0  # Has some holdout weeks
+    assert train_data['X_media'].shape[1] + holdout_data['X_media'].shape[1] == target.shape[1]  # Total weeks match
     
     # Test fit and transform
     train_tensors = pipeline.fit_and_transform_training(train_data)
