@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "deepcausalmmm"
-version = "1.0.15"
+version = "1.0.16"
 description = "Causal Deep Learning marketing-mix modeling library"
 readme = "README.md"
 requires-python = ">=3.9"
