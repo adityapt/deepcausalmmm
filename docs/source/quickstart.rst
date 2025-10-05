@@ -130,6 +130,47 @@ Use your trained model for predictions and analysis:
 
     print(f"Total media impact: {media_contributions.sum():.0f}")
 
+Response Curves Analysis
+-------------------------
+
+Analyze non-linear saturation effects for each channel:
+
+.. code-block:: python
+
+    from deepcausalmmm.postprocess import ResponseCurveFit
+    import pandas as pd
+
+    # Prepare channel data (impressions and contributions)
+    channel_data = pd.DataFrame({
+        'week': week_ids,
+        'impressions': channel_impressions,
+        'contributions': channel_contributions
+    })
+
+    # Fit response curve
+    fitter = ResponseCurveFit(
+        data=channel_data,
+        x_col='impressions',
+        y_col='contributions',
+        model_level='national',
+        date_col='week'
+    )
+
+    # Get saturation parameters
+    slope, saturation = fitter.fit_curve()
+    r2 = fitter.calculate_r2_and_plot(save_path='response_curve.html')
+
+    print(f"Slope: {slope:.3f}")
+    print(f"Half-Saturation Point: {saturation:,.0f} impressions")
+    print(f"Fit Quality (R²): {r2:.3f}")
+
+Response curves help you:
+
+* Identify saturation points for each channel
+* Optimize budget allocation across channels
+* Understand diminishing returns
+* Make data-driven investment decisions
+
 Visualization and Analysis
 --------------------------
 
@@ -149,7 +190,7 @@ Generate comprehensive visualizations:
         results=results
     )
 
-This creates 13 interactive visualizations including:
+This creates 14+ interactive visualizations including:
 
 * Performance metrics and holdout validation
 * Actual vs predicted time series
@@ -157,6 +198,7 @@ This creates 13 interactive visualizations including:
 * Economic contributions and waterfall analysis
 * DAG network visualization for causal relationships
 * Individual channel analysis and trends
+* **Response curves with saturation analysis**
 
 Next Steps
 ----------

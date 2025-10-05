@@ -31,7 +31,8 @@
 - **Gradient Clipping**: Parameter-specific clipping for stability
 
 ### 🔬 **Comprehensive Analysis**
-- **13 Interactive Visualizations**: Complete dashboard with insights
+- **14+ Interactive Visualizations**: Complete dashboard with insights
+- **Response Curves**: Non-linear saturation analysis with Hill equations
 - **DMA-Level Contributions**: True economic impact calculation
 - **Channel Effectiveness**: Detailed performance analysis
 - **DAG Visualization**: Interactive causal network graphs
@@ -149,6 +150,7 @@ deepcausalmmm/                      # Project root
 │   │   ├── __init__.py            # Postprocess module initialization
 │   │   ├── analysis.py            # Statistical analysis utilities
 │   │   ├── comprehensive_analysis.py  # Comprehensive analyzer
+│   │   ├── response_curves.py     # Non-linear response curve fitting
 │   │   └── dag_postprocess.py     # DAG post-processing and analysis
 │   │
 │   └── utils/                      # Utility functions
@@ -198,6 +200,7 @@ The comprehensive dashboard includes:
 11. **📈 Individual Channels**: Detailed channel analysis
 12. **📏 Scaled Data**: Normalized time series
 13. **🎛️ Control Variables**: External factor analysis
+14. **📉 Response Curves**: Non-linear response curves (diminishing returns analysis) with Hill equations
 
 ## ⚙️ Configuration
 
@@ -247,6 +250,33 @@ Key configuration parameters:
 - **DAG Regularization**: Acyclicity constraints
 - **Gradient Clipping**: Parameter-specific clipping
 
+### Response Curves
+- **Hill Saturation Modeling**: Non-linear response curves with Hill equations
+- **Automatic Curve Fitting**: Fits S-shaped saturation curves to channel data
+- **National-Level Aggregation**: Aggregates DMA-week data to national weekly level
+- **Proportional Allocation**: Correctly scales log-space contributions to original scale
+- **Interactive Visualizations**: Plotly-based interactive response curve plots
+- **Performance Metrics**: R², slope, and saturation point for each channel
+
+```python
+from deepcausalmmm.postprocess import ResponseCurveFit
+
+# Fit response curves to channel data
+fitter = ResponseCurveFit(
+    data=channel_data,
+    x_col='impressions',
+    y_col='contributions',
+    model_level='national',
+    date_col='week'
+)
+
+# Get fitted parameters
+slope, saturation = fitter.fit_curve()
+r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
+
+print(f"Slope: {slope:.3f}, Saturation: {saturation:.3f}, R²: {r2_score:.3f}")
+```
+
 ## 📊 Performance Benchmarks
 
 *Performance benchmarks will be added with masked/anonymized data to demonstrate model capabilities while protecting proprietary information.*
@@ -280,7 +310,7 @@ MIT License - see [LICENSE](LICENSE) file.
 
 > "Zero hardcoding approach makes it work perfectly on our different datasets without any modifications"
 
-> "The comprehensive dashboard with 13 interactive visualizations provides insights we never had before"
+> "The comprehensive dashboard with 14+ interactive visualizations including response curves provides insights we never had before"
 
 > "DMA-level contributions and DAG learning revealed true causal relationships between our marketing channels"
 

@@ -5,6 +5,65 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.17] - 2025-10-05
+
+### 🎯 Response Curves & Saturation Analysis
+
+### Added
+- **📉 Response Curve Module**: Complete non-linear response curve fitting with Hill equations
+- **`postprocess/response_curves.py`**: `ResponseCurveFit` class for saturation analysis
+- **National-Level Aggregation**: Automatic aggregation from DMA-week to national weekly data
+- **Proportional Allocation**: Correct scaling of log-space contributions to original scale
+- **Interactive Visualizations**: Plotly-based interactive response curve plots with hover details
+- **Performance Metrics**: R², slope, and saturation point calculation for each channel
+- **Dashboard Integration**: Response curves section added to comprehensive dashboard
+
+### Enhanced
+- **Hill Parameter Constraints**: Enforced slope `a >= 2.0` for proper S-shaped curves
+- **Hill Initialization**: Improved `hill_a` initialization to `2.5` for natural learning above floor
+- **Inverse Transform**: Enhanced `inverse_transform_contributions` with proportional allocation method
+- **Waterfall Chart**: Fixed total calculation to use actual predictions instead of component sum
+- **All Dashboard Plots**: Updated to use proportionally allocated contributions for consistency
+
+### API
+```python
+from deepcausalmmm.postprocess import ResponseCurveFit
+
+# Fit response curves
+fitter = ResponseCurveFit(
+    data=channel_data,
+    x_col='impressions',
+    y_col='contributions',
+    model_level='national',
+    date_col='week'
+)
+
+slope, saturation = fitter.fit_curve()
+r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
+```
+
+### Documentation
+- **README.md**: Added Response Curves section with usage examples
+- **API Documentation**: Added response curves module documentation
+- **Dashboard Features**: Updated to include response curve visualization (14+ charts)
+
+### Fixed
+- **Log-space Scaling**: Corrected contribution scaling using proportional allocation
+- **Waterfall Totals**: Fixed incorrect total calculation in waterfall charts
+- **Burn-in Handling**: Properly trimmed burn-in padding from all components
+- **Shape Mismatches**: Resolved tensor shape inconsistencies in inverse transforms
+
+### Technical Details
+- **Hill Equation**: `y = x^a / (x^a + g^a)` where `a` is slope and `g` is half-saturation
+- **Slope Constraint**: `a = torch.clamp(F.softplus(hill_a), 2.0, 5.0)` for S-shaped curves
+- **Proportional Allocation**: `component_orig = (component_log / total_log) × y_pred_orig`
+- **Aggregation**: Groups by week and sums impressions/contributions nationally
+
+### Backward Compatibility
+- **`ResponseCurveFitter`**: Maintained as alias for backward compatibility
+- **Legacy Methods**: `Hill`, `get_param`, `regression`, `fit_model` still available
+- **Legacy Parameters**: `Modellevel`, `Datecol` supported with deprecation path
+
 ## [1.0.0] - 2025-07-15
 
 ### 🏆 PRODUCTION RELEASE - Good Performance

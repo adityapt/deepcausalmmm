@@ -21,6 +21,7 @@ Postprocessing and Analysis
    :maxdepth: 2
 
    analysis
+   response_curves
    visualization
 
 Command Line Interface

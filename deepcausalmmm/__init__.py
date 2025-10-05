@@ -37,7 +37,7 @@ from deepcausalmmm.core.unified_model import DeepCausalMMM
 from deepcausalmmm.core.config import get_default_config, update_config
 
 # Post-processing (essential)
-from deepcausalmmm.postprocess import ComprehensiveAnalyzer
+from deepcausalmmm.postprocess import ComprehensiveAnalyzer, ResponseCurveFit, ResponseCurveFitter
 # Scaling (essential)
 from deepcausalmmm.core.scaling import SimpleGlobalScaler, GlobalScaler
 
@@ -54,6 +54,8 @@ __all__ = [
     
     # Analysis and visualization
     'ComprehensiveAnalyzer',
+    'ResponseCurveFit',
+    'ResponseCurveFitter',  # Backward compatibility
     
     
     # Scaling

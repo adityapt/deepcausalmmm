@@ -202,45 +202,70 @@ class SimpleGlobalScaler:
     def inverse_transform_contributions(
         self,
         media_contributions: torch.Tensor,  # [n_regions, n_timesteps, n_channels]
-        y_true_orig: torch.Tensor,  # [n_regions, n_timesteps] - in original scale
-    ) -> torch.Tensor:
+        y_pred_orig: torch.Tensor,  # [n_regions, n_timesteps] - predictions in original scale
+        baseline: torch.Tensor = None,  # [n_regions, n_timesteps] - baseline in log-space
+        control_contributions: torch.Tensor = None,  # [n_regions, n_timesteps, n_controls] - in log-space
+        seasonal_contributions: torch.Tensor = None,  # [n_regions, n_timesteps] - in log-space
+    ) -> dict:
         """
-        Inverse transform media contributions to original scale.
+        Inverse transform ALL contributions to original scale using proportional allocation.
+        
+        This method uses proportional allocation from log-space to properly distribute
+        the actual predictions across all components (baseline, media, control, seasonal).
         
         Args:
-            media_contributions: Contributions in scaled space
-            y_true_orig: True target values in original scale
+            media_contributions: Media contributions in log-space [regions, timesteps, channels]
+            y_pred_orig: Predictions in original scale [regions, timesteps]
+            baseline: Baseline in log-space [regions, timesteps]
+            control_contributions: Control contributions in log-space [regions, timesteps, controls]
+            seasonal_contributions: Seasonal contributions in log-space [regions, timesteps]
             
         Returns:
-            Media contributions in original scale
+            Dictionary with all contributions in original scale
         """
         if not self.fitted:
             raise ValueError("Scaler must be fitted before inverse transform")
         
-        # Ensure tensor shapes match
-        contrib_shape = media_contributions.shape  # [regions, timesteps, channels]
-        y_shape = y_true_orig.shape  # [regions, timesteps]
+        # Calculate total in log-space for each region-week
+        # total_log = baseline + sum(media) + sum(control) + seasonal
+        total_log = torch.zeros_like(media_contributions[:, :, 0])  # [regions, timesteps]
         
-        # Handle potential shape mismatch by trimming to minimum timesteps
-        min_timesteps = min(contrib_shape[1], y_shape[1])
-        if contrib_shape[1] != y_shape[1]:
-            print(f"   ⚠️ Shape mismatch: contributions {contrib_shape[1]} vs y_true {y_shape[1]} timesteps")
-            print(f"   🔧 Trimming both to {min_timesteps} timesteps")
-            media_contributions = media_contributions[:, :min_timesteps, :]
-            y_true_orig = y_true_orig[:, :min_timesteps]
+        if baseline is not None:
+            total_log = total_log + baseline
         
-        # For simple scaling, contributions are already meaningful
-        # We just need to ensure they're in the right scale relative to the target
+        # Sum media contributions across channels
+        total_log = total_log + media_contributions.sum(dim=2)
         
-        # Calculate total contribution per timestep
-        total_contrib = torch.sum(media_contributions, dim=2, keepdim=True)
+        if control_contributions is not None:
+            total_log = total_log + control_contributions.sum(dim=2)
         
-        # Scale contributions to match target magnitude
-        # This preserves relative contribution ratios while matching target scale
-        scale_factor = y_true_orig.unsqueeze(-1) / (total_contrib + 1e-8)
-        contributions_orig = media_contributions * scale_factor
+        if seasonal_contributions is not None:
+            total_log = total_log + seasonal_contributions
         
-        return contributions_orig
+        # Calculate ratios in log-space (component / total) for each region-week
+        # Then apply to actual predictions
+        results = {}
+        
+        # Baseline contributions
+        if baseline is not None:
+            baseline_ratio = baseline / (total_log + 1e-8)
+            results['baseline'] = y_pred_orig * baseline_ratio
+        
+        # Media contributions (per channel)
+        media_ratios = media_contributions / (total_log.unsqueeze(-1) + 1e-8)
+        results['media'] = y_pred_orig.unsqueeze(-1) * media_ratios
+        
+        # Control contributions (per control)
+        if control_contributions is not None:
+            control_ratios = control_contributions / (total_log.unsqueeze(-1) + 1e-8)
+            results['control'] = y_pred_orig.unsqueeze(-1) * control_ratios
+        
+        # Seasonal contributions
+        if seasonal_contributions is not None:
+            seasonal_ratio = seasonal_contributions / (total_log + 1e-8)
+            results['seasonal'] = y_pred_orig * seasonal_ratio
+        
+        return results
     
     def fit_transform(
         self,

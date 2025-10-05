@@ -170,8 +170,12 @@ class DeepCausalMMM(nn.Module):
         # Adstock parameters - STABILIZED initialization
         self.alpha = nn.Parameter(torch.ones(n_media) * 0.8)  # Start with reasonable adstock
         
-        # STABILIZED HILL - Smaller ranges
-        self.hill_a = nn.Parameter(torch.rand(n_media) * 0.5 + 0.5)  # 0.5-1.0
+        # STABILIZED HILL - Initialize for proper saturation curves
+        # a (slope) should be >= 2.0 for clear diminishing returns
+        # Initialize to inverse_softplus(2.5) so after softplus + clamp we get ~2.5
+        # Initialize hill_a so that softplus(hill_a) >= 2.0 naturally (without clamp floor)
+        # softplus(2.5) ≈ 2.58, giving room to learn both up and down within [2.0, 5.0]
+        self.hill_a = nn.Parameter(torch.ones(n_media) * 2.5)  # softplus(2.5) ≈ 2.58
         self.hill_g = nn.Parameter(torch.rand(n_media) * 0.2 + 0.1)  # 0.1-0.3
         
         # CAUSAL DAG components - discover meaningful relationships
@@ -574,7 +578,8 @@ class DeepCausalMMM(nn.Module):
         x_safe = F.relu(x) + 1e-8
         
         # Stabilized Hill with clipping
-        a = torch.clamp(a, 0.1, 2.0)
+        # CRITICAL: a (slope) must be >= 2.0 for proper saturation curves
+        a = torch.clamp(a, 2.0, 5.0)  # Changed from [0.1, 2.0] to [2.0, 5.0]
         g = torch.clamp(g, 0.01, 1.0)
         
         num = torch.pow(x_safe, a)

@@ -4,6 +4,7 @@ Post-processing utilities for DeepCausalMMM analysis and visualization.
 
 from deepcausalmmm.postprocess.comprehensive_analysis import ComprehensiveAnalyzer
 from deepcausalmmm.postprocess.analysis import ModelAnalyzer
+from deepcausalmmm.postprocess.response_curves import ResponseCurveFit, ResponseCurveFitter
 
 # Unified pipeline integration
 def create_unified_analyzer(
@@ -38,5 +39,7 @@ def create_unified_analyzer(
 __all__ = [
     'ComprehensiveAnalyzer',
     'ModelAnalyzer',
+    'ResponseCurveFit',
+    'ResponseCurveFitter',  # Backward compatibility alias
     'create_unified_analyzer'
 ]
