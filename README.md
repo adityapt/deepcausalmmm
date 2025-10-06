@@ -126,10 +126,9 @@ deepcausalmmm/                      # Project root
 ├── CHANGELOG.md                    # Version history and changes
 ├── CONTRIBUTING.md                 # Development guidelines
 ├── CODE_OF_CONDUCT.md              # Code of conduct
+├── CITATION.cff                    # Citation metadata for Zenodo/GitHub
 ├── Makefile                        # Build and development tasks
 ├── MANIFEST.in                     # Package manifest for distribution
-├── setup.py                        # Setup script for package installation
-├── dashboard_rmse_optimized.py     # Main dashboard script
 │
 ├── deepcausalmmm/                  # Main package directory
 │   ├── __init__.py                 # Package initialization and exports
@@ -153,13 +152,18 @@ deepcausalmmm/                      # Project root
 │   │   ├── __init__.py            # Postprocess module initialization
 │   │   ├── analysis.py            # Statistical analysis utilities
 │   │   ├── comprehensive_analysis.py  # Comprehensive analyzer
-│   │   ├── response_curves.py     # Non-linear response curve fitting
+│   │   ├── response_curves.py     # Non-linear response curve fitting (Hill equations)
 │   │   └── dag_postprocess.py     # DAG post-processing and analysis
 │   │
 │   └── utils/                      # Utility functions
 │       ├── __init__.py            # Utils module initialization
 │       ├── device.py              # GPU/CPU device detection
-│       └── data_generator.py      # Synthetic data generation
+│       └── data_generator.py      # Synthetic data generation (ConfigurableDataGenerator)
+│
+├── examples/                       # Example scripts and notebooks
+│   ├── quickstart.ipynb           # Interactive Jupyter notebook for Google Colab
+│   ├── dashboard_rmse_optimized.py # Comprehensive dashboard with 14+ visualizations
+│   └── example_response_curves.py  # Response curve fitting examples
 │
 ├── tests/                          # Test suite
 │   ├── __init__.py                # Test package initialization
@@ -167,23 +171,42 @@ deepcausalmmm/                      # Project root
 │   │   ├── __init__.py
 │   │   ├── test_config.py         # Configuration tests
 │   │   ├── test_model.py          # Model architecture tests
-│   │   └── test_scaling.py        # Data scaling tests
+│   │   ├── test_scaling.py        # Data scaling tests
+│   │   └── test_response_curves.py # Response curve fitting tests
 │   └── integration/               # Integration tests
 │       ├── __init__.py
 │       └── test_end_to_end.py     # End-to-end integration tests
 │
-└── docs/                           # Documentation
-    ├── Makefile                   # Documentation build tasks
-    ├── make.bat                   # Windows documentation build
-    ├── requirements.txt           # Documentation dependencies
-    └── source/                    # Sphinx documentation source
-        ├── conf.py               # Sphinx configuration
-        ├── index.rst             # Documentation index
-        ├── installation.rst      # Installation guide
-        ├── quickstart.rst        # Quick start guide
-        ├── api/                  # API documentation
-        ├── examples/             # Example documentation
-        └── tutorials/            # Tutorial documentation
+├── docs/                           # Documentation
+│   ├── Makefile                   # Documentation build tasks
+│   ├── make.bat                   # Windows documentation build
+│   ├── requirements.txt           # Documentation dependencies
+│   └── source/                    # Sphinx documentation source
+│       ├── conf.py               # Sphinx configuration
+│       ├── index.rst             # Documentation index
+│       ├── installation.rst      # Installation guide
+│       ├── quickstart.rst        # Quick start guide
+│       ├── contributing.rst      # Contributing guide
+│       ├── api/                  # API documentation
+│       │   ├── index.rst
+│       │   ├── core.rst
+│       │   ├── data.rst
+│       │   ├── trainer.rst
+│       │   ├── inference.rst
+│       │   ├── analysis.rst
+│       │   ├── response_curves.rst # Response curves API
+│       │   ├── utils.rst
+│       │   └── exceptions.rst
+│       ├── examples/             # Example documentation
+│       │   └── index.rst
+│       └── tutorials/            # Tutorial documentation
+│           └── index.rst
+│
+└── JOSS/                           # Journal of Open Source Software submission
+    ├── paper.md                   # JOSS paper manuscript
+    ├── paper.bib                  # Bibliography
+    ├── figure_dag_professional.png # DAG visualization figure
+    └── figure_response_curve_simple.png # Response curve figure
 ```
 
 ## 🎨 Dashboard Features
