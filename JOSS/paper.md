@@ -14,6 +14,7 @@ authors:
     affiliation: "Independent Researcher"
 date: 5 October 2025
 bibliography: paper.bib
+archive_doi: 10.5281/zenodo.17274024
 ---
 
 # Summary
