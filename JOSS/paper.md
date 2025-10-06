@@ -1,5 +1,5 @@
 ---
-title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Inference and Response Curves"
+title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Inference"
 tags:
   - Python
   - marketing mix modeling
