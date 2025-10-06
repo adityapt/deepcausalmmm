@@ -1,3 +1,8 @@
+# Dashboard outputs
+dashboard_beautiful_comprehensive/
+dashboard_unified_analysis/
+*.log
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -169,4 +174,7 @@ mlartifacts/
 .AppleDesktop
 Network Trash Folder
 Temporary Items
-.apdisk deepcausalmmm/_version.py
+.apdisk
+
+# setuptools-scm generated version file
+deepcausalmmm/_version.py

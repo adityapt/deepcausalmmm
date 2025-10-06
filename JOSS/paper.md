@@ -113,12 +113,12 @@ print(f"Slope: {fitter.slope:.3f}, Saturation: {fitter.saturation:,.0f}")
 
 # Performance
 
-DeepCausalMMM has demonstrated strong performance on masked real-world marketing data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables:
+DeepCausalMMM has demonstrated strong performance on anonymized real-world marketing data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables:
 
-- **Training R²**: 0.965, **Holdout R²**: 0.930
-- **Performance Gap**: 3.6% (indicating excellent generalization)
-- **Training RMSE**: 254,911 KPI units (34.7% error)
-- **Holdout RMSE**: 324,584 KPI units (38.7% error)
+- **Training R²**: 0.947, **Holdout R²**: 0.918
+- **Performance Gap**: 3.0% (indicating excellent generalization)
+- **Training RMSE**: 314,692 visits (42.8% error)
+- **Holdout RMSE**: 351,602 visits (41.9% error)
 
 These results demonstrate the model's ability to capture complex marketing dynamics while maintaining strong out-of-sample predictive accuracy. The small performance gap between training and holdout sets indicates robust generalization without overfitting.
 

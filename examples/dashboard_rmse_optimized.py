@@ -57,7 +57,7 @@ def load_config():
     print(f"   🧠 Hidden units: {config['hidden_dim']}, Dropout: {config['dropout']}")
     return config
 
-def load_real_mmm_data(filepath="data/MMM Data.csv"):
+def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
     """Load and process the real MMM Data.csv with robust missing data handling"""
     print(f"📂 Loading Real MMM Data from: {filepath}")
 
@@ -67,8 +67,15 @@ def load_real_mmm_data(filepath="data/MMM Data.csv"):
 
         # Identify columns
         impression_cols = [col for col in df.columns if 'impressions_' in col]
-        value_cols = [col for col in df.columns if 'value_' in col and col != 'value_visits_visits']
-        target_col = 'value_visits_visits'
+        
+        # Handle both old and new target column names
+        if 'target_visits' in df.columns:
+            target_col = 'target_visits'
+            value_cols = [col for col in df.columns if col.startswith('control_')]
+        else:
+            target_col = 'value_visits_visits'
+            value_cols = [col for col in df.columns if 'value_' in col and col != 'value_visits_visits']
+        
         region_col = 'dmacode'
         time_col = 'weekid'
 
@@ -81,8 +88,13 @@ def load_real_mmm_data(filepath="data/MMM Data.csv"):
 
         control_names = []
         for col in value_cols:
-            clean_name = col.replace('value_', '').replace('econmetricsmsa_', '').replace('mortgagemetrics_', '').replace('moodys_', '')
-            clean_name = clean_name.replace('_sm', '').replace('_', ' ').title()
+            if col.startswith('control_'):
+                # Anonymized format: control_01, control_02, etc.
+                clean_name = col.replace('control_', 'Control ').replace('_', ' ').title()
+            else:
+                # Old format: value_econmetricsmsa_*, etc.
+                clean_name = col.replace('value_', '').replace('econmetricsmsa_', '').replace('mortgagemetrics_', '').replace('moodys_', '')
+                clean_name = clean_name.replace('_sm', '').replace('_', ' ').title()
             control_names.append(clean_name)
 
         print(f"   📺 Media channels ({len(impression_cols)}): {media_names}")
@@ -1932,21 +1944,21 @@ def create_beautiful_dashboard():
     else:
         print(f"   ⚠️  Holdout predictions not available in results")
     
-    # Plot 13: SEM - Google Search Channel Impressions vs Contributions
-    print(f"   📊 Creating SEM - Google Search channel impressions vs contributions plot...")
+    # Plot 13: Channel Impressions vs Contributions (use first channel if anonymized)
+    print(f"   📊 Creating channel impressions vs contributions plot...")
     
-    # Find SEM - Google Search channel
+    # Find channel - prefer "Google Search" if available, otherwise use first channel
     push_idx = None
     push_name = None
     for i, name in enumerate(media_names):
-        if 'Google Search' in name or 'google search' in name.lower():
+        if 'Google Search' in name or 'google search' in name.lower() or 'Channel 01' in name:
             push_idx = i
             push_name = name
             break
     
     if push_idx is not None:
         # DEBUG: Simple check of ranges
-        print(f"\n   🔍 DEBUG: SEM - Google Search Channel Data Ranges...")
+        print(f"\n   🔍 DEBUG: {push_name} Channel Data Ranges...")
         
         # Get Push impressions from original data
         push_impressions = X_media[:, :, push_idx]  # [regions, weeks]
@@ -2335,9 +2347,11 @@ def create_beautiful_dashboard():
         print(f"📁 Package Analysis Location: {results['postprocess_output_dir']}")
         print(f"🎨 Dual Visualization System: Dashboard + Package postprocessing both available!")
     
-    # Export SEM Google Search data to CSV
+    # Export first channel data to CSV (for analysis)
     try:
-        sem_idx = media_names.index('SEM Google Search')
+        # Use first channel (works for both anonymized and original data)
+        sem_idx = 0
+        channel_name = media_names[0]
         sem_impressions = X_media[:, :, sem_idx]  # [regions, weeks]
         sem_contributions = contrib_results['media'][:, :, sem_idx]  # [regions, weeks] in original scale
         
@@ -2353,13 +2367,13 @@ def create_beautiful_dashboard():
                 })
         
         df_sem = pd.DataFrame(data_list)
-        sem_csv_path = 'sem_google_search_contributions.csv'
+        sem_csv_path = f'{channel_name.replace(" ", "_").lower()}_contributions.csv'
         df_sem.to_csv(sem_csv_path, index=False)
-        print(f"\n📊 SEM Google Search data exported to: {sem_csv_path}")
+        print(f"\n📊 {channel_name} data exported to: {sem_csv_path}")
         print(f"   Impressions range: [{df_sem['impressions'].min():,.0f}, {df_sem['impressions'].max():,.0f}]")
         print(f"   Contributions range: [{df_sem['contributions'].min():.2f}, {df_sem['contributions'].max():.2f}]")
     except Exception as e:
-        print(f"⚠️  Could not export SEM data: {e}")
+        print(f"⚠️  Could not export channel data: {e}")
     
     return {
         'rmse': final_rmse,
