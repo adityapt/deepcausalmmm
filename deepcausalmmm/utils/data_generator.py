@@ -238,3 +238,59 @@ def update_config_with_synthetic_data(config: Dict[str, Any]) -> Dict[str, Any]:
         config['synthetic_data'] = get_synthetic_data_config()
     
     return config
+
+
+def generate_synthetic_mmm_data(n_regions: int = 10,
+                                n_weeks: int = 52,
+                                n_media: int = 5,
+                                n_controls: int = 3,
+                                seed: int = 42):
+    """
+    Simple wrapper to generate synthetic MMM data as a DataFrame.
+    
+    Args:
+        n_regions: Number of regions/DMAs
+        n_weeks: Number of weeks
+        n_media: Number of media channels
+        n_controls: Number of control variables
+        seed: Random seed for reproducibility
+        
+    Returns:
+        pandas DataFrame with synthetic MMM data
+    """
+    import pandas as pd
+    
+    # Create config with seed
+    config = get_default_config()
+    config['random_seed'] = seed
+    
+    # Generate data
+    generator = ConfigurableDataGenerator(config)
+    X_media, X_control, y = generator.generate_mmm_dataset(
+        n_regions=n_regions,
+        n_weeks=n_weeks,
+        n_media_channels=n_media,
+        n_control_channels=n_controls
+    )
+    
+    # Convert to DataFrame
+    data = []
+    for region in range(n_regions):
+        for week in range(n_weeks):
+            row = {
+                'region': f'Region_{region+1}',
+                'week_monday': pd.date_range('2023-01-01', periods=n_weeks, freq='W')[week],
+                'visits': y[region, week]
+            }
+            
+            # Add media channels
+            for ch in range(n_media):
+                row[f'media_channel_{ch+1}'] = X_media[region, week, ch]
+            
+            # Add control variables
+            for ctrl in range(n_controls):
+                row[f'control_{ctrl+1}'] = X_control[region, week, ctrl]
+            
+            data.append(row)
+    
+    return pd.DataFrame(data)
