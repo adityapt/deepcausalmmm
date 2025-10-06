@@ -117,8 +117,8 @@ DeepCausalMMM has demonstrated strong performance on anonymized real-world marke
 
 - **Training R²**: 0.947, **Holdout R²**: 0.918
 - **Performance Gap**: 3.0% (indicating excellent generalization)
-- **Training RMSE**: 314,692 visits (42.8% error)
-- **Holdout RMSE**: 351,602 visits (41.9% error)
+- **Training RMSE**: 314,692 KPI (42.8% error)
+- **Holdout RMSE**: 351,602 KPI (41.9% error)
 
 These results demonstrate the model's ability to capture complex marketing dynamics while maintaining strong out-of-sample predictive accuracy. The small performance gap between training and holdout sets indicates robust generalization without overfitting.
 
