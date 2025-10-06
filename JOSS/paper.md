@@ -74,6 +74,16 @@ The package implements Huber loss (outlier-robust), gradient clipping, L1/L2 reg
 - **Tests**: 28 comprehensive tests with 100% pass rate
 - **Visualizations**: 14+ interactive Plotly dashboards exportable as HTML
 
+## Visualizations
+
+Figure 1 shows an example of the learned causal network (DAG) between marketing channels. The directed edges reveal interdependencies such as TV advertising driving search behavior, demonstrating the model's ability to discover channel relationships from data.
+
+![Causal network (DAG) showing relationships between marketing channels.](figure_dag_professional.png)
+
+Figure 2 demonstrates a non-linear response curve fitted to a marketing channel using the Hill equation. The S-shaped curve clearly shows saturation effects and diminishing returns, with annotations indicating the half-saturation point where the channel reaches 50% of maximum effectiveness.
+
+![Response curve showing Hill saturation effects for a marketing channel.](figure_response_curve_simple.png)
+
 # Example Usage
 
 ```python
