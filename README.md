@@ -329,6 +329,24 @@ MIT License - see [LICENSE](LICENSE) file.
 - **📝 Tutorials**: [Step-by-step Guides](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/)
 - **💡 Examples**: [Practical Use Cases](https://deepcausalmmm.readthedocs.io/en/latest/examples/)
 
+## 📖 Citation
+
+If you use DeepCausalMMM in your research, please cite:
+
+```bibtex
+@software{Puttaparthi_Tirumala_DeepCausalMMM_2025,
+  author = {Puttaparthi Tirumala, Aditya},
+  doi = {10.5281/zenodo.17274024},
+  month = oct,
+  title = {{DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling}},
+  url = {https://github.com/adityapt/deepcausalmmm},
+  version = {1.0.17},
+  year = {2025}
+}
+```
+
+Or click the **"Cite this repository"** button on GitHub for other citation formats (APA, Chicago, MLA).
+
 ## 🔗 Quick Links
 
 - **Main Dashboard**: `dashboard_rmse_optimized.py` - Complete analysis pipeline
