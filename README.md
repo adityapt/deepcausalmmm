@@ -3,6 +3,9 @@
 **Advanced Marketing Mix Modeling with Causal Inference and Deep Learning**
 
 [![Documentation](https://readthedocs.org/projects/deepcausalmmm/badge/?version=latest)](https://deepcausalmmm.readthedocs.io/en/latest/?badge=latest)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/adityapt/deepcausalmmm/blob/main/examples/quickstart.ipynb)
+[![PyPI version](https://badge.fury.io/py/deepcausalmmm.svg)](https://badge.fury.io/py/deepcausalmmm)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17274024.svg)](https://doi.org/10.5281/zenodo.17274024)
 [![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
 [![Deep Learning](https://img.shields.io/badge/Deep-Learning-blue)](https://pytorch.org)
 [![Causal DAG](https://img.shields.io/badge/Causal-DAG-purple)](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
