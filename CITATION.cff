@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use DeepCausalMMM in your research, please cite it using the metadata below."
+title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
+version: "1.0.17"
+doi: 10.5281/zenodo.16934851
+authors:
+  - family-names: Puttaparthi Tirumala
+    given-names: Aditya
+    orcid: https://orcid.org/0009-0008-9495-3932
+    email: puttaparthy.aditya@gmail.com
+    affiliation: Independent Researcher
+license: MIT
+date-released: 2025-10-05
+type: software
+url: https://github.com/adityapt/deepcausalmmm
+repository-code: https://github.com/adityapt/deepcausalmmm
+keywords:
+  - marketing mix modeling
+  - causal inference
+  - deep learning
+  - time series
+  - PyTorch
+  - GRU
+  - DAG
+  - response curves
+  - saturation modeling
+abstract: |
+  DeepCausalMMM is a Python package for Marketing Mix Modeling (MMM) that combines 
+  deep learning with causal inference. It uses Gated Recurrent Units (GRUs) to 
+  automatically learn temporal patterns such as adstock and lag, while simultaneously 
+  discovering causal relationships between marketing channels through Directed Acyclic 
+  Graph (DAG) learning. The package implements Hill equation-based saturation curves 
+  to model diminishing returns and optimize budget allocation. Key features include 
+  zero-hardcoding philosophy, multi-region modeling, robust statistical methods, 
+  comprehensive response curve analysis, and 14+ interactive visualizations.
+references:
+  - type: article
+    title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
+    authors:
+      - family-names: Puttaparthi Tirumala
+        given-names: Aditya
+    year: 2025
+    journal: "Journal of Open Source Software"
+    status: submitted
+preferred-citation:
+  type: software
+  title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
+  authors:
+    - family-names: Puttaparthi Tirumala
+      given-names: Aditya
+      orcid: https://orcid.org/0009-0008-9495-3932
+  version: "1.0.17"
+  doi: 10.5281/zenodo.16934851
+  url: https://github.com/adityapt/deepcausalmmm
+  year: 2025
+  month: 10
