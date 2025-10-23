@@ -22,11 +22,11 @@ archive_doi: 10.5281/zenodo.16934842
 
 # Summary
 
-Marketing Mix Modeling (MMM) is a statistical technique used to estimate the impact of marketing activities on business outcomes such as sales, revenue, or customer visits. Traditional MMM approaches often rely on linear regression or Bayesian hierarchical models that assume independence between marketing channels and struggle to capture complex temporal dynamics and non-linear saturation effects [@Hanssens2005; @Ng2021Bayesian].
+Marketing Mix Modeling (MMM) is a statistical technique used to estimate the impact of marketing activities on business outcomes such as sales, revenue, or customer visits. Traditional MMM approaches often rely on linear regression or Bayesian hierarchical models that assume independence between marketing channels and struggle to capture complex temporal dynamics and non-linear saturation effects [@Chan2017; @Hanssens2005; @Ng2021Bayesian].
 
 **DeepCausalMMM** is a Python package that addresses these limitations by combining deep learning, causal inference, and advanced marketing science. The package uses Gated Recurrent Units (GRUs) to automatically learn temporal patterns such as adstock (carryover effects) and lag, while simultaneously learning statistical dependencies and potential causal structures between marketing channels through Directed Acyclic Graph (DAG) learning [@Zheng2018NOTEARS; @Gong2024CausalMMM]. Additionally, it implements Hill equation-based saturation curves to model diminishing returns and optimize budget allocation.
 
-Key innovations include: (1) a data-driven design where hyperparameters and transformations (e.g., adstock decay, saturation curves) are learned or estimated from data with sensible defaults, rather than requiring fixed heuristics or manual specification, (2) multi-region modeling with both shared and region-specific parameters, (3) robust statistical methods including Huber loss and advanced regularization, (4) comprehensive response curve analysis for understanding channel saturation.
+Key features include: (1) a data-driven design where hyperparameters and transformations (e.g., adstock decay, saturation curves) are learned or estimated from data with sensible defaults, rather than requiring fixed heuristics or manual specification, (2) multi-region modeling with both shared and region-specific parameters, (3) robust statistical methods including Huber loss and advanced regularization, (4) comprehensive response curve analysis for understanding channel saturation.
 
 # Statement of Need
 
@@ -38,9 +38,9 @@ Marketing organizations invest billions annually in advertising across channels 
 
 Several open-source MMM frameworks exist, each with distinct approaches:
 
-**Robyn (Meta)** [@Runge2024RobynPackaging; @RobynGitHub] uses Bayesian hyperparameter optimization with fixed adstock and saturation transformations (Adstock, Hill, Weibull). It provides budget optimization and is widely used in industry but requires manual specification of transformation types and does not model channel interdependencies.
+**Robyn (Meta)** [@Runge2024RobynPackaging; @RobynGitHub] uses evolutionary hyperparameter optimization with fixed adstock and saturation transformations (Adstock, Hill, Weibull). It provides budget optimization and is widely used in industry but requires manual specification of transformation types and does not model channel interdependencies.
 
-**Meridian (Google)** [@Meridian2024] is Google's open-source Bayesian MMM framework featuring reach and frequency modeling, geo-level analysis, and experimental calibration. It employs causal inference with pre-specified causal graphs and the backdoor criterion. .
+**Meridian (Google)** [@Meridian2024] is Google's open-source Bayesian MMM framework featuring reach and frequency modeling, geo-level analysis, and experimental calibration. It employs causal inference with pre-specified causal graphs and the backdoor criterion.
 
 **PyMC-Marketing** [@PyMCMarketing2024] provides Bayesian MMM with highly flexible prior specifications and some causal identification capabilities. It excels at uncertainty quantification but requires significant Bayesian modeling expertise and does not use neural networks for temporal modeling.
 
@@ -119,8 +119,8 @@ DeepCausalMMM has demonstrated strong performance on anonymized real-world marke
 
 - **Training R²**: 0.947, **Holdout R²**: 0.918
 - **Performance Gap**: 3.0% (indicating excellent generalization)
-- **Training RMSE**: 314,692 kpi units (42.8% relative error - Relative RMSE = (RMSE / Mean) × 100  = (314,692 / ~743,088) × 100  ≈ 42.8%)
-- **Holdout RMSE**: 351,602 kpi units (41.9% relative error)
+- **Training RMSE**: 314,692 KPI units (42.8% relative error - Relative RMSE = (RMSE / Mean) × 100  = (314,692 / ~743,088) × 100  ≈ 42.8%)
+- **Holdout RMSE**: 351,602 KPI units (41.9% relative error)
 
 These results demonstrate the model's ability to capture complex marketing dynamics while maintaining strong out-of-sample predictive accuracy. The small performance gap between training and holdout sets indicates robust generalization without overfitting.
 
