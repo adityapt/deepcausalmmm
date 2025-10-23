@@ -465,4 +465,4 @@ Contributors will be recognized in:
 
 ---
 
-Thank you for contributing to DeepCausalMMM! Together we're building the future of Media Mix Modeling 🚀
+Thank you for contributing to DeepCausalMMM! Together we're building the future of Marketing Mix Modeling 🚀

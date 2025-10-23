@@ -4,6 +4,10 @@ import torch
 from statsmodels.tsa.seasonal import seasonal_decompose
 from typing import Tuple, Optional
 
+import logging
+
+logger = logging.getLogger('deepcausalmmm')
+
 class DetectSeasonality:
     """
     Seasonality detection and decomposition for time series data.
@@ -49,8 +53,8 @@ class DetectSeasonality:
         n_regions, n_weeks = y_data.shape
         seasonal_components = []
         
-        print(f"🌊 Extracting seasonal components per region...")
-        print(f"   📊 Processing {n_regions} regions × {n_weeks} weeks")
+        logger.info(f" Extracting seasonal components per region...")
+        logger.info(f"    Processing {n_regions} regions × {n_weeks} weeks")
         
         for region_idx in range(n_regions):
             region_data = y_data[region_idx, :]
@@ -75,7 +79,7 @@ class DetectSeasonality:
                 seasonal_components.append(seasonal_component)
                 
             except Exception as e:
-                print(f"   ⚠️ Region {region_idx}: Seasonal decomposition failed, using mean: {e}")
+                logger.warning(f"    Region {region_idx}: Seasonal decomposition failed, using mean: {e}")
                 # Fallback: use mean seasonal pattern (flat)
                 seasonal_component = np.ones(n_weeks)
                 seasonal_components.append(seasonal_component)
@@ -83,10 +87,10 @@ class DetectSeasonality:
         # Stack all regions and convert to tensor
         seasonal_tensor = torch.tensor(np.stack(seasonal_components, axis=0), dtype=torch.float32)
         
-        print(f"   ✅ Seasonal components extracted:")
-        print(f"      Range: [{seasonal_tensor.min():.3f}, {seasonal_tensor.max():.3f}]")
-        print(f"      Mean: {seasonal_tensor.mean():.3f}")
-        print(f"      Shape: {seasonal_tensor.shape}")
+        logger.info(f"    Seasonal components extracted:")
+        logger.info(f"      Range: [{seasonal_tensor.min():.3f}, {seasonal_tensor.max():.3f}]")
+        logger.info(f"      Mean: {seasonal_tensor.mean():.3f}")
+        logger.info(f"      Shape: {seasonal_tensor.shape}")
         
         return seasonal_tensor
 

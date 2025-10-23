@@ -5,12 +5,55 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.18] - 2025-10-22
+
+### Professional Code Standards & Documentation
+
+### Changed
+- **Logging System**: Replaced all print statements with proper logging throughout core library
+- **Package Logger**: Added centralized logging configuration in `__init__.py`
+- **Emoji Removal**: Removed all emojis from core library, postprocessing, CHANGELOG, and CODE_OF_CONDUCT
+- **JOSS Paper**: Updated with correct Zenodo DOI, test suite description, and requirement clarifications
+- **arXiv Submission**: Updated to match JOSS paper changes for consistency
+
+### Core Library Updates
+- **`deepcausalmmm/__init__.py`**: Added `_setup_logging()` function for package-wide logger
+- **`core/train_model.py`**: Replaced 70 print statements with logging (info/warning/debug)
+- **`core/data.py`**: Replaced 46 print statements with logging
+- **`core/unified_model.py`**: Replaced 17 print statements with logging
+- **`core/seasonality.py`**: Replaced 7 print statements with logging
+- **`core/trainer.py`**: Replaced 3 print statements with logging
+- **`core/visualization.py`**: Replaced 1 print statement with logging
+
+### Postprocessing Updates
+- **`postprocess/analysis.py`**: Replaced 4 print statements with logging
+- **`postprocess/response_curves.py`**: Replaced 4 print statements with logging (info/error)
+- **`postprocess/comprehensive_analysis.py`**: Replaced 65 print statements with logging, removed 8 emojis from plot titles
+
+### Documentation Updates
+- **`CHANGELOG.md`**: Removed all emojis for professional presentation
+- **`CODE_OF_CONDUCT.md`**: Removed all emojis
+- **`JOSS/paper.md`**: Updated test suite description, Zenodo DOI to concept DOI (10.5281/zenodo.16934842)
+- **`JOSS/arxiv_submission/paper_arxiv.tex`**: Synced with JOSS paper updates
+
+### Technical Details
+- **Logger Name**: `'deepcausalmmm'` (accessible via `logging.getLogger('deepcausalmmm')`)
+- **Default Level**: INFO
+- **Format**: `'%(levelname)s - %(message)s'`
+- **Output**: stdout
+- **User Control**: Users can adjust logging level via standard Python logging configuration
+
+### Backward Compatibility
+- CLI and example scripts retain print statements (user-facing output)
+- All existing APIs unchanged
+- Logging can be controlled by users without code changes
+
 ## [1.0.17] - 2025-10-05
 
-### 🎯 Response Curves & Saturation Analysis
+### Response Curves & Saturation Analysis
 
 ### Added
-- **📉 Response Curve Module**: Complete non-linear response curve fitting with Hill equations
+- **Response Curve Module**: Complete non-linear response curve fitting with Hill equations
 - **`postprocess/response_curves.py`**: `ResponseCurveFit` class for saturation analysis
 - **National-Level Aggregation**: Automatic aggregation from DMA-week to national weekly data
 - **Proportional Allocation**: Correct scaling of log-space contributions to original scale
@@ -66,15 +109,15 @@ r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
 
 ## [1.0.0] - 2025-07-15
 
-### 🏆 PRODUCTION RELEASE - Good Performance
+###  PRODUCTION RELEASE - Good Performance
 
 ### Added
-- **🚀 Complete DeepCausalMMM Package**: Production-ready MMM with causal inference
-- **🧠 Advanced Model Architecture**: GRU-based temporal modeling with DAG learning
-- **📊 Zero Hardcoding Philosophy**: All parameters learnable and configurable
-- **🔬 Comprehensive Analysis Suite**: 13 interactive visualizations and insights
-- **⚙️ Unified Data Pipeline**: Consistent data processing with proper scaling
-- **🎯 Robust Statistical Methods**: Huber loss, multiple metrics, advanced regularization
+- ** Complete DeepCausalMMM Package**: Production-ready MMM with causal inference
+- ** Advanced Model Architecture**: GRU-based temporal modeling with DAG learning
+- ** Zero Hardcoding Philosophy**: All parameters learnable and configurable
+- ** Comprehensive Analysis Suite**: 13 interactive visualizations and insights
+- ** Unified Data Pipeline**: Consistent data processing with proper scaling
+- ** Robust Statistical Methods**: Huber loss, multiple metrics, advanced regularization
 
 ### Core Components
 - **`core/unified_model.py`**: Main DeepCausalMMM model with learnable parameters
@@ -91,13 +134,13 @@ r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
 - **Dashboard Features**: 13 comprehensive visualizations including DAG networks, waterfall charts, economic contributions
 
 ### Key Features
-- **✅ Learnable Coefficient Bounds**: Channel-specific, data-driven constraints
-- **✅ Data-Driven Seasonality**: Automatic seasonal decomposition per region
-- **✅ Non-Negative Constraints**: Baseline and seasonality always positive
-- **✅ DAG Learning**: Discovers causal relationships between channels
-- **✅ Robust Loss Functions**: Huber loss for outlier resistance
-- **✅ Advanced Regularization**: L1/L2, sparsity, coefficient-specific penalties
-- **✅ Gradient Clipping**: Parameter-specific clipping for training stability
+- ** Learnable Coefficient Bounds**: Channel-specific, data-driven constraints
+- ** Data-Driven Seasonality**: Automatic seasonal decomposition per region
+- ** Non-Negative Constraints**: Baseline and seasonality always positive
+- ** DAG Learning**: Discovers causal relationships between channels
+- ** Robust Loss Functions**: Huber loss for outlier resistance
+- ** Advanced Regularization**: L1/L2, sparsity, coefficient-specific penalties
+- ** Gradient Clipping**: Parameter-specific clipping for training stability
 
 ### Performance Optimizations
 - **Optimal Configuration**: 6500 epochs, 0.009 LR, 0.04 temporal regularization
@@ -112,10 +155,10 @@ r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
 - **Log1p Transformation**: For target variable with proper inverse transforms
 
 ### Documentation
-- **📚 Comprehensive README**: Complete usage guide with examples
-- **🤝 Contributing Guidelines**: Development standards and processes
-- **📋 Changelog**: Detailed version history
-- **🔧 Configuration Guide**: All parameters documented with optimal values
+- ** Comprehensive README**: Complete usage guide with examples
+- ** Contributing Guidelines**: Development standards and processes
+- ** Changelog**: Detailed version history
+- ** Configuration Guide**: All parameters documented with optimal values
 
 ### Testing & Quality
 - **Unit Tests**: Comprehensive test coverage for all components
@@ -160,7 +203,7 @@ r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
 
 ## Development Milestones
 
-### 🎯 Key Achievements Across Versions
+###  Key Achievements Across Versions
 
 | Version | Training R² | Holdout R² | Performance Gap | Key Innovation |
 |---------|-------------|------------|-----------------|----------------|
@@ -168,7 +211,7 @@ r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
 | v0.9.0  | 0.85       | 0.65       | 20%            | Improved Training |
 | **v1.0.0** | **0.965**  | **0.930**  | **3.6%**      | **Zero Hardcoding + Advanced Architecture** |
 
-### 🔧 Technical Evolution
+###  Technical Evolution
 
 **v0.8.0 → v0.9.0:**
 - Improved model architecture
@@ -183,29 +226,29 @@ r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
 - **Comprehensive analysis suite**
 - **Production-ready performance**
 
-### 🏆 Performance Improvements
+###  Performance Improvements
 
 **RMSE Reduction Journey:**
 - v0.8.0: ~800k visits (110% error)
 - v0.9.0: ~600k visits (80% error)  
-- **v1.0.0: 325k visits (38.7% error)** ✅
+- **v1.0.0: 325k visits (38.7% error)** 
 
 **Generalization Improvements:**
 - v0.8.0: 35% performance gap
 - v0.9.0: 20% performance gap
-- **v1.0.0: 3.6% performance gap** ✅
+- **v1.0.0: 3.6% performance gap** 
 
-### 🎨 Feature Evolution
+###  Feature Evolution
 
 **Visualization Expansion:**
 - v0.8.0: 1 basic plot
 - v0.9.0: 5 standard plots
-- **v1.0.0: 13 comprehensive interactive visualizations** ✅
+- **v1.0.0: 13 comprehensive interactive visualizations** 
 
 **Analysis Depth:**
 - v0.8.0: Basic performance metrics
 - v0.9.0: Channel-level insights
-- **v1.0.0: Complete business intelligence suite** ✅
+- **v1.0.0: Complete business intelligence suite** 
 
 ## Future Roadmap
 
@@ -237,6 +280,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and how to con
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
 
----
 
-**DeepCausalMMM v1.0.0** - Production-ready Media Mix Modeling with exceptional performance! 🚀

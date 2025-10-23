@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Beautiful RMSE-Optimized Dashboard with Config System
+Dashboard to visualize outputs
 ====================================================
 This implementation uses:
 - Config system for input parameters  
@@ -47,23 +47,23 @@ def get_viz_params(config):
 
 def load_config():
     """Load configuration from the single source of truth - config.py"""
-    print("📋 Loading Configuration...")
+    print(" Loading Configuration...")
     
     # Use only config.py - no dashboard overrides
     config = get_default_config()
     
-    print("   ✅ Configuration loaded from config.py")
-    print(f"   📊 Epochs: {config['n_epochs']}, Warm-start: {config['warm_start_epochs']}")
-    print(f"   🧠 Hidden units: {config['hidden_dim']}, Dropout: {config['dropout']}")
+    print("    Configuration loaded from config.py")
+    print(f"    Epochs: {config['n_epochs']}, Warm-start: {config['warm_start_epochs']}")
+    print(f"    Hidden units: {config['hidden_dim']}, Dropout: {config['dropout']}")
     return config
 
 def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
     """Load and process the real MMM Data.csv with robust missing data handling"""
-    print(f"📂 Loading Real MMM Data from: {filepath}")
+    print(f" Loading Real MMM Data from: {filepath}")
 
     try:
         df = pd.read_csv(filepath)
-        print(f"   📊 Loaded data shape: {df.shape}")
+        print(f"    Loaded data shape: {df.shape}")
 
         # Identify columns
         impression_cols = [col for col in df.columns if 'impressions_' in col]
@@ -97,8 +97,8 @@ def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
                 clean_name = clean_name.replace('_sm', '').replace('_', ' ').title()
             control_names.append(clean_name)
 
-        print(f"   📺 Media channels ({len(impression_cols)}): {media_names}")
-        print(f"   🎛️ Control variables ({len(value_cols)}): {control_names}")
+        print(f"    Media channels ({len(impression_cols)}): {media_names}")
+        print(f"    Control variables ({len(value_cols)}): {control_names}")
 
         # Get unique regions and weeks
         regions = sorted(df[region_col].unique())
@@ -106,7 +106,7 @@ def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
         n_regions = len(regions)
         n_weeks = len(weeks)
 
-        print(f"   📊 Data structure: {n_regions} regions × {n_weeks} weeks")
+        print(f"    Data structure: {n_regions} regions × {n_weeks} weeks")
 
         # Create complete grid
         complete_index = pd.MultiIndex.from_product([regions, weeks], names=[region_col, time_col])
@@ -130,7 +130,7 @@ def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
         df_complete = df_complete.sort_values(['region_idx', 'week_idx'])
 
         # Seasonality features will be added by UnifiedDataPipeline
-        print("   🌊 Seasonality features will be added by UnifiedDataPipeline for proper train/holdout alignment")
+        print("    Seasonality features will be added by UnifiedDataPipeline for proper train/holdout alignment")
         
         # Extract arrays
         X_media_list = []
@@ -148,20 +148,20 @@ def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
         X_control = np.stack(X_control_list, axis=0)
         y = np.stack(y_list, axis=0)
 
-        print(f"   📈 Visits range: {y.min():,.0f} - {y.max():,.0f}")
-        print(f"   ✅ Real MMM data successfully loaded!")
+        print(f"    Visits range: {y.min():,.0f} - {y.max():,.0f}")
+        print(f"    Real MMM data successfully loaded!")
 
         return X_media, X_control, y, media_names, control_names
 
     except Exception as e:
-        print(f"   ❌ Error loading real data: {e}")
+        print(f"    Error loading real data: {e}")
         import traceback
         traceback.print_exc()
         raise
 
 def create_model_from_config(config, n_media, n_control, n_regions):
     """Create DeepCausalMMM model using config parameters (architecture unchanged)"""
-    print("\n🧠 Creating Model from Configuration...")
+    print("\n Creating Model from Configuration...")
     
     # Model architecture with ALL config parameters - NO HARDCODING!
     model = DeepCausalMMM(
@@ -184,14 +184,14 @@ def create_model_from_config(config, n_media, n_control, n_regions):
         ctrl_hidden_ratio=config.get('ctrl_hidden_ratio', 0.5)
     )
     
-    print(f"   ✅ Model created with {model.hidden_size} hidden units")
-    print(f"   🔧 Config-driven parameters: dropout={config['dropout']}, l1={config['l1_weight']}, l2={config['l2_weight']}")
+    print(f"    Model created with {model.hidden_size} hidden units")
+    print(f"    Config-driven parameters: dropout={config['dropout']}, l1={config['l1_weight']}, l2={config['l2_weight']}")
     
     return model
 
 def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded, config):
     """Train model using config-specified parameters"""
-    print("\n🚀 Training Model with Config Parameters...")
+    print("\n Training Model with Config Parameters...")
     
     # Multi-stage optimizer from config
     if config['optimizer']['type'] == 'adamw':
@@ -220,20 +220,20 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
     else:
         scheduler = CosineAnnealingLR(optimizer, T_max=config['n_epochs'])
     
-    print(f"   🎯 Training Configuration from Config:")
-    print(f"      📈 Epochs: {config['n_epochs']}")
-    print(f"      🧠 Hidden units: {config['hidden_dim']}")
-    print(f"      🔥 Warm-start: {config['warm_start_epochs']} epochs")
-    print(f"      📊 Learning rate: {config['learning_rate']}")
-    print(f"      🎛️ Optimizer: {config['optimizer']['type']}")
-    print(f"      📅 Scheduler: {config['scheduler']['type']}")
+    print(f"    Training Configuration from Config:")
+    print(f"       Epochs: {config['n_epochs']}")
+    print(f"       Hidden units: {config['hidden_dim']}")
+    print(f"       Warm-start: {config['warm_start_epochs']} epochs")
+    print(f"       Learning rate: {config['learning_rate']}")
+    print(f"       Optimizer: {config['optimizer']['type']}")
+    print(f"       Scheduler: {config['scheduler']['type']}")
     
     # Warm-start training
-    print(f"   🔥 Config-driven warm-start training for {config['warm_start_epochs']} epochs...")
+    print(f"    Config-driven warm-start training for {config['warm_start_epochs']} epochs...")
     model.warm_start_training(X_media_padded, X_control_padded, R, y_padded, optimizer)
     
     # Main training
-    print(f"   🚀 Main training for {config['n_epochs']} epochs...")
+    print(f"    Main training for {config['n_epochs']} epochs...")
     model.train()
     
     train_losses = []
@@ -290,8 +290,8 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
             patience_counter += 1
         
         if patience_counter >= config['scheduler']['patience']:
-            print(f"\n   ⏹️ Early stopping at epoch {epoch}")
-            print(f"   🏆 Best RMSE: {best_rmse:.2f}")
+            print(f"\n   ⏹ Early stopping at epoch {epoch}")
+            print(f"    Best RMSE: {best_rmse:.2f}")
             break
         
         if epoch % 100 == 0:
@@ -302,8 +302,8 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
                 'R²': f'{r2:.3f}'
             })
     
-    print(f"   ✅ Config-driven training completed!")
-    print(f"   🏆 Final Best RMSE: {best_rmse:.2f}")
+    print(f"    Config-driven training completed!")
+    print(f"    Final Best RMSE: {best_rmse:.2f}")
     
     return train_losses, train_rmses, train_r2s, best_rmse
 
@@ -320,13 +320,13 @@ def create_dag_network_visualization(model, media_names, output_path, config):
                 # Extract the learned adjacency matrix from adj_logits
                 adj_probs = torch.sigmoid(model.adj_logits)
                 correlation_matrix = adj_probs.detach().cpu().numpy()
-                print(f"   ✅ Using ACTUAL DAG structure from model (adj_logits)")
-                print(f"   📊 DAG adjacency range: [{correlation_matrix.min():.3f}, {correlation_matrix.max():.3f}]")
+                print(f"    Using ACTUAL DAG structure from model (adj_logits)")
+                print(f"    DAG adjacency range: [{correlation_matrix.min():.3f}, {correlation_matrix.max():.3f}]")
             except Exception as e:
-                print(f"   ⚠️ Could not extract DAG from model.adj_logits ({e}), using identity structure")
+                print(f"    Could not extract DAG from model.adj_logits ({e}), using identity structure")
                 correlation_matrix = np.eye(n_media) * 0.5
         else:
-            print(f"   ⚠️ Model doesn't have adj_logits, using identity structure")
+            print(f"    Model doesn't have adj_logits, using identity structure")
             correlation_matrix = np.eye(n_media) * 0.5
         
         # Ensure diagonal is zero for visualization
@@ -451,7 +451,7 @@ def create_dag_network_visualization(model, media_names, output_path, config):
         ))
         
         fig.update_layout(
-            title='DAG Network: Strongest Causal Channel Relationships<br><sub>🏹 Arrows show direction of influence (A → B means A influences B)</sub>',
+            title='DAG Network: Strongest Causal Channel Relationships<br><sub> Arrows show direction of influence (A → B means A influences B)</sub>',
             showlegend=False,
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -474,7 +474,7 @@ def create_dag_network_visualization(model, media_names, output_path, config):
         fig.write_html(output_path)
         return True
     except Exception as e:
-        print(f"   ⚠️ DAG network visualization failed: {e}")
+        print(f"    DAG network visualization failed: {e}")
         return False
 
 def create_dag_heatmap_visualization(model, media_names, output_path, config):
@@ -490,13 +490,13 @@ def create_dag_heatmap_visualization(model, media_names, output_path, config):
                 # Extract the learned adjacency matrix from adj_logits
                 adj_probs = torch.sigmoid(model.adj_logits)
                 adj_matrix = adj_probs.detach().cpu().numpy()
-                print(f"   ✅ Using ACTUAL DAG adjacency matrix from model (adj_logits)")
-                print(f"   📊 DAG adjacency range: [{adj_matrix.min():.3f}, {adj_matrix.max():.3f}]")
+                print(f"    Using ACTUAL DAG adjacency matrix from model (adj_logits)")
+                print(f"    DAG adjacency range: [{adj_matrix.min():.3f}, {adj_matrix.max():.3f}]")
             except Exception as e:
-                print(f"   ⚠️ Could not extract DAG adjacency from model.adj_logits ({e}), using zeros")
+                print(f"    Could not extract DAG adjacency from model.adj_logits ({e}), using zeros")
                 adj_matrix = np.zeros((n_media, n_media))
         else:
-            print(f"   ⚠️ Model doesn't have adj_logits, using zeros")
+            print(f"    Model doesn't have adj_logits, using zeros")
             adj_matrix = np.zeros((n_media, n_media))
         
         # Ensure diagonal is zero
@@ -512,7 +512,7 @@ def create_dag_heatmap_visualization(model, media_names, output_path, config):
         ))
         
         fig.update_layout(
-            title='DAG Adjacency Matrix: Channel Influence Strength<br><sub>🔽 Influencing Channel (rows) → Influenced Channel (columns) 🔽</sub>',
+            title='DAG Adjacency Matrix: Channel Influence Strength<br><sub> Influencing Channel (rows) → Influenced Channel (columns) </sub>',
             xaxis_title='→ Influenced Channel (TO)',
             yaxis_title='↓ Influencing Channel (FROM)',
             height=600,
@@ -530,15 +530,15 @@ def create_dag_heatmap_visualization(model, media_names, output_path, config):
         fig.write_html(output_path)
         return True
     except Exception as e:
-        print(f"   ⚠️ DAG heatmap visualization failed: {e}")
+        print(f"    DAG heatmap visualization failed: {e}")
         return False
 
 def create_beautiful_dashboard():
     """Create the beautiful comprehensive dashboard with config system"""
     
-    print("🎯 BEAUTIFUL COMPREHENSIVE MMM DASHBOARD")
+    print(" BEAUTIFUL COMPREHENSIVE MMM DASHBOARD")
     print("=" * 60)
-    print("🔧 Config-driven • 🎨 Beautiful Visualizations • 🎯 RMSE Optimized")
+    print(" Config-driven •  Beautiful Visualizations •  RMSE Optimized")
     
     # 1. Load configuration
     config = load_config()
@@ -559,23 +559,23 @@ def create_beautiful_dashboard():
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     
-    print(f"   🎲 Random seed set to: {seed} (deterministic mode enabled)")
+    print(f"    Random seed set to: {seed} (deterministic mode enabled)")
     
     # 2. Load real data
-    print("\n📂 Loading Real MMM Data...")
+    print("\n Loading Real MMM Data...")
     X_media, X_control, y, media_names, control_names = load_real_mmm_data()
     
     n_regions, n_weeks, n_media = X_media.shape
     n_control = X_control.shape[2]
     
-    print(f"   📊 Final data shape: {n_regions} regions × {n_weeks} weeks")
-    print(f"   📺 Media channels: {n_media}")
-    print(f"   🎛️ Control variables: {n_control}")
+    print(f"    Final data shape: {n_regions} regions × {n_weeks} weeks")
+    print(f"    Media channels: {n_media}")
+    print(f"    Control variables: {n_control}")
     
     # 3. REVERT TO WORKING MODELTRAINER APPROACH (Based on Memory)
-    print("\n🚀 Training Model with Working ModelTrainer Configuration...")
-    print("   🔧 Using ModelTrainer class (afternoon working version)")
-    print("   🎯 Huber Loss + UnifiedDataPipeline (proven configuration)")
+    print("\n Training Model with Working ModelTrainer Configuration...")
+    print("    Using ModelTrainer class (afternoon working version)")
+    print("    Huber Loss + UnifiedDataPipeline (proven configuration)")
     
     from deepcausalmmm.core.trainer import ModelTrainer
     from deepcausalmmm.core.data import UnifiedDataPipeline
@@ -641,29 +641,29 @@ def create_beautiful_dashboard():
         **training_results
     }
     
-    print(f"\n🎉 Unified Training completed!")
+    print(f"\n Unified Training completed!")
     print(f"=" * 60)
-    print(f"📊 HOLDOUT PERFORMANCE RESULTS:")
+    print(f" HOLDOUT PERFORMANCE RESULTS:")
     print(f"=" * 60)
-    print(f"   🏆 Training Loss (MSE): {results['final_train_loss']:.1f}")
+    print(f"    Training Loss (MSE): {results['final_train_loss']:.1f}")
     if results.get('final_holdout_loss') is not None:
-        print(f"   🎯 Holdout Loss (MSE):  {results['final_holdout_loss']:.1f}")
+        print(f"    Holdout Loss (MSE):  {results['final_holdout_loss']:.1f}")
     else:
-        print(f"   🎯 Holdout Loss (MSE):  N/A")
-    print(f"   🏆 Training R²: {results['final_train_r2']:.3f}")
-    print(f"   🎯 Holdout R²:  {results['final_holdout_r2']:.3f}")
-    print(f"   📊 R² Gap: {results['final_train_r2'] - results['final_holdout_r2']:.3f}")
-    print(f"   📈 Gap Percentage: {((results['final_train_r2'] - results['final_holdout_r2'])/results['final_train_r2']*100):.1f}%")
+        print(f"    Holdout Loss (MSE):  N/A")
+    print(f"    Training R²: {results['final_train_r2']:.3f}")
+    print(f"    Holdout R²:  {results['final_holdout_r2']:.3f}")
+    print(f"    R² Gap: {results['final_train_r2'] - results['final_holdout_r2']:.3f}")
+    print(f"    Gap Percentage: {((results['final_train_r2'] - results['final_holdout_r2'])/results['final_train_r2']*100):.1f}%")
     if results.get('final_holdout_loss') is not None:
-        print(f"   📊 Loss Ratio: {results['final_holdout_loss']/results['final_train_loss']:.2f}x")
+        print(f"    Loss Ratio: {results['final_holdout_loss']/results['final_train_loss']:.2f}x")
     else:
-        print(f"   📊 Loss Ratio: N/A")
-    print(f"   🏅 Holdout RMSE: {results.get('final_holdout_rmse', 'N/A'):.1f}")
+        print(f"    Loss Ratio: N/A")
+    print(f"    Holdout RMSE: {results.get('final_holdout_rmse', 'N/A'):.1f}")
     print(f"=" * 60)
-    print(f"   ✅ Unified pipeline ensures consistent data processing")
+    print(f"    Unified pipeline ensures consistent data processing")
     
-    # 📊 UNIFIED POST-PROCESSING
-    print(f"\n📊 Unified Post-Processing...")
+    #  UNIFIED POST-PROCESSING
+    print(f"\n Unified Post-Processing...")
     
     # Get the pipeline from results
     pipeline = results['pipeline']
@@ -681,12 +681,15 @@ def create_beautiful_dashboard():
     # Create unified post-processor for additional analysis
     from deepcausalmmm.postprocess import create_unified_analyzer
     
+    # Use same dashboard_outputs folder for everything
+    dashboard_dir = config.get('output_paths', {}).get('dashboard_dir', 'dashboard_outputs')
+    
     unified_analyzer = create_unified_analyzer(
         model=model,
         pipeline=pipeline,
         media_cols=media_names,
         control_cols=control_names,
-        output_dir="dashboard_unified_analysis"
+        output_dir=dashboard_dir
     )
     
     # Run comprehensive analysis with unified pipeline
@@ -697,17 +700,17 @@ def create_beautiful_dashboard():
         create_plots=False  # We'll create our own dashboard plots
     )
     
-    print(f"   📊 Unified comprehensive analysis completed")
+    print(f"    Unified comprehensive analysis completed")
     if 'channel_analysis' in comprehensive_results:
-        print(f"   🎯 Channel analysis: {len(comprehensive_results['channel_analysis']['channel_names'])} channels")
+        print(f"    Channel analysis: {len(comprehensive_results['channel_analysis']['channel_names'])} channels")
     else:
-        print(f"   🎯 Channel analysis: {len(media_names)} channels processed")
+        print(f"    Channel analysis: {len(media_names)} channels processed")
     
-    print(f"\n🎯 UNIFIED PERFORMANCE SUMMARY:")
-    print(f"   🏆 Training R²: {results['final_train_r2']:.3f}")
-    print(f"   🎯 Holdout R²: {results['final_holdout_r2']:.3f}")
-    print(f"   📊 Performance Gap: {results['final_train_r2'] - results['final_holdout_r2']:.3f} ({((results['final_train_r2'] - results['final_holdout_r2'])/results['final_train_r2']*100):.1f}%)")
-    print(f"   ✅ All data processed with consistent transformations")
+    print(f"\n UNIFIED PERFORMANCE SUMMARY:")
+    print(f"    Training R²: {results['final_train_r2']:.3f}")
+    print(f"    Holdout R²: {results['final_holdout_r2']:.3f}")
+    print(f"    Performance Gap: {results['final_train_r2'] - results['final_holdout_r2']:.3f} ({((results['final_train_r2'] - results['final_holdout_r2'])/results['final_train_r2']*100):.1f}%)")
+    print(f"    All data processed with consistent transformations")
     
     # Legacy function for compatibility (will be removed later)
     def predict_on_data(model, scaler, X_media_data, X_control_data, n_regions, padding_weeks=0):
@@ -758,18 +761,18 @@ def create_beautiful_dashboard():
     padding_weeks = config['burn_in_weeks']
     
     # No validation data in unified approach
-    print("\n⚠️  Validation data not available (disabled for this run)")
+    print("\n  Validation data not available (disabled for this run)")
     y_val_pred_scaled = None
     val_contributions = None
     val_coefficients = None
     val_outputs = None
     
     # Use holdout predictions from unified pipeline instead of re-predicting
-    print("🧪 Evaluating Holdout Data...")
-    print("   ⚠️  Validation metrics not calculated (validation disabled)")
+    print(" Evaluating Holdout Data...")
+    print("     Validation metrics not calculated (validation disabled)")
     
     # Get consistent split parameters first
-    holdout_ratio = config.get('holdout_ratio', 0.15)
+    holdout_ratio = config.get('holdout_ratio', 0.08)
     n_weeks_full = y.shape[1]
     holdout_weeks_actual = int(n_weeks_full * holdout_ratio)
     train_weeks_actual = n_weeks_full - holdout_weeks_actual
@@ -783,9 +786,9 @@ def create_beautiful_dashboard():
         # Calculate percentage using consistent training data
         y_train_for_mean = y[:, :train_weeks_actual].astype(np.float32)
         target_mean = y_train_for_mean.mean()
-        print(f"   🏆 Holdout RMSE: {results['final_holdout_rmse']:,.0f} visits ({(results['final_holdout_rmse'] / target_mean) * 100:.1f}%)")
-        print(f"   📈 Holdout R²: {results['final_holdout_r2']:.3f}")
-        print(f"   📊 Holdout MAE: {results.get('final_holdout_mae', 0):,.0f} visits")
+        print(f"    Holdout RMSE: {results['final_holdout_rmse']:,.0f} visits ({(results['final_holdout_rmse'] / target_mean) * 100:.1f}%)")
+        print(f"    Holdout R²: {results['final_holdout_r2']:.3f}")
+        print(f"    Holdout MAE: {results.get('final_holdout_mae', 0):,.0f} visits")
     else:
         # Fallback: use processed holdout tensors from UnifiedDataPipeline
         if holdout_tensors is not None:
@@ -798,9 +801,9 @@ def create_beautiful_dashboard():
             
             # Inverse transform to get original scale predictions
             y_holdout_pred_orig = inverse_scale_predictions(scaler, y_holdout_pred_scaled, padding_weeks)
-            print(f"   🏆 Holdout RMSE: {((y_holdout_pred_orig.detach().numpy().flatten() - y_holdout.flatten())**2).mean()**0.5:,.0f} visits")
+            print(f"    Holdout RMSE: {((y_holdout_pred_orig.detach().numpy().flatten() - y_holdout.flatten())**2).mean()**0.5:,.0f} visits")
         else:
-            print("   ⚠️  No holdout tensors available for prediction")
+            print("     No holdout tensors available for prediction")
     
     # Validation predictions (disabled)
     y_val_pred_orig = None
@@ -824,11 +827,11 @@ def create_beautiful_dashboard():
         val_r2 = 1 - (ss_res_val / ss_tot_val) if ss_tot_val > 0 else 0
         val_relative_rmse = (val_rmse / np.mean(y_val_clean)) * 100
         
-        print(f"   ✅ Validation RMSE: {val_rmse:,.0f} visits ({val_relative_rmse:.1f}%)")
-        print(f"   📈 Validation R²: {val_r2:.3f}")
-        print(f"   📊 Validation MAE: {val_mae:,.0f} visits")
+        print(f"    Validation RMSE: {val_rmse:,.0f} visits ({val_relative_rmse:.1f}%)")
+        print(f"    Validation R²: {val_r2:.3f}")
+        print(f"    Validation MAE: {val_mae:,.0f} visits")
     else:
-        print(f"   ⚠️  Validation metrics not calculated (validation disabled)")
+        print(f"     Validation metrics not calculated (validation disabled)")
         val_rmse = 0
         val_mae = 0
         val_r2 = 0
@@ -839,24 +842,24 @@ def create_beautiful_dashboard():
     
     # y_holdout already defined above for consistency
     
-    print(f"   🔧 Using consistent holdout data from UnifiedDataPipeline split:")
-    print(f"   📊 Holdout weeks: {holdout_weeks_actual} (from week {train_weeks_actual+1} to {n_weeks_full})")
+    print(f"    Using consistent holdout data from UnifiedDataPipeline split:")
+    print(f"    Holdout weeks: {holdout_weeks_actual} (from week {train_weeks_actual+1} to {n_weeks_full})")
     
     # Calculate holdout metrics
     y_holdout_flat = y_holdout.flatten()
     
     # Debug shapes to fix the broadcasting error
-    print(f"   🔍 DEBUG: y_holdout shape: {y_holdout.shape}")
-    print(f"   🔍 DEBUG: y_holdout_pred_orig shape: {y_holdout_pred_orig.shape}")
+    print(f"    DEBUG: y_holdout shape: {y_holdout.shape}")
+    print(f"    DEBUG: y_holdout_pred_orig shape: {y_holdout_pred_orig.shape}")
     
     # Ensure holdout predictions are properly shaped
     if y_holdout_pred_orig.shape != y_holdout.shape:
-        print(f"   ⚠️ Shape mismatch detected!")
+        print(f"    Shape mismatch detected!")
         print(f"   Expected: {y_holdout.shape}, Got: {y_holdout_pred_orig.shape}")
         
         # If predictions have wrong number of timesteps, we need to use fallback method
         if y_holdout_pred_orig.shape[1] != y_holdout.shape[1]:
-            print(f"   🔧 Using fallback prediction method due to timestep mismatch")
+            print(f"    Using fallback prediction method due to timestep mismatch")
             # Use processed holdout tensors from UnifiedDataPipeline for fallback
             if holdout_tensors is not None:
                 # Use already processed holdout data - predict directly with model
@@ -868,19 +871,19 @@ def create_beautiful_dashboard():
                 
                 # Inverse transform to get original scale predictions
                 y_holdout_pred_orig = inverse_scale_predictions(scaler, y_holdout_pred_scaled, padding_weeks)
-                print(f"   ✅ Fallback predictions shape: {y_holdout_pred_orig.shape}")
+                print(f"    Fallback predictions shape: {y_holdout_pred_orig.shape}")
             else:
-                print("   ⚠️  No holdout tensors available for fallback prediction")
+                print("     No holdout tensors available for fallback prediction")
         else:
             # Just reshape if it's a simple dimension issue
             expected_shape = y_holdout.shape
             y_holdout_pred_orig = y_holdout_pred_orig.view(expected_shape)
-            print(f"   🔧 DEBUG: Reshaped predictions to: {y_holdout_pred_orig.shape}")
+            print(f"    DEBUG: Reshaped predictions to: {y_holdout_pred_orig.shape}")
     
     y_holdout_pred_flat = y_holdout_pred_orig.detach().numpy().flatten()
     
-    print(f"   🔍 DEBUG: y_holdout_flat shape: {y_holdout_flat.shape}")
-    print(f"   🔍 DEBUG: y_holdout_pred_flat shape: {y_holdout_pred_flat.shape}")
+    print(f"    DEBUG: y_holdout_flat shape: {y_holdout_flat.shape}")
+    print(f"    DEBUG: y_holdout_pred_flat shape: {y_holdout_pred_flat.shape}")
     
     # Remove any NaN/inf values for holdout
     valid_mask_holdout = np.isfinite(y_holdout_flat) & np.isfinite(y_holdout_pred_flat)
@@ -897,9 +900,9 @@ def create_beautiful_dashboard():
     holdout_r2 = 1 - (ss_res_holdout / ss_tot_holdout) if ss_tot_holdout > 0 else 0
     holdout_relative_rmse = (holdout_rmse / np.mean(y_holdout_clean)) * 100
     
-    print(f"   🏆 Holdout RMSE: {holdout_rmse:,.0f} visits ({holdout_relative_rmse:.1f}%)")
-    print(f"   📈 Holdout R²: {holdout_r2:.3f}")
-    print(f"   📊 Holdout MAE: {holdout_mae:,.0f} visits")
+    print(f"    Holdout RMSE: {holdout_rmse:,.0f} visits ({holdout_relative_rmse:.1f}%)")
+    print(f"    Holdout R²: {holdout_r2:.3f}")
+    print(f"    Holdout MAE: {holdout_mae:,.0f} visits")
     
     # Use unified results structure
     unified_results = {
@@ -932,15 +935,15 @@ def create_beautiful_dashboard():
         'coefficients': None  # Will be extracted from model outputs if needed
     }
     
-    # ✅ UNIFIED POST-PROCESSING COMPLETE
-    print(f"\n✅ Unified post-processing completed successfully!")
-    print(f"   📊 Full dataset predictions: {postprocess_results['predictions'].shape}")
-    print(f"   📺 Media contributions: {postprocess_results['media_contributions'].shape}")
-    print(f"   🎛️ Control contributions: {postprocess_results['control_contributions'].shape}")
-    print(f"   ✅ All data processed with consistent transformations from unified pipeline")
+    #  UNIFIED POST-PROCESSING COMPLETE
+    print(f"\n Unified post-processing completed successfully!")
+    print(f"    Full dataset predictions: {postprocess_results['predictions'].shape}")
+    print(f"    Media contributions: {postprocess_results['media_contributions'].shape}")
+    print(f"    Control contributions: {postprocess_results['control_contributions'].shape}")
+    print(f"    All data processed with consistent transformations from unified pipeline")
     
-    # 🎆 PREPARE DATA FOR VISUALIZATION
-    print("\n🎆 Preparing unified data for visualization...")
+    #  PREPARE DATA FOR VISUALIZATION
+    print("\n Preparing unified data for visualization...")
     
     # Extract data from unified results
     train_losses = results['train_losses']
@@ -955,10 +958,10 @@ def create_beautiful_dashboard():
     control_contributions_orig = postprocess_results['control_contributions']
     
     # Use unified pipeline results (already in original scale)
-    print(f"   ✅ Using unified pipeline post-processed results")
-    print(f"   📊 Predictions shape: {predictions_orig.shape}")
-    print(f"   📺 Media contributions shape: {media_contributions_orig.shape}")
-    print(f"   🎛️ Control contributions shape: {control_contributions_orig.shape}")
+    print(f"    Using unified pipeline post-processed results")
+    print(f"    Predictions shape: {predictions_orig.shape}")
+    print(f"    Media contributions shape: {media_contributions_orig.shape}")
+    print(f"    Control contributions shape: {control_contributions_orig.shape}")
     
     # Convert to numpy if needed
     if isinstance(media_contributions_orig, torch.Tensor):
@@ -970,15 +973,15 @@ def create_beautiful_dashboard():
     baseline_contrib = np.zeros((n_regions, predictions_orig.shape[1]))
     ctrl_contributions_orig = control_contributions_orig
     
-    print(f"   ✅ Using full dataset for contributions (train + holdout combined)")
-    print(f"   📊 Full dataset shape: {y_orig.shape}")
-    print(f"   📊 Full predictions shape: {predictions_orig.shape}")
-    print(f"   📊 Full contributions shape: {media_contributions_orig.shape}")
+    print(f"    Using full dataset for contributions (train + holdout combined)")
+    print(f"    Full dataset shape: {y_orig.shape}")
+    print(f"    Full predictions shape: {predictions_orig.shape}")
+    print(f"    Full contributions shape: {media_contributions_orig.shape}")
     
-    print(f"   🔍 DEBUG: y_orig mean: {y_orig.mean():,.0f}, std: {y_orig.std():,.0f}")
-    print(f"   🔍 DEBUG: predictions_orig mean: {predictions_orig.mean():,.0f}, std: {predictions_orig.std():,.0f}")
-    print(f"   🔍 DEBUG: y_orig range: [{y_orig.min():,.0f}, {y_orig.max():,.0f}]")
-    print(f"   🔍 DEBUG: predictions_orig range: [{predictions_orig.min():,.0f}, {predictions_orig.max():,.0f}]")
+    print(f"    DEBUG: y_orig mean: {y_orig.mean():,.0f}, std: {y_orig.std():,.0f}")
+    print(f"    DEBUG: predictions_orig mean: {predictions_orig.mean():,.0f}, std: {predictions_orig.std():,.0f}")
+    print(f"    DEBUG: y_orig range: [{y_orig.min():,.0f}, {y_orig.max():,.0f}]")
+    print(f"    DEBUG: predictions_orig range: [{predictions_orig.min():,.0f}, {predictions_orig.max():,.0f}]")
     
     # Convert to numpy for compatibility with existing visualization code
     predictions_orig = torch.tensor(predictions_orig) if not isinstance(predictions_orig, torch.Tensor) else predictions_orig
@@ -1011,28 +1014,28 @@ def create_beautiful_dashboard():
     holdout_relative_rmse = (holdout_rmse_unscaled / y_holdout_orig.mean().item()) * 100
     
     # DEBUG: Check what's in results
-    print(f"   🔍 DEBUG: results['final_holdout_rmse'] = {results.get('final_holdout_rmse', 'NOT_FOUND')}")
-    print(f"   🔍 DEBUG: results['final_holdout_r2'] = {results.get('final_holdout_r2', 'NOT_FOUND')}")
+    print(f"    DEBUG: results['final_holdout_rmse'] = {results.get('final_holdout_rmse', 'NOT_FOUND')}")
+    print(f"    DEBUG: results['final_holdout_r2'] = {results.get('final_holdout_r2', 'NOT_FOUND')}")
     
     # Update holdout RMSE from ModelTrainer if available (already calculated above)
     # holdout_rmse_unscaled and holdout_relative_rmse already calculated above
     
-    print(f"   🏆 FINAL RESULTS (CORRECTLY SEPARATED - ORIGINAL SCALE RMSE):")
-    print(f"      🚂 Training RMSE: {train_rmse_unscaled:,.0f} visits ({train_relative_rmse:.1f}%)")
-    print(f"      🧪 Holdout RMSE: {holdout_rmse_unscaled:,.0f} visits ({holdout_relative_rmse:.1f}%)")
-    print(f"      🚂 Training R²: {results.get('final_train_r2', 'N/A')}")
-    print(f"      🧪 Holdout R²: {results.get('final_holdout_r2', 'N/A')}")
-    print(f"   ✅ All RMSE values calculated on ORIGINAL UNSCALED data")
+    print(f"    FINAL RESULTS (CORRECTLY SEPARATED - ORIGINAL SCALE RMSE):")
+    print(f"       Training RMSE: {train_rmse_unscaled:,.0f} visits ({train_relative_rmse:.1f}%)")
+    print(f"       Holdout RMSE: {holdout_rmse_unscaled:,.0f} visits ({holdout_relative_rmse:.1f}%)")
+    print(f"       Training R²: {results.get('final_train_r2', 'N/A')}")
+    print(f"       Holdout R²: {results.get('final_holdout_r2', 'N/A')}")
+    print(f"    All RMSE values calculated on ORIGINAL UNSCALED data")
     
     # Display robust metrics if available
     if 'holdout_mae_orig' in results:
-        print(f"\n   🎯 ROBUST METRICS (Option 1 - Outlier Resistant):")
-        print(f"      📊 Holdout MAE: {results['holdout_mae_orig']:,.0f} visits")
-        print(f"      📊 Holdout Median AE: {results['holdout_median_ae']:,.0f} visits")
-        print(f"      📊 Holdout Trimmed RMSE (95%): {results['holdout_trimmed_rmse']:,.0f} visits")
-        print(f"      ✨ Holdout R² (Log-space): {results['holdout_r2_log']:.3f}")
-        print(f"      ✨ Holdout RMSE (Log-space): {results['holdout_rmse_log']:.3f}")
-        print(f"   🔬 Huber Loss Training: {'ENABLED' if config.get('use_huber_loss', False) else 'DISABLED'}")
+        print(f"\n    ROBUST METRICS (Option 1 - Outlier Resistant):")
+        print(f"       Holdout MAE: {results['holdout_mae_orig']:,.0f} visits")
+        print(f"       Holdout Median AE: {results['holdout_median_ae']:,.0f} visits")
+        print(f"       Holdout Trimmed RMSE (95%): {results['holdout_trimmed_rmse']:,.0f} visits")
+        print(f"       Holdout R² (Log-space): {results['holdout_r2_log']:.3f}")
+        print(f"       Holdout RMSE (Log-space): {results['holdout_rmse_log']:.3f}")
+        print(f"    Huber Loss Training: {'ENABLED' if config.get('use_huber_loss', False) else 'DISABLED'}")
     
     # Set final metrics for compatibility (use UNSCALED training metrics for overall dashboard)
     final_rmse = train_rmse_unscaled  # Use unscaled training RMSE
@@ -1042,7 +1045,7 @@ def create_beautiful_dashboard():
     # Calculate MAE from predictions and actual (since train_mmm doesn't return it)
     # Ensure shapes match (predictions might be from training subset)
     if predictions_orig.shape != y_orig.shape:
-        print(f"🔍 DEBUG: Shape mismatch - predictions: {predictions_orig.shape}, y_orig: {y_orig.shape}")
+        print(f" DEBUG: Shape mismatch - predictions: {predictions_orig.shape}, y_orig: {y_orig.shape}")
         # Use only the overlapping portion for MAE calculation
         min_weeks = min(predictions_orig.shape[1], y_orig.shape[1])
         final_mae = torch.mean(torch.abs(predictions_orig[:, :min_weeks] - y_orig[:, :min_weeks])).item()
@@ -1050,7 +1053,7 @@ def create_beautiful_dashboard():
         final_mae = torch.mean(torch.abs(predictions_orig - y_orig)).item()
     
     # Extract ACTUAL coefficients from the model (not synthetic approximations)
-    print(f"   🔍 Extracting ACTUAL coefficients from trained model...")
+    print(f"    Extracting ACTUAL coefficients from trained model...")
     
     # Get the processed full dataset from pipeline to match training data
     processed_data = results['pipeline'].get_processed_full_data()
@@ -1076,12 +1079,12 @@ def create_beautiful_dashboard():
             media_coeffs = media_coeffs[:, burn_in:, :]  # Remove burn-in weeks
             ctrl_coeffs = ctrl_coeffs[:, burn_in:, :]  # Remove burn-in weeks
             
-            print(f"   ✅ Extracted ACTUAL coefficients from model:")
-            print(f"      📺 Media coefficients shape: {media_coeffs.shape}")
-            print(f"      🎛️ Control coefficients shape: {ctrl_coeffs.shape}")
+            print(f"    Extracted ACTUAL coefficients from model:")
+            print(f"       Media coefficients shape: {media_coeffs.shape}")
+            print(f"       Control coefficients shape: {ctrl_coeffs.shape}")
         else:
             # Fallback to approximation if coefficients not available in outputs
-            print(f"   ⚠️ Model outputs don't contain coefficients, using contribution approximation")
+            print(f"    Model outputs don't contain coefficients, using contribution approximation")
             n_regions_contrib, n_weeks_contrib = media_contributions.shape[:2]
             n_media = len(media_names)
             
@@ -1095,8 +1098,8 @@ def create_beautiful_dashboard():
                 media_coeffs[:, :, i] = contrib_channel / total_contrib
     
     # Get actual baseline and control contributions from model
-    print(f"   🔍 Getting actual baseline and control contributions from model...")
-    print(f"   🚨 CRITICAL: Using processed data from UnifiedDataPipeline to match training!")
+    print(f"    Getting actual baseline and control contributions from model...")
+    print(f"    CRITICAL: Using processed data from UnifiedDataPipeline to match training!")
     
     # CRITICAL FIX: Use the processed data from pipeline that includes seasonality
     # The model was trained with 14 control variables (7 original + 7 seasonality)
@@ -1122,9 +1125,9 @@ def create_beautiful_dashboard():
     X_media_processed = processed_data['X_media']  # Shape: [190, 109+burn_in, 13]
     X_control_processed = processed_data['X_control']  # Shape: [190, 109+burn_in, 14] (includes seasonality)
     
-    print(f"   ✅ Using processed data shapes:")
-    print(f"      📺 Media: {X_media_processed.shape} (includes padding)")
-    print(f"      🎛️ Control: {X_control_processed.shape} (includes seasonality + padding)")
+    print(f"    Using processed data shapes:")
+    print(f"       Media: {X_media_processed.shape} (includes padding)")
+    print(f"       Control: {X_control_processed.shape} (includes seasonality + padding)")
     
     # Run a forward pass to get the actual baseline and control contributions
     with torch.no_grad():
@@ -1148,16 +1151,16 @@ def create_beautiful_dashboard():
         'seasonal_contributions': actual_seasonal_contributions
     }
     
-    print(f"   ✅ Got actual baseline mean: {actual_baseline.mean().item():.2f}")
-    print(f"   ✅ Got actual control contributions mean: {actual_ctrl_contributions.mean().item():.2f}")
-    print(f"   ✅ Got actual seasonal contributions mean: {actual_seasonal_contributions.mean().item():.2f}")
-    print(f"   ✅ Got seasonal contributions range: [{actual_seasonal_contributions.min().item():.3f}, {actual_seasonal_contributions.max().item():.3f}]")
+    print(f"    Got actual baseline mean: {actual_baseline.mean().item():.2f}")
+    print(f"    Got actual control contributions mean: {actual_ctrl_contributions.mean().item():.2f}")
+    print(f"    Got actual seasonal contributions mean: {actual_seasonal_contributions.mean().item():.2f}")
+    print(f"    Got seasonal contributions range: [{actual_seasonal_contributions.min().item():.3f}, {actual_seasonal_contributions.max().item():.3f}]")
     
     # 8. Create beautiful visualizations
-    print("\n🎨 Creating Beautiful Comprehensive Visualizations...")
+    print("\n Creating Beautiful Comprehensive Visualizations...")
     
     # Create output directory from config
-    dashboard_dir = config.get('output_paths', {}).get('dashboard_dir', 'dashboard_beautiful_comprehensive')
+    dashboard_dir = config.get('output_paths', {}).get('dashboard_dir', 'dashboard_outputs')
     os.makedirs(dashboard_dir, exist_ok=True)
     
     plots_created = []
@@ -1444,12 +1447,12 @@ def create_beautiful_dashboard():
         hovermode='x unified'
     )
     
-    total_timeseries_path = "dashboard_beautiful_comprehensive/total_actual_vs_predicted_timeseries.html"
+    total_timeseries_path = f"{dashboard_dir}/total_actual_vs_predicted_timeseries.html"
     fig_total_timeseries.write_html(total_timeseries_path)
     plots_created.append(("Total Time Series", total_timeseries_path))
     
     # Plot 3b: Actual vs Predicted in Scaled Space (Log1p)
-    print(f"   📊 Creating scaled data time series...")
+    print(f"    Creating scaled data time series...")
     
     # Get scaled data from the pipeline
     full_data = {'X_media': X_media, 'X_control': X_control, 'y': y}
@@ -1532,7 +1535,7 @@ def create_beautiful_dashboard():
         hovermode='x unified'
     )
     
-    scaled_timeseries_path = "dashboard_beautiful_comprehensive/scaled_actual_vs_predicted_timeseries.html"
+    scaled_timeseries_path = f"{dashboard_dir}/scaled_actual_vs_predicted_timeseries.html"
     fig_scaled_timeseries.write_html(scaled_timeseries_path)
     plots_created.append(("Scaled Time Series", scaled_timeseries_path))
     
@@ -1562,14 +1565,14 @@ def create_beautiful_dashboard():
         hovermode='x unified'
     )
     
-    coeffs_path = "dashboard_beautiful_comprehensive/coefficients_over_time.html"
+    coeffs_path = f"{dashboard_dir}/coefficients_over_time.html"
     fig_coeffs.write_html(coeffs_path)
     plots_created.append(("Coefficients Over Time", coeffs_path))
     
     # ========================================================================
     # CALCULATE PROPORTIONALLY ALLOCATED CONTRIBUTIONS (for all plots)
     # ========================================================================
-    print(f"   📊 Computing proportionally allocated contributions for all plots...")
+    print(f"    Computing proportionally allocated contributions for all plots...")
     
     # Trim all components to match predictions_orig shape [190, 109]
     target_weeks = predictions_orig.shape[1]  # 109 weeks
@@ -1591,7 +1594,7 @@ def create_beautiful_dashboard():
         seasonal_contributions=seasonal_trimmed
     )
     
-    print(f"   ✅ Proportionally allocated contributions computed:")
+    print(f"    Proportionally allocated contributions computed:")
     print(f"      Media: {contrib_results['media'].shape}")
     print(f"      Baseline: {contrib_results['baseline'].shape}")
     print(f"      Seasonal: {contrib_results['seasonal'].shape}")
@@ -1640,7 +1643,7 @@ def create_beautiful_dashboard():
         hovermode='x unified'
     )
     
-    contrib_stacked_path = "dashboard_beautiful_comprehensive/contributions_stacked.html"
+    contrib_stacked_path = f"{dashboard_dir}/contributions_stacked.html"
     fig_contrib_stacked.write_html(contrib_stacked_path)
     plots_created.append(("Contributions Stacked", contrib_stacked_path))
     
@@ -1679,7 +1682,7 @@ def create_beautiful_dashboard():
         hovermode='x unified'
     )
     
-    contrib_lines_path = "dashboard_beautiful_comprehensive/contributions_lines.html"
+    contrib_lines_path = f"{dashboard_dir}/contributions_lines.html"
     fig_contrib_lines.write_html(contrib_lines_path)
     plots_created.append(("Individual Contributions", contrib_lines_path))
     
@@ -1739,7 +1742,7 @@ def create_beautiful_dashboard():
         showlegend=False
     )
     
-    effectiveness_path = "dashboard_beautiful_comprehensive/channel_effectiveness.html"
+    effectiveness_path = f"{dashboard_dir}/channel_effectiveness.html"
     fig_effectiveness.write_html(effectiveness_path)
     plots_created.append(("Channel Effectiveness", effectiveness_path))
     
@@ -1768,12 +1771,12 @@ def create_beautiful_dashboard():
                          font_size=14, showarrow=False)]
     )
     
-    contrib_pct_path = "dashboard_beautiful_comprehensive/contribution_percentages.html"
+    contrib_pct_path = f"{dashboard_dir}/contribution_percentages.html"
     fig_contrib_pct.write_html(contrib_pct_path)
     plots_created.append(("Contribution Percentages", contrib_pct_path))
     
     # Plot 9: Proper Waterfall Chart with Proportional Allocation
-    print(f"   💰 Creating proper waterfall chart...")
+    print(f"    Creating proper waterfall chart...")
     
     # Use contrib_results already calculated above
     # Extract contributions in original scale (visits)
@@ -1833,7 +1836,7 @@ def create_beautiful_dashboard():
     ))
     
     fig_waterfall.update_layout(
-        title='💰 Waterfall Chart: Total Economic Contributions<br><sub>DMA-Level Coefficients × Total Visits Generated</sub>',
+        title=' Waterfall Chart: Total Economic Contributions<br><sub>DMA-Level Coefficients × Total Visits Generated</sub>',
         xaxis_title='Components',
         yaxis_title='Total Visits Contributed',
         height=600,
@@ -1841,26 +1844,26 @@ def create_beautiful_dashboard():
         showlegend=True
     )
     
-    waterfall_path = "dashboard_beautiful_comprehensive/waterfall_chart.html"
+    waterfall_path = f"{dashboard_dir}/waterfall_chart.html"
     fig_waterfall.write_html(waterfall_path)
     plots_created.append(("Waterfall Chart", waterfall_path))
     
     # Plot 10: DAG Network
-    print(f"   🔗 Creating DAG network visualization...")
-    dag_network_path = "dashboard_beautiful_comprehensive/dag_network.html"
+    print(f"    Creating DAG network visualization...")
+    dag_network_path = f"{dashboard_dir}/dag_network.html"
     dag_network_success = create_dag_network_visualization(model, media_names, dag_network_path, config)
     if dag_network_success:
         plots_created.append(("DAG Network", dag_network_path))
     
     # Plot 11: DAG Heatmap
-    print(f"   🔥 Creating DAG heatmap visualization...")
-    dag_heatmap_path = "dashboard_beautiful_comprehensive/dag_heatmap.html"
+    print(f"    Creating DAG heatmap visualization...")
+    dag_heatmap_path = f"{dashboard_dir}/dag_heatmap.html"
     dag_heatmap_success = create_dag_heatmap_visualization(model, media_names, dag_heatmap_path, config)
     if dag_heatmap_success:
         plots_created.append(("DAG Heatmap", dag_heatmap_path))
     
     # Plot 12: Holdout Performance Scatter Plot
-    print(f"   🎯 Creating holdout performance scatter plot...")
+    print(f"    Creating holdout performance scatter plot...")
     
     # Get holdout predictions - use the EXACT SAME method as ModelTrainer
     if holdout_tensors is not None and 'y' in holdout_tensors:
@@ -1927,7 +1930,7 @@ def create_beautiful_dashboard():
             showlegend=True
         )
         
-        holdout_scatter_path = "dashboard_beautiful_comprehensive/holdout_scatter.html"
+        holdout_scatter_path = f"{dashboard_dir}/holdout_scatter.html"
         fig_holdout.write_html(holdout_scatter_path)
         plots_created.append(("Holdout Performance", holdout_scatter_path))
         
@@ -1935,17 +1938,17 @@ def create_beautiful_dashboard():
         trainer_r2 = results.get('final_holdout_r2', 0)
         r2_diff = abs(scatter_r2 - trainer_r2)
         if r2_diff > 0.01:  # More than 1% difference
-            print(f"   ⚠️  INCONSISTENCY DETECTED:")
-            print(f"      📊 Scatter plot R²: {scatter_r2:.3f}")
-            print(f"      🏆 ModelTrainer R²: {trainer_r2:.3f}")
-            print(f"      📈 Difference: {r2_diff:.3f}")
+            print(f"     INCONSISTENCY DETECTED:")
+            print(f"       Scatter plot R²: {scatter_r2:.3f}")
+            print(f"       ModelTrainer R²: {trainer_r2:.3f}")
+            print(f"       Difference: {r2_diff:.3f}")
         else:
-            print(f"   ✅ Holdout scatter plot created: R² = {scatter_r2:.3f} (consistent with ModelTrainer)")
+            print(f"    Holdout scatter plot created: R² = {scatter_r2:.3f} (consistent with ModelTrainer)")
     else:
-        print(f"   ⚠️  Holdout predictions not available in results")
+        print(f"     Holdout predictions not available in results")
     
     # Plot 13: Channel Impressions vs Contributions (use first channel if anonymized)
-    print(f"   📊 Creating channel impressions vs contributions plot...")
+    print(f"    Creating channel impressions vs contributions plot...")
     
     # Find channel - prefer "Google Search" if available, otherwise use first channel
     push_idx = None
@@ -1958,30 +1961,30 @@ def create_beautiful_dashboard():
     
     if push_idx is not None:
         # DEBUG: Simple check of ranges
-        print(f"\n   🔍 DEBUG: {push_name} Channel Data Ranges...")
+        print(f"\n    DEBUG: {push_name} Channel Data Ranges...")
         
         # Get Push impressions from original data
         push_impressions = X_media[:, :, push_idx]  # [regions, weeks]
-        print(f"      📊 Original impressions: [{push_impressions.min():.2f}, {push_impressions.max():.2f}]")
+        print(f"       Original impressions: [{push_impressions.min():.2f}, {push_impressions.max():.2f}]")
         
         # Get the learned coefficients for Push channel
         push_coeffs = media_coeffs[:, :, push_idx]  # [regions, weeks]
-        print(f"      ⚖️  Learned coefficients: [{push_coeffs.min():.6f}, {push_coeffs.max():.6f}]")
+        print(f"        Learned coefficients: [{push_coeffs.min():.6f}, {push_coeffs.max():.6f}]")
         
         # Check Hill parameters
         with torch.no_grad():
             hill_a = torch.nn.functional.softplus(model.hill_a[push_idx])
             hill_g = torch.nn.functional.softplus(model.hill_g[push_idx])
             alpha = torch.sigmoid(model.alpha[push_idx])
-            print(f"      🎚️  Hill: a={hill_a:.4f}, g={hill_g:.6f}, Adstock α={alpha:.4f}")
+            print(f"        Hill: a={hill_a:.4f}, g={hill_g:.6f}, Adstock α={alpha:.4f}")
         
         # Extract Push channel data
         push_contrib_log = media_contributions[:, :, push_idx]  # [regions, weeks]
-        print(f"      📊 Log contributions: [{push_contrib_log.min():.6f}, {push_contrib_log.max():.6f}]")
+        print(f"       Log contributions: [{push_contrib_log.min():.6f}, {push_contrib_log.max():.6f}]")
         
         # USE PROPORTIONALLY ALLOCATED CONTRIBUTIONS (same as CSV export)
         push_contrib_orig = contrib_results['media'][:, :, push_idx]  # [regions, weeks] - proportionally allocated
-        print(f"      📊 Proportionally allocated contributions: [{push_contrib_orig.min():.2f}, {push_contrib_orig.max():.2f}]")
+        print(f"       Proportionally allocated contributions: [{push_contrib_orig.min():.2f}, {push_contrib_orig.max():.2f}]")
         
         # AGGREGATE TO NATIONAL LEVEL BY WEEK
         # Sum across all regions for each week
@@ -1998,7 +2001,7 @@ def create_beautiful_dashboard():
         # Remove weeks with zero impressions
         push_df = push_df[push_df['impressions'] > 0]
         
-        print(f"   📊 SEM - Google Search Channel ({push_name}) - National Level Aggregation:")
+        print(f"    SEM - Google Search Channel ({push_name}) - National Level Aggregation:")
         print(f"      Weeks: {len(push_df)}")
         print(f"      Impressions range: [{push_df['impressions'].min():,.0f}, {push_df['impressions'].max():,.0f}]")
         print(f"      Contributions range: [{push_df['contributions'].min():.2f}, {push_df['contributions'].max():.2f}]")
@@ -2025,15 +2028,15 @@ def create_beautiful_dashboard():
             showlegend=True
         )
         
-        push_scatter_path = "dashboard_beautiful_comprehensive/push_channel_scatter.html"
+        push_scatter_path = f"{dashboard_dir}/push_channel_scatter.html"
         fig_push.write_html(push_scatter_path)
         plots_created.append(("Push Channel Analysis", push_scatter_path))
-        print(f"   ✅ Push channel plot created (national weekly aggregation)")
+        print(f"    Push channel plot created (national weekly aggregation)")
     else:
-        print(f"   ⚠️  Push channel not found in media channels")
+        print(f"     Push channel not found in media channels")
     
     # Plot 14: Response Curves for All Channels
-    print(f"\n   📈 Fitting response curves for all channels...")
+    print(f"\n    Fitting response curves for all channels...")
     from deepcausalmmm import ResponseCurveFit
     
     response_curve_results = {}
@@ -2059,7 +2062,7 @@ def create_beautiful_dashboard():
         channel_df = channel_df[channel_df['spend'] > 0]
         
         if len(channel_df) < 10:
-            print(f"         ⚠️  Skipping: insufficient data points ({len(channel_df)})")
+            print(f"           Skipping: insufficient data points ({len(channel_df)})")
             continue
         
         try:
@@ -2071,7 +2074,7 @@ def create_beautiful_dashboard():
                 date_col='week_monday'
             )
             
-            output_path = f"dashboard_beautiful_comprehensive/response_curve_{ch_name.replace(' ', '_')}.html"
+            output_path = f"{dashboard_dir}/response_curve_{ch_name.replace(' ', '_')}.html"
             
             fitter.fit(
                 title=f"Response Curve: {ch_name}",
@@ -2087,16 +2090,16 @@ def create_beautiful_dashboard():
             response_curve_results[ch_name] = summary
             response_curve_paths.append((ch_name, output_path))
             
-            print(f"         ✅ R²={summary['r2']:.3f}, Slope={summary['params']['slope']:.3f}")
+            print(f"          R²={summary['r2']:.3f}, Slope={summary['params']['slope']:.3f}")
             
         except Exception as e:
-            print(f"         ❌ Failed: {e}")
+            print(f"          Failed: {e}")
             continue
     
-    print(f"   ✅ Fitted {len(response_curve_results)}/{len(media_names)} response curves")
+    print(f"    Fitted {len(response_curve_results)}/{len(media_names)} response curves")
     
     # 9. Create Beautiful Master Dashboard
-    print("\n🎨 Creating Beautiful Master Dashboard...")
+    print("\n Creating Beautiful Master Dashboard...")
     
     master_html = f"""
     <!DOCTYPE html>
@@ -2123,7 +2126,7 @@ def create_beautiful_dashboard():
     </head>
     <body>
         <div class="header">
-            <h1>🎯 Beautiful Comprehensive MMM Dashboard</h1>
+            <h1> Beautiful Comprehensive MMM Dashboard</h1>
             <h2>Config-Driven • Real Data Analysis</h2>
             <p>Advanced Marketing Mix Modeling with Coefficient Stabilization</p>
             <p><strong>Data:</strong> {n_regions} regions × {n_weeks} weeks | <strong>Channels:</strong> {n_media} media + {n_control} control</p>
@@ -2157,7 +2160,7 @@ def create_beautiful_dashboard():
         </div>
         
         <div class="insights">
-            <h3>🎯 Key Results</h3>
+            <h3> Key Results</h3>
             <div class="insight-item">
                 <strong>Config-Driven Success:</strong> All parameters loaded from configuration system for consistent, reproducible results.
             </div>
@@ -2175,7 +2178,7 @@ def create_beautiful_dashboard():
             </div>
         </div>
         
-        <div class="section-header">📊 Training & Performance Analysis</div>
+        <div class="section-header"> Training & Performance Analysis</div>
         
         <div class="plot-container">
             <div class="plot-title">Training Progress & Final Results</div>
@@ -2197,7 +2200,7 @@ def create_beautiful_dashboard():
             <iframe src="scaled_actual_vs_predicted_timeseries.html"></iframe>
         </div>
         
-        <div class="section-header">📈 Coefficient & Contribution Analysis</div>
+        <div class="section-header"> Coefficient & Contribution Analysis</div>
         
         <div class="plot-container">
             <div class="plot-title">Media Channel Coefficients Over Time</div>
@@ -2215,7 +2218,7 @@ def create_beautiful_dashboard():
             </div>
         </div>
         
-        <div class="section-header">🎯 Channel Effectiveness & ROI</div>
+        <div class="section-header"> Channel Effectiveness & ROI</div>
         
         <div class="plot-container">
             <div class="plot-title">Channel Effectiveness Analysis</div>
@@ -2233,7 +2236,7 @@ def create_beautiful_dashboard():
             </div>
         </div>
         
-        <div class="section-header">🔗 DAG & Causal Relationships</div>
+        <div class="section-header"> DAG & Causal Relationships</div>
         
         <div class="two-column">
             <div class="plot-container">
@@ -2246,17 +2249,17 @@ def create_beautiful_dashboard():
             </div>
         </div>
         
-        <div class="section-header">🎯 Holdout Validation Performance</div>
+        <div class="section-header"> Holdout Validation Performance</div>
         
         <div class="plot-container">
             <div class="plot-title">Holdout Performance: Actual vs Predicted</div>
             <iframe src="holdout_scatter.html" style="height: 500px;"></iframe>
         </div>
         
-        <div class="section-header">📈 Response Curves: Saturation Analysis</div>
+        <div class="section-header"> Response Curves: Saturation Analysis</div>
         
         <div class="insights">
-            <h3>📊 Response Curve Summary</h3>
+            <h3> Response Curve Summary</h3>
             <p>Hill equation curves fitted to national weekly aggregated data (impressions vs. contributions).</p>
             <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                 <tr style="background: #f0f0f0; font-weight: bold;">
@@ -2286,7 +2289,7 @@ def create_beautiful_dashboard():
         </div>
         
         <div class="insights">
-            <h3>📋 Technical Summary</h3>
+            <h3> Technical Summary</h3>
             <div class="insight-item">
                 <strong>Config System:</strong> All parameters loaded from configuration - hidden_dim: {config['hidden_dim']}, dropout: {config['dropout']}, epochs: {config['n_epochs']}
             </div>
@@ -2305,11 +2308,11 @@ def create_beautiful_dashboard():
         </div>
         
         <div style="text-align: center; margin-top: 30px; padding: 20px; background: white; border-radius: 10px;">
-            <h3>🚀 Beautiful MMM Dashboard with Unified Pipeline</h3>
+            <h3> Beautiful MMM Dashboard with Unified Pipeline</h3>
             <p><strong>Unified pipeline comprehensive analysis complete!</strong></p>
             <p><strong>Training Performance:</strong> Loss: {results['final_train_loss']:.1f} | RMSE: {final_rmse:,.0f} ({relative_rmse:.1f}%) | R²: {final_r2:.3f}</p>
             <p><strong>Holdout Performance:</strong> Loss: {results['final_holdout_loss']:.1f} | RMSE: {holdout_rmse:,.0f} ({holdout_relative_rmse:.1f}%) | R²: {holdout_r2:.3f} | Gap: {final_r2 - holdout_r2:.3f} ({((final_r2 - holdout_r2)/final_r2*100):.1f}%)</p>
-            <p><strong>Data Split:</strong> 85% Train ({int(n_weeks * 0.85)} weeks) | 15% Holdout ({n_weeks - int(n_weeks * 0.85)} weeks)</p>
+            <p><strong>Data Split:</strong> {int((1-holdout_ratio)*100)}% Train ({train_weeks_actual} weeks) | {int(holdout_ratio*100)}% Holdout ({holdout_weeks_actual} weeks)</p>
         </div>
     </body>
     </html>
@@ -2319,61 +2322,62 @@ def create_beautiful_dashboard():
     with open(dashboard_path, 'w') as f:
         f.write(master_html)
     
-    print(f"   ✅ Beautiful comprehensive dashboard created!")
-    print(f"   📁 Location: {dashboard_path}")
+    print(f"    Beautiful comprehensive dashboard created!")
+    print(f"    Location: {dashboard_path}")
     
     # 10. Display final results
-    print(f"\n🎉 BEAUTIFUL COMPREHENSIVE DASHBOARD COMPLETE!")
-    print(f"🔧 Config System: ✅ Used for all parameters")
-    print(f"🎨 Beautiful Visualizations: ✅ All {len(plots_created)} plots created")
-    print(f"🧠 Modular Training: ✅ train_model.py with SimpleGlobalScaler & RMSE optimization")
-    print(f"📊 Package Postprocessing: ✅ Enhanced analysis with matching visualizations")
+    print(f"\n BEAUTIFUL COMPREHENSIVE DASHBOARD COMPLETE!")
+    print(f" Config System:  Used for all parameters")
+    print(f" Beautiful Visualizations:  All {len(plots_created)} plots created")
+    print(f" Modular Training:  train_model.py with SimpleGlobalScaler & RMSE optimization")
+    print(f" Package Postprocessing:  Enhanced analysis with matching visualizations")
     
-    print(f"🏆 Training RMSE: {final_rmse:,.0f} visits ({relative_rmse:.1f}%)")
+    print(f" Training RMSE: {final_rmse:,.0f} visits ({relative_rmse:.1f}%)")
     if 'final_holdout_rmse' in results and results['final_holdout_rmse'] is not None:
         holdout_rmse = results['final_holdout_rmse']
         holdout_r2 = results.get('final_holdout_r2', 0.0)
         # Calculate relative percentage using holdout data mean
         holdout_relative = (holdout_rmse / y_holdout_orig.mean().item()) * 100 if 'y_holdout_orig' in locals() else 100.0
-        print(f"🧪 Holdout RMSE: {holdout_rmse:,.0f} visits ({holdout_relative:.1f}%)")
-        print(f"📈 Holdout R²: {holdout_r2:.3f}")
-    print(f"📈 Training R²: {final_r2:.3f}")
-    print(f"⚡ Training Best RMSE: {best_rmse:.4f} (log space)")
+        print(f" Holdout RMSE: {holdout_rmse:,.0f} visits ({holdout_relative:.1f}%)")
+        print(f" Holdout R²: {holdout_r2:.3f}")
+    print(f" Training R²: {final_r2:.3f}")
+    print(f" Training Best RMSE: {best_rmse:.4f} (log space)")
     
-    print(f"📁 Dashboard Location: {dashboard_path}")
+    print(f" Dashboard Location: {dashboard_path}")
     
     # Check if postprocessing was successful
     if 'postprocess_output_dir' in results:
-        print(f"📁 Package Analysis Location: {results['postprocess_output_dir']}")
-        print(f"🎨 Dual Visualization System: Dashboard + Package postprocessing both available!")
+        print(f" Package Analysis Location: {results['postprocess_output_dir']}")
+        print(f" Dual Visualization System: Dashboard + Package postprocessing both available!")
     
-    # Export first channel data to CSV (for analysis)
-    try:
-        # Use first channel (works for both anonymized and original data)
-        sem_idx = 0
-        channel_name = media_names[0]
-        sem_impressions = X_media[:, :, sem_idx]  # [regions, weeks]
-        sem_contributions = contrib_results['media'][:, :, sem_idx]  # [regions, weeks] in original scale
-        
-        # Create DataFrame
-        data_list = []
-        for region_idx in range(n_regions):
-            for week_idx in range(predictions_orig.shape[1]):
-                data_list.append({
-                    'region': region_idx + 1,
-                    'week': week_idx + 1,
-                    'impressions': float(sem_impressions[region_idx, week_idx]),
-                    'contributions': float(sem_contributions[region_idx, week_idx])
-                })
-        
-        df_sem = pd.DataFrame(data_list)
-        sem_csv_path = f'{channel_name.replace(" ", "_").lower()}_contributions.csv'
-        df_sem.to_csv(sem_csv_path, index=False)
-        print(f"\n📊 {channel_name} data exported to: {sem_csv_path}")
-        print(f"   Impressions range: [{df_sem['impressions'].min():,.0f}, {df_sem['impressions'].max():,.0f}]")
-        print(f"   Contributions range: [{df_sem['contributions'].min():.2f}, {df_sem['contributions'].max():.2f}]")
-    except Exception as e:
-        print(f"⚠️  Could not export channel data: {e}")
+    # Export first channel data to CSV (for analysis) - DISABLED
+    # Uncomment below if you need to export channel data for analysis
+    # try:
+    #     # Use first channel (works for both anonymized and original data)
+    #     sem_idx = 0
+    #     channel_name = media_names[0]
+    #     sem_impressions = X_media[:, :, sem_idx]  # [regions, weeks]
+    #     sem_contributions = contrib_results['media'][:, :, sem_idx]  # [regions, weeks] in original scale
+    #     
+    #     # Create DataFrame
+    #     data_list = []
+    #     for region_idx in range(n_regions):
+    #         for week_idx in range(predictions_orig.shape[1]):
+    #             data_list.append({
+    #                 'region': region_idx + 1,
+    #                 'week': week_idx + 1,
+    #                 'impressions': float(sem_impressions[region_idx, week_idx]),
+    #                 'contributions': float(sem_contributions[region_idx, week_idx])
+    #             })
+    #     
+    #     df_sem = pd.DataFrame(data_list)
+    #     sem_csv_path = f'{dashboard_dir}/{channel_name.replace(" ", "_").lower()}_contributions.csv'
+    #     df_sem.to_csv(sem_csv_path, index=False)
+    #     print(f"\n {channel_name} data exported to: {sem_csv_path}")
+    #     print(f"   Impressions range: [{df_sem['impressions'].min():,.0f}, {df_sem['impressions'].max():,.0f}]")
+    #     print(f"   Contributions range: [{df_sem['contributions'].min():.2f}, {df_sem['contributions'].max():.2f}]")
+    # except Exception as e:
+    #     print(f"  Could not export channel data: {e}")
     
     return {
         'rmse': final_rmse,
@@ -2390,4 +2394,22 @@ def create_beautiful_dashboard():
     }
 
 if __name__ == "__main__":
-    results = create_beautiful_dashboard() 
+    results = create_beautiful_dashboard()
+    
+    # Print clear completion message with full paths
+    print("\n" + "="*80)
+    print(" DASHBOARD GENERATION COMPLETE!")
+    print("="*80)
+    import os
+    dashboard_dir = os.path.abspath(results['config'].get('output_paths', {}).get('dashboard_dir', 'dashboard_outputs'))
+    
+    print(f"\n Dashboard Location:")
+    print(f"   {dashboard_dir}/")
+    print(f"\n Main Files:")
+    print(f"   - master_dashboard.html (open this in your browser)")
+    print(f"   - All individual plot HTML files")
+    print(f"   - CSV exports and analysis data")
+    print(f"\n Total plots created: {len(results['plots_created'])}")
+    print(f"\n To view the dashboard:")
+    print(f"   open {dashboard_dir}/master_dashboard.html")
+    print("="*80 + "\n") 

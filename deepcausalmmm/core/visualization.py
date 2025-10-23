@@ -13,6 +13,10 @@ import networkx as nx
 from typing import Dict, Any, List, Optional, Tuple
 import os
 
+import logging
+
+logger = logging.getLogger('deepcausalmmm')
+
 from deepcausalmmm.core.config import get_default_config
 
 
@@ -454,7 +458,7 @@ class VisualizationManager:
             )
             return True
         except Exception as e:
-            print(f"   ⚠️ Failed to save plot to {filepath}: {e}")
+            logger.warning(f"    Failed to save plot to {filepath}: {e}")
             return False
             
     def create_comprehensive_dashboard(self, results: Dict[str, Any],

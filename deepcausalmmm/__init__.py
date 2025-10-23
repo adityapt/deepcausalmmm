@@ -14,6 +14,25 @@ Main Components:
 - Configuration system for reproducible experiments
 """
 
+import logging
+import sys
+
+# Configure package-level logging
+def _setup_logging():
+    """Configure default logging for DeepCausalMMM."""
+    logger = logging.getLogger('deepcausalmmm')
+    logger.setLevel(logging.INFO)
+    
+    # Only add handler if none exists (avoid duplicates)
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter('%(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.propagate = False  # Don't propagate to root logger
+
+_setup_logging()
+
 try:
     from importlib.metadata import version
     __version__ = version("deepcausalmmm")

@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use DeepCausalMMM in your research, please cite it using the metadata below."
 title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
-version: "1.0.17"
-doi: 10.5281/zenodo.17274024
+version: "1.0.18"
+doi: 10.5281/zenodo.16934842
 authors:
   - family-names: Puttaparthi Tirumala
     given-names: Aditya
@@ -10,7 +10,7 @@ authors:
     email: puttaparthy.aditya@gmail.com
     affiliation: Independent Researcher
 license: MIT
-date-released: 2025-10-05
+date-released: 2025-10-22
 type: software
 url: https://github.com/adityapt/deepcausalmmm
 repository-code: https://github.com/adityapt/deepcausalmmm
@@ -31,8 +31,8 @@ abstract: |
   discovering causal relationships between marketing channels through Directed Acyclic 
   Graph (DAG) learning. The package implements Hill equation-based saturation curves 
   to model diminishing returns and optimize budget allocation. Key features include 
-  zero-hardcoding philosophy, multi-region modeling, robust statistical methods, 
-  comprehensive response curve analysis, and 14+ interactive visualizations.
+  data-driven design, multi-region modeling, robust statistical methods, 
+  comprehensive response curve analysis, and interactive visualizations.
 references:
   - type: article
     title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
@@ -49,8 +49,8 @@ preferred-citation:
     - family-names: Puttaparthi Tirumala
       given-names: Aditya
       orcid: https://orcid.org/0009-0008-9495-3932
-  version: "1.0.17"
-  doi: 10.5281/zenodo.17274024
+  version: "1.0.18"
+  doi: 10.5281/zenodo.16934842
   url: https://github.com/adityapt/deepcausalmmm
   year: 2025
   month: 10

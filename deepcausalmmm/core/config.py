@@ -157,10 +157,10 @@ def get_default_config() -> Dict[str, Any]:
         
         # Output directory configuration
         'output_paths': {
-            'dashboard_dir': 'dashboard_beautiful_comprehensive',  # Main dashboard directory
-            'results_dir': 'results',                             # Results directory
-            'plots_dir': 'plots',                                # Individual plots directory
-            'data_dir': 'data',                                  # Data output directory
+            'dashboard_dir': 'dashboard_outputs',  # Main dashboard directory
+            'results_dir': 'results',              # Results directory
+            'plots_dir': 'plots',                  # Individual plots directory
+            'data_dir': 'data',                    # Data output directory
         },
 
     }

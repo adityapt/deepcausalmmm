@@ -1,16 +1,18 @@
 # Release Notes: DeepCausalMMM v1.0.17
 
+> **Note:** This is a historical release. See [RELEASE_NOTES_1.0.18.md](RELEASE_NOTES_1.0.18.md) for the latest version.
+
 **Release Date:** October 5, 2025
 
-## 🎯 Major Feature: Response Curves & Saturation Analysis
+## Major Feature: Response Curves & Saturation Analysis
 
 This release introduces comprehensive non-linear response curve fitting capabilities, enabling marketers to understand saturation effects and optimize budget allocation across channels.
 
 ---
 
-## ✨ New Features
+## New Features
 
-### 📉 Response Curve Module (`postprocess/response_curves.py`)
+### Response Curve Module (`postprocess/response_curves.py`)
 
 Complete implementation of Hill equation-based saturation analysis:
 
@@ -43,7 +45,7 @@ print(f"Half-Saturation: {fitter.saturation:,.0f}")
 print(f"R²: {fitter.r_2:.3f}")
 ```
 
-### 📊 Dashboard Integration
+### Dashboard Integration
 
 Response curves now integrated into the comprehensive dashboard:
 
@@ -54,7 +56,7 @@ Response curves now integrated into the comprehensive dashboard:
 
 ---
 
-## 🔧 Enhancements
+## Enhancements
 
 ### Hill Transformation Improvements
 
@@ -98,7 +100,7 @@ y = x^a / (x^a + g^a)
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 ### README.md Updates
 
@@ -127,7 +129,7 @@ y = x^a / (x^a + g^a)
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### New Test Suite (`tests/unit/test_response_curves.py`)
 
@@ -152,11 +154,11 @@ Comprehensive test coverage with 12 test cases:
 - Parameter validation
 - Prediction accuracy
 
-**Results:** ✅ All 28 tests pass (12 new + 16 existing)
+**Results:** All 28 tests pass (12 new + 16 existing)
 
 ---
 
-## 🔄 Backward Compatibility
+## Backward Compatibility
 
 ### Maintained Compatibility
 
@@ -183,7 +185,7 @@ fitter.Datecol     # → fitter.date_col
 
 ---
 
-## 🐛 Bug Fixes
+## Bug Fixes
 
 ### Fixed Issues
 
@@ -195,7 +197,7 @@ fitter.Datecol     # → fitter.date_col
 
 ---
 
-## 📦 Package Updates
+## Package Updates
 
 ### Modified Files
 
@@ -225,7 +227,7 @@ fitter.Datecol     # → fitter.date_col
 
 ---
 
-## 🎯 Technical Details
+## Technical Details
 
 ### Hill Equation
 
@@ -269,7 +271,7 @@ component_orig = (component_log / total_log) × y_pred_orig
 
 ---
 
-## 📈 Performance
+## Performance
 
 ### Model Performance (Unchanged)
 
@@ -288,7 +290,7 @@ component_orig = (component_log / total_log) × y_pred_orig
 
 ---
 
-## 🚀 Migration Guide
+## Migration Guide
 
 ### Upgrading from v1.0.16
 
@@ -323,7 +325,7 @@ fitter.fit(
 
 ---
 
-## 🎓 Use Cases
+## Use Cases
 
 ### Budget Optimization
 
@@ -348,13 +350,13 @@ Inform decisions:
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Special thanks to the MMM community for feedback and testing that led to these improvements.
 
 ---
 
-## 📞 Support
+## Support
 
 - **Documentation**: [deepcausalmmm.readthedocs.io](https://deepcausalmmm.readthedocs.io/)
 - **Issues**: [GitHub Issues](https://github.com/adityapt/deepcausalmmm/issues)
@@ -362,4 +364,4 @@ Special thanks to the MMM community for feedback and testing that led to these i
 
 ---
 
-**DeepCausalMMM v1.0.17** - Now with comprehensive response curve analysis! 🚀📉
+**DeepCausalMMM v1.0.17** - Now with comprehensive response curve analysis!

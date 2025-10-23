@@ -13,6 +13,9 @@ from plotly.subplots import make_subplots
 import plotly.express as px
 import networkx as nx
 
+import logging
+logger = logging.getLogger('deepcausalmmm')
+
 from typing import Dict, List, Optional, Any, Tuple
 import os
 from datetime import datetime
@@ -69,7 +72,7 @@ class ComprehensiveAnalyzer:
         # Use pipeline's padding weeks if available, otherwise detect
         if self.pipeline is not None:
             self.burnin_weeks = self.pipeline.padding_weeks
-            print(f"   Using unified pipeline burn-in weeks: {self.burnin_weeks}")
+            logger.info(f"   Using unified pipeline burn-in weeks: {self.burnin_weeks}")
         else:
             # Fallback to legacy detection
             self.burnin_weeks = self._detect_burnin_weeks()
@@ -84,11 +87,11 @@ class ComprehensiveAnalyzer:
         # Store analysis timestamp
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        print(f"🔥 ComprehensiveAnalyzer initialized (Modernized):")
-        print(f"   Auto burn-in detection: {auto_detect_burnin}")
-        print(f"   Detected/Manual burn-in weeks: {self.burnin_weeks}")
-        print(f"   Output directory: {self.output_dir}")
-        print(f"   Using config-driven visualization parameters")
+        logger.info(f" ComprehensiveAnalyzer initialized (Modernized):")
+        logger.info(f"   Auto burn-in detection: {auto_detect_burnin}")
+        logger.info(f"   Detected/Manual burn-in weeks: {self.burnin_weeks}")
+        logger.info(f"   Output directory: {self.output_dir}")
+        logger.info(f"   Using config-driven visualization parameters")
     
     def _detect_burnin_weeks(self) -> int:
         """
@@ -98,7 +101,7 @@ class ComprehensiveAnalyzer:
             Number of burn-in weeks to remove from analysis
         """
         if self.manual_burnin_weeks is not None:
-            print(f"   Using manual burn-in weeks: {self.manual_burnin_weeks}")
+            logger.info(f"   Using manual burn-in weeks: {self.manual_burnin_weeks}")
             return self.manual_burnin_weeks
         
         if not self.auto_detect_burnin:
@@ -110,7 +113,7 @@ class ComprehensiveAnalyzer:
         # Check if model has burn_in_weeks attribute
         if hasattr(self.model, 'burn_in_weeks'):
             burnin_weeks = self.model.burn_in_weeks
-            print(f"   Detected burn-in from model.burn_in_weeks: {burnin_weeks}")
+            logger.info(f"   Detected burn-in from model.burn_in_weeks: {burnin_weeks}")
         
         # Check if model outputs contain burn-in info
         elif hasattr(self.model, 'forward'):
@@ -126,14 +129,14 @@ class ComprehensiveAnalyzer:
                     
                     if 'burn_in_weeks' in outputs:
                         burnin_weeks = outputs['burn_in_weeks']
-                        print(f"   Detected burn-in from model outputs: {burnin_weeks}")
+                        logger.info(f"   Detected burn-in from model outputs: {burnin_weeks}")
             except Exception as e:
-                print(f"   Could not detect burn-in from model forward pass: {e}")
+                logger.info(f"   Could not detect burn-in from model forward pass: {e}")
         
         # Default heuristic: assume 4 weeks if GRU is present
         if burnin_weeks == 0 and hasattr(self.model, 'gru'):
             burnin_weeks = 4
-            print(f"   Using default GRU burn-in: {burnin_weeks} weeks")
+            logger.info(f"   Using default GRU burn-in: {burnin_weeks} weeks")
         
         return burnin_weeks
     
@@ -201,14 +204,14 @@ class ComprehensiveAnalyzer:
                 # Remove burn-in from time dimension (assumed to be dim=1)
                 if value.shape[1] > self.burnin_weeks:
                     cleaned_outputs[key] = self._remove_burnin_from_tensor(value)
-                    print(f"   Removed {self.burnin_weeks} burn-in weeks from {key}: {value.shape} -> {cleaned_outputs[key].shape}")
+                    logger.info(f"   Removed {self.burnin_weeks} burn-in weeks from {key}: {value.shape} -> {cleaned_outputs[key].shape}")
                 else:
                     cleaned_outputs[key] = value
             elif isinstance(value, np.ndarray) and value.ndim >= 2:
                 # Remove burn-in from time dimension
                 if value.shape[1] > self.burnin_weeks:
                     cleaned_outputs[key] = self._remove_burnin_from_array(value)
-                    print(f"   Removed {self.burnin_weeks} burn-in weeks from {key}: {value.shape} -> {cleaned_outputs[key].shape}")
+                    logger.info(f"   Removed {self.burnin_weeks} burn-in weeks from {key}: {value.shape} -> {cleaned_outputs[key].shape}")
                 else:
                     cleaned_outputs[key] = value
             else:
@@ -232,7 +235,7 @@ class ComprehensiveAnalyzer:
             return self.pipeline.scaler.inverse_transform_target(y_scaled)
         
         # Fallback: return as-is (should not happen in modern usage)
-        print("⚠️  Warning: No pipeline available for inverse transformation")
+        logger.warning("  Warning: No pipeline available for inverse transformation")
         return y_scaled
     
     def inverse_transform_contributions(
@@ -280,8 +283,8 @@ class ComprehensiveAnalyzer:
         if self.pipeline is None:
             raise ValueError("UnifiedDataPipeline is required for this method")
             
-        print(f"\n📊 UNIFIED PIPELINE COMPREHENSIVE ANALYSIS")
-        print(f"=" * 55)
+        logger.info(f"\n UNIFIED PIPELINE COMPREHENSIVE ANALYSIS")
+        logger.info(f"=" * 55)
         
         # 1. Get predictions and contributions using unified pipeline
         results = self.pipeline.predict_and_postprocess(
@@ -298,9 +301,9 @@ class ComprehensiveAnalyzer:
         media_contributions = results['media_contributions']
         control_contributions = results['control_contributions']
         
-        print(f"   ✅ Predictions shape: {predictions.shape}")
-        print(f"   📺 Media contributions shape: {media_contributions.shape}")
-        print(f"   🎛️ Control contributions shape: {control_contributions.shape}")
+        logger.info(f"    Predictions shape: {predictions.shape}")
+        logger.info(f"    Media contributions shape: {media_contributions.shape}")
+        logger.info(f"    Control contributions shape: {control_contributions.shape}")
         
         # 3. Calculate comprehensive metrics
         analysis_results = {
@@ -321,7 +324,7 @@ class ComprehensiveAnalyzer:
         
         # 5. Create visualizations if requested
         if create_plots:
-            print(f"\n🎨 Creating unified pipeline visualizations...")
+            logger.info(f"\n Creating unified pipeline visualizations...")
             
             # Channel effectiveness analysis
             channel_analysis = self._analyze_channel_effectiveness_unified(
@@ -339,10 +342,10 @@ class ComprehensiveAnalyzer:
                     media_contributions, control_contributions
                 )
         
-        print(f"\n✅ Unified pipeline analysis complete!")
-        print(f"   📈 R²: {analysis_results['unified_r2']:.3f}")
-        print(f"   📊 RMSE: {analysis_results['unified_rmse']:.0f}")
-        print(f"   💯 MAE: {analysis_results['unified_mae']:.0f}")
+        logger.info(f"\n Unified pipeline analysis complete!")
+        logger.info(f"    R²: {analysis_results['unified_r2']:.3f}")
+        logger.info(f"    RMSE: {analysis_results['unified_rmse']:.0f}")
+        logger.info(f"    MAE: {analysis_results['unified_mae']:.0f}")
         
         return analysis_results
     
@@ -434,7 +437,7 @@ class ComprehensiveAnalyzer:
         # Save plot
         output_path = os.path.join(self.output_dir, f'unified_actual_vs_predicted_{self.timestamp}.html')
         fig.write_html(output_path)
-        print(f"   ✅ Saved: {output_path}")
+        logger.info(f"    Saved: {output_path}")
     
     def _create_unified_contribution_plots(
         self,
@@ -477,7 +480,7 @@ class ComprehensiveAnalyzer:
         # Save plot
         output_path = os.path.join(self.output_dir, f'unified_channel_effectiveness_{self.timestamp}.html')
         fig.write_html(output_path)
-        print(f"   ✅ Saved: {output_path}")
+        logger.info(f"    Saved: {output_path}")
     
     def analyze_comprehensive(
         self,
@@ -501,15 +504,15 @@ class ComprehensiveAnalyzer:
         Returns:
             Dictionary containing all analysis results (burn-in removed)
         """
-        print("=== COMPREHENSIVE DEEPCAUSALMMM ANALYSIS ===")
-        print(f"Input data: {X_media.shape[0]} regions × {X_media.shape[1]} weeks")
+        logger.info("=== COMPREHENSIVE DEEPCAUSALMMM ANALYSIS ===")
+        logger.info(f"Input data: {X_media.shape[0]} regions × {X_media.shape[1]} weeks")
         
         if self.burnin_weeks > 0:
-            print(f"🔥 Burn-in removal: {self.burnin_weeks} weeks will be removed from analysis")
+            logger.info(f" Burn-in removal: {self.burnin_weeks} weeks will be removed from analysis")
         
-        print(f"Media channels: {len(self.media_cols)}")
-        print(f"Control variables: {len(self.control_cols)}")
-        print()
+        logger.info(f"Media channels: {len(self.media_cols)}")
+        logger.info(f"Control variables: {len(self.control_cols)}")
+        logger.info()
         
         # Convert to tensors
         X_media_tensor = torch.FloatTensor(X_media)
@@ -517,7 +520,7 @@ class ComprehensiveAnalyzer:
         region_tensor = torch.LongTensor(region_ids)
         
         # Generate predictions
-        print("Generating model predictions...")
+        logger.info("Generating model predictions...")
         self.model.eval()
         with torch.no_grad():
             y_pred, coeffs, media_contrib, outputs = self.model(
@@ -526,7 +529,7 @@ class ComprehensiveAnalyzer:
             
             # Clean model outputs (remove burn-in)
             if self.burnin_weeks > 0:
-                print(f"Removing {self.burnin_weeks} burn-in weeks from model outputs...")
+                logger.info(f"Removing {self.burnin_weeks} burn-in weeks from model outputs...")
                 outputs = self._clean_model_outputs(outputs)
                 
                 # Also remove burn-in from main outputs
@@ -534,9 +537,9 @@ class ComprehensiveAnalyzer:
                 coeffs = self._remove_burnin_from_tensor(coeffs)
                 media_contrib = self._remove_burnin_from_tensor(media_contrib)
                 
-                print(f"   Cleaned predictions: {y_pred.shape}")
-                print(f"   Cleaned coefficients: {coeffs.shape}")
-                print(f"   Cleaned contributions: {media_contrib.shape}")
+                logger.info(f"   Cleaned predictions: {y_pred.shape}")
+                logger.info(f"   Cleaned coefficients: {coeffs.shape}")
+                logger.info(f"   Cleaned contributions: {media_contrib.shape}")
             
             # Convert to numpy
             y_pred_scaled = y_pred.cpu().numpy()
@@ -554,18 +557,18 @@ class ComprehensiveAnalyzer:
         
         # Remove burn-in from input data for final analysis
         if self.burnin_weeks > 0:
-            print(f"Removing {self.burnin_weeks} burn-in weeks from input data...")
+            logger.info(f"Removing {self.burnin_weeks} burn-in weeks from input data...")
             y_true_clean = self._remove_burnin_from_array(y_true)
             X_media_clean = self._remove_burnin_from_array(X_media)
             X_control_clean = self._remove_burnin_from_array(X_control)
-            print(f"   Cleaned input shapes: y_true={y_true_clean.shape}, X_media={X_media_clean.shape}")
+            logger.info(f"   Cleaned input shapes: y_true={y_true_clean.shape}, X_media={X_media_clean.shape}")
         else:
             y_true_clean = y_true
             X_media_clean = X_media
             X_control_clean = X_control
         
         # Apply inverse transformations
-        print("Applying inverse transformations...")
+        logger.info("Applying inverse transformations...")
         y_true_original = self.inverse_transform_target(y_true_clean)
         y_pred_original = self.inverse_transform_target(y_pred_scaled)
         
@@ -601,7 +604,7 @@ class ComprehensiveAnalyzer:
             'timestamp': self.timestamp
         }
         
-        print("Creating comprehensive visualizations...")
+        logger.info("Creating comprehensive visualizations...")
         
         # 1. Media Coefficients Over Time
         self._create_media_coefficients_plot(coeffs_np, weeks)
@@ -631,18 +634,18 @@ class ComprehensiveAnalyzer:
         # 8. Performance Summary Report
         self._create_performance_report(results)
         
-        print(f"\n✅ Analysis complete! Results saved to: {self.output_dir}")
-        print(f"📊 All visualizations use ORIGINAL SCALE data after inverse transformation")
+        logger.info(f"\n Analysis complete! Results saved to: {self.output_dir}")
+        logger.info(f" All visualizations use ORIGINAL SCALE data after inverse transformation")
         
         if self.burnin_weeks > 0:
-            print(f"🔥 Burn-in removal applied: {self.burnin_weeks} weeks removed from all outputs")
-            print(f"📈 Final analysis dimensions: {len(weeks)} weeks")
+            logger.info(f" Burn-in removal applied: {self.burnin_weeks} weeks removed from all outputs")
+            logger.info(f" Final analysis dimensions: {len(weeks)} weeks")
         
         return results
     
     def _create_media_coefficients_plot(self, coeffs: np.ndarray, weeks: List[int]):
         """Create media coefficients over time visualization."""
-        print("  Creating media coefficients over time...")
+        logger.info("  Creating media coefficients over time...")
         
         fig = make_subplots(
             rows=4, cols=4,
@@ -674,7 +677,7 @@ class ComprehensiveAnalyzer:
             )
         
         fig.update_layout(
-            title='📊 Media Coefficients Over Time (All Regions Average)',
+            title=' Media Coefficients Over Time (All Regions Average)',
             height=900,
             showlegend=False
         )
@@ -687,7 +690,7 @@ class ComprehensiveAnalyzer:
     
     def _create_control_coefficients_plot(self, ctrl_coeffs: np.ndarray, weeks: List[int]):
         """Create control coefficients over time visualization."""
-        print("  Creating control coefficients over time...")
+        logger.info("  Creating control coefficients over time...")
         
         fig = make_subplots(
             rows=2, cols=4,
@@ -719,7 +722,7 @@ class ComprehensiveAnalyzer:
             )
         
         fig.update_layout(
-            title='🎛️ Control Variable Coefficients Over Time (All Regions Average)',
+            title=' Control Variable Coefficients Over Time (All Regions Average)',
             height=600,
             showlegend=False
         )
@@ -738,7 +741,7 @@ class ComprehensiveAnalyzer:
         weeks: List[int]
     ):
         """Create beautiful contributions over time visualization with multiple views (original scale)."""
-        print("  Creating beautiful contributions over time (original scale)...")
+        logger.info("  Creating beautiful contributions over time (original scale)...")
         
         # Sum across regions and channels/variables
         media_total = media_contrib.sum(axis=(0, 2))
@@ -785,7 +788,7 @@ class ComprehensiveAnalyzer:
         ))
         
         fig_lines.update_layout(
-            title='💰 Total Contributions Over Time (Original Scale - All Regions Combined)',
+            title=' Total Contributions Over Time (Original Scale - All Regions Combined)',
             xaxis_title='Week',
             yaxis_title='Contribution (Original Scale)',
             height=600,
@@ -828,7 +831,7 @@ class ComprehensiveAnalyzer:
         ))
         
         fig_stacked.update_layout(
-            title='📊 Contributions Stacked Over Time (Original Scale)',
+            title=' Contributions Stacked Over Time (Original Scale)',
             xaxis_title='Week',
             yaxis_title='Cumulative Contribution (Original Scale)',
             height=600,
@@ -847,7 +850,7 @@ class ComprehensiveAnalyzer:
         weeks: List[int]
     ):
         """Create actual vs predicted visualization (original scale)."""
-        print("  Creating actual vs predicted (original scale)...")
+        logger.info("  Creating actual vs predicted (original scale)...")
         
         # Sum across regions for each week
         actual_total = y_true.sum(axis=0)
@@ -915,7 +918,7 @@ class ComprehensiveAnalyzer:
         r2 = 1 - (ss_res / ss_tot)
         
         fig.update_layout(
-            title=f'📈 Actual vs Predicted (Original Scale) - R² = {r2:.4f}',
+            title=f' Actual vs Predicted (Original Scale) - R² = {r2:.4f}',
             height=900,
             showlegend=True
         )
@@ -930,7 +933,7 @@ class ComprehensiveAnalyzer:
     
     def _create_individual_channel_analysis(self, media_contrib: np.ndarray, weeks: List[int]):
         """Create comprehensive individual channel analysis with beautiful visualizations (original scale)."""
-        print("  Creating beautiful individual channel analysis (original scale)...")
+        logger.info("  Creating beautiful individual channel analysis (original scale)...")
         
         # Calculate channel data
         channel_data = []
@@ -979,7 +982,7 @@ class ComprehensiveAnalyzer:
             )
         
         fig_channels.update_layout(
-            title='📊 Individual Channel Contributions Over Time (Original Scale)',
+            title=' Individual Channel Contributions Over Time (Original Scale)',
             height=900,
             showlegend=False
         )
@@ -1024,7 +1027,7 @@ class ComprehensiveAnalyzer:
         
         fig_effectiveness.update_xaxes(tickangle=-45)
         fig_effectiveness.update_layout(
-            title='🏆 Channel Effectiveness Analysis (Original Scale)',
+            title=' Channel Effectiveness Analysis (Original Scale)',
             height=600,
             showlegend=False
         )
@@ -1054,7 +1057,7 @@ class ComprehensiveAnalyzer:
         )
         
         fig_pie.update_layout(
-            title='🥧 Channel Contribution Share (%) - Original Scale',
+            title=' Channel Contribution Share (%) - Original Scale',
             height=600,
             showlegend=True
         )
@@ -1080,7 +1083,7 @@ class ComprehensiveAnalyzer:
             )
         
         fig_lines.update_layout(
-            title='📈 Individual Channel Contributions Over Time (Original Scale)',
+            title=' Individual Channel Contributions Over Time (Original Scale)',
             xaxis_title='Week',
             yaxis_title='Contribution (Original Scale)',
             height=600,
@@ -1100,7 +1103,7 @@ class ComprehensiveAnalyzer:
         baseline: np.ndarray
     ):
         """Create proper waterfall chart using go.Waterfall like the dashboard."""
-        print("  Creating proper waterfall chart (original scale)...")
+        logger.info("  Creating proper waterfall chart (original scale)...")
         
         # Calculate average contributions
         baseline_avg = baseline.mean()
@@ -1145,7 +1148,7 @@ class ComprehensiveAnalyzer:
         ))
         
         fig.update_layout(
-            title='💰 Waterfall Chart: Marketing + Control + Baseline Contributions (Original Scale)',
+            title=' Waterfall Chart: Marketing + Control + Baseline Contributions (Original Scale)',
             xaxis_title='Components',
             yaxis_title='Average Contribution (Original Scale)',
             height=600,
@@ -1156,11 +1159,11 @@ class ComprehensiveAnalyzer:
         waterfall_filename = f"{self.output_dir}/waterfall_chart_{self.timestamp}.html"
         fig.write_html(waterfall_filename)
         
-        print(f"    Proper waterfall chart saved with {len(self.media_cols)} media + {len(self.control_cols)} control components")
+        logger.info(f"    Proper waterfall chart saved with {len(self.media_cols)} media + {len(self.control_cols)} control components")
     
     def _create_dag_visualization(self):
         """Create beautiful DAG structure visualization with network and heatmap views."""
-        print("  Creating beautiful DAG structure visualization...")
+        logger.info("  Creating beautiful DAG structure visualization...")
         
         # Get adjacency matrix from model or create synthetic for demo
         try:
@@ -1174,14 +1177,14 @@ class ComprehensiveAnalyzer:
                     adj_matrix = np.random.uniform(0.1, 0.8, (n_media, n_media))
                     adj_matrix = adj_matrix * (adj_matrix > 0.3)
                     np.fill_diagonal(adj_matrix, 0)
-                    print("    Using synthetic DAG for visualization (model doesn't have DAG components)")
+                    logger.info("    Using synthetic DAG for visualization (model doesn't have DAG components)")
         except Exception as e:
             # Fallback to synthetic
             n_media = len(self.media_cols)
             adj_matrix = np.random.uniform(0.1, 0.8, (n_media, n_media))
             adj_matrix = adj_matrix * (adj_matrix > 0.3)
             np.fill_diagonal(adj_matrix, 0)
-            print(f"    Using synthetic DAG for visualization (error: {e})")
+            logger.info(f"    Using synthetic DAG for visualization (error: {e})")
         
         # Clean channel names for display
         clean_names = []
@@ -1197,7 +1200,7 @@ class ComprehensiveAnalyzer:
     
     def _create_dag_network_plot(self, adj_matrix: np.ndarray, channel_names: List[str]):
         """Create beautiful DAG network plot."""
-        print("    Creating DAG network plot...")
+        logger.info("    Creating DAG network plot...")
         
         # Create directed graph
         G = nx.DiGraph()
@@ -1260,7 +1263,7 @@ class ComprehensiveAnalyzer:
         ))
         
         fig.update_layout(
-            title=f'🔗 DAG Network: Channel Interaction Relationships<br>({len(G.edges())} significant connections)',
+            title=f' DAG Network: Channel Interaction Relationships<br>({len(G.edges())} significant connections)',
             showlegend=False,
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -1272,11 +1275,11 @@ class ComprehensiveAnalyzer:
         fig.write_html(network_filename)
         # fig.show()  # Removed to prevent browser popup
         
-        print(f"    DAG network saved: {len(G.edges())} edges")
+        logger.info(f"    DAG network saved: {len(G.edges())} edges")
     
     def _create_dag_heatmap_plot(self, adj_matrix: np.ndarray, channel_names: List[str]):
         """Create beautiful DAG adjacency matrix heatmap."""
-        print("    Creating DAG heatmap plot...")
+        logger.info("    Creating DAG heatmap plot...")
         
         fig = go.Figure(data=go.Heatmap(
             z=adj_matrix,
@@ -1289,7 +1292,7 @@ class ComprehensiveAnalyzer:
         ))
         
         fig.update_layout(
-            title='🔥 DAG Adjacency Matrix: Channel Influence Strength',
+            title=' DAG Adjacency Matrix: Channel Influence Strength',
             xaxis_title='Influenced Channel',
             yaxis_title='Influencing Channel',
             height=600,
@@ -1301,11 +1304,11 @@ class ComprehensiveAnalyzer:
         fig.write_html(heatmap_filename)
         # fig.show()  # Removed to prevent browser popup
         
-        print(f"    DAG heatmap saved with {len(channel_names)} channels")
+        logger.info(f"    DAG heatmap saved with {len(channel_names)} channels")
     
     def _create_performance_report(self, results: Dict[str, Any]):
         """Create comprehensive performance report."""
-        print("  Creating performance report...")
+        logger.info("  Creating performance report...")
         
         # Calculate key metrics
         y_true = results['y_true_original']
@@ -1367,13 +1370,13 @@ All visualizations use ORIGINAL SCALE data after proper inverse transformation.
         with open(filename, 'w') as f:
             f.write(report)
         
-        print(f"    Performance report saved: {filename}")
+        logger.info(f"    Performance report saved: {filename}")
         
-        # Print key metrics
-        print(f"\n📊 KEY PERFORMANCE METRICS (Original Scale):")
-        print(f"   R²: {r2:.4f}")
-        print(f"   RMSE: {rmse:.2f}")
-        print(f"   MAE: {mae:.2f}")
+        # logger.info key metrics
+        logger.info(f"\n KEY PERFORMANCE METRICS (Original Scale):")
+        logger.info(f"   R²: {r2:.4f}")
+        logger.info(f"   RMSE: {rmse:.2f}")
+        logger.info(f"   MAE: {mae:.2f}")
 
 
 # Removed legacy create_scaling_params function - use modern UnifiedDataPipeline instead 
