@@ -1,8 +1,8 @@
-# Contributing to DeepCausalMMM 🤝
+# Contributing to DeepCausalMMM
 
 Thank you for your interest in contributing to DeepCausalMMM! This document provides guidelines for contributing to our advanced Media Mix Modeling package.
 
-## 🏆 Project Philosophy
+## Project Philosophy
 
 ### **Zero Hardcoding Principle**
 - **All parameters must be configurable** via `config.py`
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to DeepCausalMMM! This document prov
 - **Error handling** with informative messages
 - **Modular design** with clear separation of concerns
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Development Setup
 
@@ -47,7 +47,7 @@ pip install -e .[dev]
 
 4. **Verify installation**
 ```bash
-python -c "from deepcausalmmm import DeepCausalMMM, get_device; print('✅ Package installed successfully!')"
+python -c "from deepcausalmmm import DeepCausalMMM, get_device; print(' Package installed successfully!')"
 ```
 
 5. **Run tests to ensure setup**
@@ -55,7 +55,7 @@ python -c "from deepcausalmmm import DeepCausalMMM, get_device; print('✅ Packa
 python -m pytest tests/ -v
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 deepcausalmmm/                      # Project root
@@ -74,10 +74,10 @@ deepcausalmmm/                      # Project root
 │   ├── cli.py                      # Command-line interface
 │   ├── exceptions.py               # Custom exception classes
 │   │
-│   ├── core/                       # ⚠️ CRITICAL: Core model components
+│   ├── core/                       #  CRITICAL: Core model components
 │   │   ├── __init__.py            # Core module initialization
-│   │   ├── config.py              # ⚠️ CRITICAL: All configurations
-│   │   ├── unified_model.py       # ⚠️ CRITICAL: Main model architecture
+│   │   ├── config.py              #  CRITICAL: All configurations
+│   │   ├── unified_model.py       #  CRITICAL: Main model architecture
 │   │   ├── trainer.py             # ModelTrainer class for training
 │   │   ├── data.py                # UnifiedDataPipeline for data processing
 │   │   ├── scaling.py             # SimpleGlobalScaler for data normalization
@@ -148,7 +148,7 @@ deepcausalmmm/                      # Project root
 
 ### **1. Configuration Management**
 
-**✅ DO:**
+** DO:**
 ```python
 # In unified_model.py
 def __init__(self, config: Dict[str, Any]):
@@ -157,12 +157,12 @@ def __init__(self, config: Dict[str, Any]):
     self.gru_layers = config['gru_layers']
 ```
 
-**❌ DON'T:**
+** DON'T:**
 ```python
 # NEVER hardcode values
 def __init__(self):
-    self.hidden_dim = 320  # ❌ HARDCODED
-    self.dropout = 0.08    # ❌ HARDCODED
+    self.hidden_dim = 320  #  HARDCODED
+    self.dropout = 0.08    #  HARDCODED
 ```
 
 ### **2. Model Architecture Changes**
@@ -216,12 +216,12 @@ def test_focal_loss_calculation():
 - **Seasonality**: Min-Max scaling per region (0-1)
 - **Target variable**: Log1p transformation
 
-**✅ DO:**
+** DO:**
 - Use `UnifiedDataPipeline` for all data processing
 - Ensure consistent train/holdout transformations
 - Document scaling choices with business justification
 
-**❌ DON'T:**
+** DON'T:**
 - Apply different scaling to train/holdout
 - Use hardcoded scaling parameters
 - Skip data validation steps
@@ -283,7 +283,7 @@ def calculate_contributions(
     """
 ```
 
-## 🧪 Performance Standards
+##  Performance Standards
 
 ### **Benchmark Requirements**
 
@@ -319,7 +319,7 @@ def test_model_performance_regression():
     assert results['holdout_rmse'] <= 400000
 ```
 
-## 🔄 Pull Request Process
+##  Pull Request Process
 
 ### **1. Pre-submission Checklist**
 - [ ] **Code follows zero-hardcoding principle**
@@ -332,30 +332,30 @@ def test_model_performance_regression():
 
 ### **2. PR Description Template**
 ```markdown
-## 🎯 Purpose
+##  Purpose
 Brief description of what this PR accomplishes.
 
-## 🔧 Changes Made
+##  Changes Made
 - List of specific changes
 - New features added
 - Bug fixes included
 
-## 📊 Performance Impact
+##  Performance Impact
 - Benchmark results before/after
 - Any performance changes documented
 - Justification for performance changes
 
-## 🧪 Testing
+##  Testing
 - Tests added/modified
 - Test coverage maintained
 - Performance regression tests included
 
-## 📚 Documentation
+##  Documentation
 - README updated if needed
 - Docstrings added/updated
 - Examples provided for new features
 
-## ⚠️ Breaking Changes
+##  Breaking Changes
 - Any breaking changes listed
 - Migration guide provided if needed
 ```
@@ -367,57 +367,57 @@ Brief description of what this PR accomplishes.
 4. **Documentation review** for clarity and completeness
 5. **Final approval** and merge
 
-## 🐛 Bug Reports
+##  Bug Reports
 
 ### **Issue Template**
 ```markdown
-## 🐛 Bug Description
+##  Bug Description
 Clear description of the bug.
 
-## 🔄 Steps to Reproduce
+##  Steps to Reproduce
 1. Step 1
 2. Step 2
 3. Step 3
 
-## 📊 Expected Behavior
+##  Expected Behavior
 What should happen.
 
-## 📊 Actual Behavior  
+##  Actual Behavior  
 What actually happens.
 
-## 🔧 Environment
+##  Environment
 - Python version:
 - PyTorch version:
 - Operating System:
 - DeepCausalMMM version:
 
-## 📋 Additional Context
+##  Additional Context
 - Error messages
 - Stack traces
 - Sample data (if applicable)
 ```
 
-## 💡 Feature Requests
+##  Feature Requests
 
 ### **Enhancement Template**
 ```markdown
-## 🎯 Feature Description
+##  Feature Description
 Clear description of the proposed feature.
 
-## 🔧 Use Case
+##  Use Case
 Why is this feature needed? What problem does it solve?
 
-## 💭 Proposed Implementation
+##  Proposed Implementation
 High-level approach to implementing the feature.
 
-## 📊 Performance Considerations
+##  Performance Considerations
 Any potential impact on model performance.
 
-## 🔗 Related Issues
+##  Related Issues
 Links to related issues or discussions.
 ```
 
-## 🏷️ Code Style
+##  Code Style
 
 ### **Python Style Guidelines**
 - **PEP 8** compliance with 100-character line limit
@@ -449,14 +449,14 @@ from deepcausalmmm.core.config import get_default_config
 from deepcausalmmm.utils.device import get_device
 ```
 
-## 🎉 Recognition
+##  Recognition
 
 Contributors will be recognized in:
 - **CHANGELOG.md** for each release
 - **README.md** contributors section
 - **GitHub releases** with contributor highlights
 
-## 🤝 Community
+##  Community
 
 - **Be respectful** and constructive in discussions
 - **Help others** learn and contribute
@@ -465,4 +465,4 @@ Contributors will be recognized in:
 
 ---
 
-Thank you for contributing to DeepCausalMMM! Together we're building the future of Marketing Mix Modeling 🚀
+Thank you for contributing to DeepCausalMMM! Together we're building the future of Marketing Mix Modeling 
