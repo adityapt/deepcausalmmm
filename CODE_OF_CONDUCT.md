@@ -10,21 +10,21 @@ We pledge to act and interact in ways that contribute to an open, welcoming, div
 
 Examples of behavior that contributes to a positive environment for our community include:
 
-### 🤝 Professional Collaboration
+###  Professional Collaboration
 * Demonstrating empathy and kindness toward other people
 * Being respectful of differing opinions, viewpoints, and experiences
 * Giving and gracefully accepting constructive feedback
 * Accepting responsibility and apologizing to those affected by our mistakes, and learning from the experience
 * Focusing on what is best not just for us as individuals, but for the overall community
 
-### 📊 Academic and Technical Integrity
+###  Academic and Technical Integrity
 * Sharing knowledge and resources openly while respecting intellectual property
 * Providing proper attribution for ideas, code, and research contributions
 * Being honest about limitations and assumptions in marketing models and causal analyses
 * Encouraging rigorous peer review and scientific discussion
 * Respecting data privacy and marketing data sensitivity
 
-### 🌍 Inclusive Community Building
+###  Inclusive Community Building
 * Using welcoming and inclusive language
 * Encouraging participation from contributors with diverse backgrounds and skill levels
 * Supporting newcomers to marketing mix modeling and causal inference
@@ -35,20 +35,20 @@ Examples of behavior that contributes to a positive environment for our communit
 
 Examples of unacceptable behavior include:
 
-### 🚫 Harassment and Discrimination
+###  Harassment and Discrimination
 * The use of sexualized language or imagery, and sexual attention or advances of any kind
 * Trolling, insulting or derogatory comments, and personal or political attacks
 * Public or private harassment
 * Publishing others' private information, such as a physical or email address, without their explicit permission
 
-### 🚫 Professional Misconduct
+###  Professional Misconduct
 * Deliberately sharing misleading or incorrect information about modeling techniques
 * Plagiarizing code, research, or documentation without proper attribution
 * Sharing proprietary or confidential marketing data without authorization
 * Sabotaging others' work or contributions
 * Other conduct which could reasonably be considered inappropriate in a professional setting
 
-### 🚫 Technical Misconduct
+###  Technical Misconduct
 * Submitting code known to contain security vulnerabilities
 * Deliberately introducing bugs or malicious code
 * Violating data privacy regulations or ethical guidelines
@@ -58,13 +58,13 @@ Examples of unacceptable behavior include:
 
 Given the sensitive nature of marketing mix modeling, community members must:
 
-### 📈 Data Privacy
+###  Data Privacy
 * Never share actual marketing spend, revenue, or performance data
 * Use only synthetic or anonymized data in examples and discussions
 * Respect proprietary modeling techniques and competitive information
 * Follow applicable data privacy regulations (GDPR, CCPA, etc.)
 
-### 🔬 Scientific Integrity
+###  Scientific Integrity
 * Clearly document model assumptions and limitations
 * Avoid overstating causal claims or model capabilities
 * Encourage replication and validation of results
@@ -149,25 +149,25 @@ If you believe you have been unfairly accused or sanctioned, you may appeal by:
 
 ## Community Guidelines for Specific Contexts
 
-### 🧮 Code Reviews
+###  Code Reviews
 * Focus on the code, not the person
 * Provide constructive, specific feedback
 * Acknowledge good practices and improvements
 * Be patient with newcomers to PyTorch or causal inference
 
-### 📚 Documentation and Tutorials
+###  Documentation and Tutorials
 * Use inclusive language and examples
 * Provide clear explanations suitable for different skill levels
 * Include warnings about marketing data privacy
 * Acknowledge limitations and assumptions
 
-### 🎯 Issue Discussions
+###  Issue Discussions
 * Stay on topic and provide relevant information
 * Be respectful when disagreeing with approaches
 * Help newcomers understand complex concepts
 * Avoid off-topic discussions about competitors or proprietary methods
 
-### 🚀 Research Collaborations
+###  Research Collaborations
 * Respect intellectual property and attribution
 * Be transparent about funding sources and conflicts of interest
 * Encourage open science practices when possible
@@ -200,6 +200,6 @@ If you have questions about this Code of Conduct or suggestions for improvement,
 
 ---
 
-**Last Updated**: January 2025
+**Last Updated**: October 2025
 
 This Code of Conduct is a living document and may be updated to reflect the evolving needs of the DeepCausalMMM community. 

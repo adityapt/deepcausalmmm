@@ -3,11 +3,14 @@ Training functions for DeepCausalMMM models.
 Updated to use UnifiedDataPipeline for consistent data processing.
 """
 
+import logging
 import torch
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any
 from tqdm import tqdm
 from sklearn.metrics import r2_score, mean_squared_error
+
+logger = logging.getLogger('deepcausalmmm')
 
 from deepcausalmmm.core.unified_model import DeepCausalMMM, create_unified_mmm
 from deepcausalmmm.core.config import get_default_config, update_config
@@ -53,18 +56,18 @@ def train_model_with_config(
         Tuple of (train_losses, train_rmses, train_r2s, best_rmse)
     """
     if verbose:
-        print(f"\n🚀 Training Model with Config Parameters...")
-        print(f"   🎯 Training Configuration from Config:")
-        print(f"      📈 Epochs: {config['n_epochs']}")
-        print(f"      🧠 Hidden units: {config['hidden_dim']}")
-        print(f"      🔥 Warm-start: {config['warm_start_epochs']}")
-        print(f"      📊 Learning rate: {config['learning_rate']}")
-        print(f"      🎛️ Optimizer: {config['optimizer']}")
-        print(f"      📅 Scheduler: {config['scheduler']}")
+        logger.info("Training Model with Config Parameters...")
+        logger.info("Training Configuration from Config:")
+        logger.info(f"   Epochs: {config['n_epochs']}")
+        logger.info(f"   Hidden units: {config['hidden_dim']}")
+        logger.info(f"   Warm-start: {config['warm_start_epochs']}")
+        logger.info(f"   Learning rate: {config['learning_rate']}")
+        logger.info(f"   Optimizer: {config['optimizer']}")
+        logger.info(f"   Scheduler: {config['scheduler']}")
     
     # 1. Warm-start training for coefficient stabilization
     if verbose:
-        print(f"   🔥 Config-driven warm-start training for {config['warm_start_epochs']} epochs...")
+        logger.info(f"   Config-driven warm-start training for {config['warm_start_epochs']} epochs...")
     
     # Create optimizer for warm-start (reduced learning rate)
     warm_optimizer = torch.optim.AdamW(
@@ -80,11 +83,11 @@ def train_model_with_config(
     # CRITICAL FIX: Initialize baseline with training data (was missing!)
     if hasattr(model, 'initialize_baseline'):
         if verbose:
-            print(f"   📊 Initializing model baseline from training data...")
+            logger.info("   Initializing model baseline from training data...")
         model.initialize_baseline(y_padded)
     if hasattr(model, 'initialize_stable_coefficients_from_data'):
         if verbose:
-            print(f"   🎯 Initializing stable coefficients from training data...")
+            logger.info("   Initializing stable coefficients from training data...")
         model.initialize_stable_coefficients_from_data(X_media_padded, X_control_padded, y_padded)
     
     model.warm_start_training(
@@ -93,11 +96,11 @@ def train_model_with_config(
     )
     
     if verbose:
-        print(f"✅ Warm-start training completed. GRU initialized for stable coefficients.")
+        logger.info(f" Warm-start training completed. GRU initialized for stable coefficients.")
     
     # 2. Main training with full configuration
     if verbose:
-        print(f"   🚀 Main training for {config['n_epochs']} epochs...")
+        logger.info(f"    Main training for {config['n_epochs']} epochs...")
     
     # Create main optimizer based on config - EXACT SAME as working dashboard
     if config.get('optimizer', 'adamw') == 'adamw':
@@ -181,10 +184,10 @@ def train_model_with_config(
                 try:
                     # Debug info on first holdout evaluation
                     if epoch == 10:
-                        print(f"\n   🔍 DEBUG: Holdout X_media shape: {holdout_data['X_media'].shape}")
-                        print(f"   🔍 DEBUG: Holdout X_control shape: {holdout_data['X_control'].shape}")
-                        print(f"   🔍 DEBUG: Burn-in weeks: {config['burn_in_weeks']}")
-                        print(f"   🔍 DEBUG: Holdout weeks after burn-in: {holdout_data['X_media'].shape[1] - config['burn_in_weeks']}")
+                        logger.debug(f"\n   DEBUG: Holdout X_media shape: {holdout_data['X_media'].shape}")
+                        logger.debug(f"   DEBUG: Holdout X_control shape: {holdout_data['X_control'].shape}")
+                        logger.debug(f"   DEBUG: Burn-in weeks: {config['burn_in_weeks']}")
+                        logger.debug(f"   DEBUG: Holdout weeks after burn-in: {holdout_data['X_media'].shape[1] - config['burn_in_weeks']}")
                     
                     # Evaluate on holdout data
                     holdout_pred_full, _, _, _ = model(
@@ -230,18 +233,18 @@ def train_model_with_config(
                             
                             # Debug success on first holdout evaluation
                             if epoch == 10:
-                                print(f"   ✅ DEBUG: Holdout evaluation successful - RMSE: {holdout_rmse:,.0f}, R²: {holdout_r2:.3f}")
+                                logger.debug(f"    DEBUG: Holdout evaluation successful - RMSE: {holdout_rmse:,.0f}, R²: {holdout_r2:.3f}")
                         else:
                             if epoch == 10:
-                                print(f"   ⚠️ DEBUG: Empty holdout tensors after processing")
+                                logger.warning(f"   DEBUG: Empty holdout tensors after processing")
                     else:
                         if epoch == 10:
-                            print(f"   ⚠️ DEBUG: No actual holdout weeks after removing padding ({actual_holdout_weeks} weeks)")
+                            logger.warning(f"   DEBUG: No actual holdout weeks after removing padding ({actual_holdout_weeks} weeks)")
                             
                 except Exception as e:
                     # Print debug info on errors
                     if epoch == 10:
-                        print(f"\n   ⚠️ Holdout evaluation error (epoch {epoch}): {e}")
+                        logger.warning(f"\n   Holdout evaluation error (epoch {epoch}): {e}")
                     pass
         
         # Track metrics
@@ -303,15 +306,15 @@ def train_model_with_config(
         if (config.get('early_stopping', False) and 
             patience_counter >= config.get('patience', 500)):
             if verbose:
-                print(f"   ⏹️ Early stopping at epoch {epoch}")
-                print(f"   🏆 Best RMSE: {best_rmse:.2f}")
+                logger.info(f"    Early stopping at epoch {epoch}")
+                logger.info(f"    Best RMSE: {best_rmse:.2f}")
             break
     
     pbar.close()
     
     if verbose:
-        print(f"   ✅ Config-driven training completed!")
-        print(f"   🏆 Final Best RMSE: {best_rmse:.2f}")
+        logger.info(f"    Config-driven training completed!")
+        logger.info(f"    Final Best RMSE: {best_rmse:.2f}")
     
     return train_losses, train_rmses, train_r2s, best_rmse
 
@@ -368,21 +371,21 @@ def train_mmm(
         stacklevel=2
     )
     if verbose:
-        print("🎯 DEEPCAUSALMMM TRAINING")
-        print("=" * 50)
+        logger.info(" DEEPCAUSALMMM TRAINING")
+        logger.info("=" * 50)
         if use_unified_pipeline:
-            print("🔧 Config-driven • 🎨 UnifiedDataPipeline • 🎯 RMSE Optimized")
+            logger.info(" Config-driven •  UnifiedDataPipeline •  RMSE Optimized")
         else:
-            print("🔧 Config-driven • 🎨 SimpleGlobalScaler • 🎯 RMSE Optimized")
+            logger.info(" Config-driven •  SimpleGlobalScaler •  RMSE Optimized")
     
     # 1. Configuration setup
     if config is None:
         config = get_default_config()
         if verbose:
-            print("📋 Using default configuration")
+            logger.info(" Using default configuration")
     else:
         if verbose:
-            print("📋 Using provided configuration")
+            logger.info(" Using provided configuration")
     
     if use_unified_pipeline:
         # Use UnifiedDataPipeline for consistent train/holdout processing
@@ -412,8 +415,8 @@ def _train_with_unified_pipeline(
     holdout_ratio = config.get('holdout_ratio', 0.27)
     
     if verbose:
-        print(f"\n🎯 UNIFIED DATA PIPELINE TRAINING")
-        print(f"🔧 Consistent train/holdout processing • Holdout ratio: {holdout_ratio:.1%}")
+        logger.info(f"\n UNIFIED DATA PIPELINE TRAINING")
+        logger.info(f" Consistent train/holdout processing • Holdout ratio: {holdout_ratio:.1%}")
     
     # 1. Initialize unified data pipeline
     pipeline = UnifiedDataPipeline(config)
@@ -463,7 +466,7 @@ def _train_with_unified_pipeline(
     
     # 7. Final evaluation on both train and holdout
     if verbose:
-        print("\n📊 Final Evaluation (Train + Holdout)...")
+        logger.info("\n Final Evaluation (Train + Holdout)...")
     
     model.eval()
     with torch.no_grad():
@@ -505,16 +508,16 @@ def _train_with_unified_pipeline(
             holdout_loss = torch.nn.functional.mse_loss(holdout_pred_log, holdout_true_log).item()
             
             if verbose:
-                print(f"   🧪 HOLDOUT RESULTS:")
-                print(f"      Loss: {holdout_loss:.1f}")
-                print(f"      RMSE: {holdout_rmse:,.0f}")
-                print(f"      R²: {holdout_r2:.3f}")
+                logger.info(f"    HOLDOUT RESULTS:")
+                logger.info(f"      Loss: {holdout_loss:.1f}")
+                logger.info(f"      RMSE: {holdout_rmse:,.0f}")
+                logger.info(f"      R²: {holdout_r2:.3f}")
         else:
             holdout_rmse = None
             holdout_r2 = None
             holdout_loss = None
             if verbose:
-                print(f"   ⚠️ Holdout data too small for evaluation")
+                logger.warning(f"   Holdout data too small for evaluation")
     
     # Training evaluation
     # CONSISTENCY FIX: Use same process as holdout - no double padding removal
@@ -535,15 +538,15 @@ def _train_with_unified_pipeline(
     )
     
     if verbose:
-        print(f"   🚂 TRAINING RESULTS:")
-        print(f"      RMSE: {final_train_rmse:,.0f}")
-        print(f"      R²: {final_train_r2:.3f}")
-        print(f"\n📊 SUMMARY:")
-        print(f"   🚂 Train: RMSE {final_train_rmse:,.0f} | R² {final_train_r2:.3f}")
+        logger.info(f"   TRAINING RESULTS:")
+        logger.info(f"      RMSE: {final_train_rmse:,.0f}")
+        logger.info(f"      R²: {final_train_r2:.3f}")
+        logger.info(f"\n SUMMARY:")
+        logger.info(f"   Train: RMSE {final_train_rmse:,.0f} | R² {final_train_r2:.3f}")
         if holdout_rmse is not None:
-            print(f"   🧪 Holdout: RMSE {holdout_rmse:,.0f} | R² {holdout_r2:.3f}")
+            logger.info(f"    Holdout: RMSE {holdout_rmse:,.0f} | R² {holdout_r2:.3f}")
             generalization_gap = ((holdout_rmse - final_train_rmse) / final_train_rmse) * 100
-            print(f"   📈 Generalization Gap: {generalization_gap:+.1f}%")
+            logger.info(f"    Generalization Gap: {generalization_gap:+.1f}%")
     
     # 8. Prepare results
         results = {
@@ -579,11 +582,11 @@ def _train_with_unified_pipeline(
     }
     
     if verbose:
-        print(f"\n🎉 UNIFIED PIPELINE TRAINING COMPLETE!")
-        print(f"🏆 Train RMSE: {final_train_rmse:,.0f} (R²: {final_train_r2:.3f})")
+        logger.info(f"\n UNIFIED PIPELINE TRAINING COMPLETE!")
+        logger.info(f" Train RMSE: {final_train_rmse:,.0f} (R²: {final_train_r2:.3f})")
         if holdout_rmse is not None:
-            print(f"🧪 Holdout RMSE: {holdout_rmse:,.0f} (R²: {holdout_r2:.3f})")
-        print("=" * 50)
+            logger.info(f" Holdout RMSE: {holdout_rmse:,.0f} (R²: {holdout_r2:.3f})")
+        logger.info("=" * 50)
     
     return model, results
 
@@ -601,11 +604,11 @@ def _train_simple(
     
     # 2. Data preprocessing with SimpleGlobalScaler
     if verbose:
-        print("\n🔧 Data Preprocessing with SimpleGlobalScaler...")
+        logger.info("\n Data Preprocessing with SimpleGlobalScaler...")
     
     scaler = SimpleGlobalScaler()
     if verbose:
-        print("   📊 Created new SimpleGlobalScaler")
+        logger.info("    Created new SimpleGlobalScaler")
     
     # Scale data
     X_media_scaled, X_control_scaled, y_scaled = scaler.fit_transform(
@@ -613,10 +616,10 @@ def _train_simple(
     )
     
     if verbose:
-        print("   ✅ SimpleGlobalScaler applied successfully")
-        print(f"   📊 Data shape: {X_media.shape[0]} regions × {X_media.shape[1]} weeks")
-        print(f"   📺 Media channels: {X_media.shape[2]}")
-        print(f"   🎛️ Control variables: {X_control.shape[2]}")
+        logger.info("    SimpleGlobalScaler applied successfully")
+        logger.info(f"    Data shape: {X_media.shape[0]} regions × {X_media.shape[1]} weeks")
+        logger.info(f"    Media channels: {X_media.shape[2]}")
+        logger.info(f"    Control variables: {X_control.shape[2]}")
     
     # 3. Data padding for burn-in
     padding_weeks = config['burn_in_weeks']
@@ -632,11 +635,11 @@ def _train_simple(
     y_padded = torch.cat([y_padding, y_scaled], dim=1)
     
     if verbose:
-        print(f"   ✅ Added {padding_weeks} weeks padding for burn-in")
+        logger.info(f"    Added {padding_weeks} weeks padding for burn-in")
     
     # 4. Model creation
     if verbose:
-        print("\n🧠 Creating Model from Configuration...")
+        logger.info("\n Creating Model from Configuration...")
     
     model = DeepCausalMMM(
         n_media=X_media.shape[2],
@@ -655,8 +658,8 @@ def _train_simple(
     )
     
     if verbose:
-        print(f"   ✅ Model created with {config.get('hidden_dim', 64)} hidden units")
-        print(f"   🔧 Config-driven parameters: dropout={config.get('dropout', 0.1)}, l1={config.get('l1_weight', 0.001)}, l2={config.get('l2_weight', 0.001)}")
+        logger.info(f"    Model created with {config.get('hidden_dim', 64)} hidden units")
+        logger.info(f"    Config-driven parameters: dropout={config.get('dropout', 0.1)}, l1={config.get('l1_weight', 0.001)}, l2={config.get('l2_weight', 0.001)}")
     
     # Create region tensor for training and evaluation
     R = torch.zeros(X_media_padded.shape[0], dtype=torch.long)
@@ -668,7 +671,7 @@ def _train_simple(
     
     # 6. Final evaluation
     if verbose:
-        print("\n📊 Final Evaluation...")
+        logger.info("\n Final Evaluation...")
     
     model.eval()
     with torch.no_grad():
@@ -691,11 +694,11 @@ def _train_simple(
         relative_rmse = final_rmse / y_orig.mean().item() * 100
         
         if verbose:
-            print(f"   🏆 FINAL RESULTS:")
-            print(f"      RMSE: {final_rmse:,.0f}")
-            print(f"      Relative RMSE: {relative_rmse:.1f}%")
-            print(f"      R²: {final_r2:.3f}")
-            print(f"      Training Best RMSE: {best_rmse:.4f} (log space)")
+            logger.info(f"    FINAL RESULTS:")
+            logger.info(f"      RMSE: {final_rmse:,.0f}")
+            logger.info(f"      Relative RMSE: {relative_rmse:.1f}%")
+            logger.info(f"      R²: {final_r2:.3f}")
+            logger.info(f"      Training Best RMSE: {best_rmse:.4f} (log space)")
     
     # 7. Prepare results
     results = {
@@ -723,10 +726,10 @@ def _train_simple(
     }
     
     if verbose:
-        print(f"\n🎉 TRAINING COMPLETE!")
-        print(f"🏆 Final RMSE: {final_rmse:,.0f} ({relative_rmse:.1f}%)")
-        print(f"📈 R²: {final_r2:.3f}")
-        print("=" * 50)
+        logger.info(f"\n TRAINING COMPLETE!")
+        logger.info(f" Final RMSE: {final_rmse:,.0f} ({relative_rmse:.1f}%)")
+        logger.info(f" R²: {final_r2:.3f}")
+        logger.info("=" * 50)
         
         return model, results 
 

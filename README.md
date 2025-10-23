@@ -112,7 +112,7 @@ python dashboard_rmse_optimized.py
 from deepcausalmmm import DeepCausalMMM, get_device
 from deepcausalmmm.core import get_default_config
 
-print("✅ DeepCausalMMM package imported successfully!")
+print(" DeepCausalMMM package imported successfully!")
 print(f"Device: {get_device()}")
 ```
 
@@ -216,7 +216,7 @@ The comprehensive dashboard includes:
 1. **📈 Performance Metrics**: Training vs Holdout comparison
 2. **📊 Actual vs Predicted**: Time series visualization
 3. **🎯 Holdout Scatter**: Generalization assessment
-4. **💰 Economic Contributions**: Total visits per channel
+4. **💰 Economic Contributions**: Total KPI per channel
 5. **🥧 Contribution Breakdown**: Donut chart with percentages
 6. **💧 Waterfall Analysis**: Decomposed contribution flow
 7. **📺 Channel Effectiveness**: Coefficient distributions
@@ -360,14 +360,11 @@ MIT License - see [LICENSE](LICENSE) file.
 If you use DeepCausalMMM in your research, please cite:
 
 ```bibtex
-@software{Puttaparthi_Tirumala_DeepCausalMMM_2025,
-  author = {Puttaparthi Tirumala, Aditya},
-  doi = {10.5281/zenodo.17274024},
-  month = oct,
-  title = {{DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling}},
-  url = {https://github.com/adityapt/deepcausalmmm},
-  version = {1.0.17},
-  year = {2025}
+@article{tirumala2025deepcausalmmm,
+  title={DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Inference},
+  author={Puttaparthi Tirumala, Aditya},
+  journal={arXiv preprint arXiv:2510.13087},
+  year={2025}
 }
 ```
 
@@ -383,5 +380,7 @@ Or click the **"Cite this repository"** button on GitHub for other citation form
 ---
 
 **DeepCausalMMM** - Where Deep Learning meets Causal Inference for Superior Marketing Mix Modeling 🚀
+
+**arXiv preprint** - https://www.arxiv.org/abs/2510.13087
 
 *Built with ❤️ for the MMM community*

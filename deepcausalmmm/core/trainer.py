@@ -16,6 +16,9 @@ from deepcausalmmm.core.unified_model import DeepCausalMMM
 from deepcausalmmm.core.config import get_default_config
 from deepcausalmmm.utils.device import get_device
 
+import logging
+
+logger = logging.getLogger('deepcausalmmm')
 
 class ModelTrainer:
     """
@@ -206,7 +209,7 @@ class ModelTrainer:
             return
             
         if verbose:
-            print(f"\n🔥 Warm-start Training ({warm_epochs} epochs)...")
+            logger.info(f"\nWarm-start Training ({warm_epochs} epochs)...")
             
         # Create separate optimizer for warm-start with lower learning rate
         warm_optimizer = torch.optim.AdamW(
@@ -483,7 +486,7 @@ class ModelTrainer:
         n_epochs = self.config.get('n_epochs', 1000)
         
         if verbose:
-            print(f"\n🚀 Main Training ({n_epochs} epochs)...")
+            logger.info(f"\n Main Training ({n_epochs} epochs)...")
             
         # Storage for holdout metrics
         last_holdout_loss = None
@@ -530,7 +533,7 @@ class ModelTrainer:
                 # Early stopping check
                 if self.should_stop_early(holdout_rmse):
                     if verbose:
-                        print(f"\n⏹️ Early stopping at epoch {epoch}")
+                        logger.info(f"\n Early stopping at epoch {epoch}")
                     break
             else:
                 # Advanced learning rate scheduling (no holdout case)

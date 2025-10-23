@@ -1,7 +1,11 @@
 # Dashboard outputs
 dashboard_beautiful_comprehensive/
 dashboard_unified_analysis/
+dashboard_outputs/
 *.log
+
+# ArXiv submission (local only)
+JOSS/arxiv_submission/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -82,6 +86,7 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
+!examples/quickstart.ipynb
 
 # IPython
 profile_default/

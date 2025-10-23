@@ -11,6 +11,9 @@ import numpy as np
 from deepcausalmmm.core.dag_model import NodeToEdge, EdgeToNode, DAGConstraint
 from deepcausalmmm.core.seasonality import DetectSeasonality
 
+import logging
+
+logger = logging.getLogger('deepcausalmmm')
 
 class DeepCausalMMM(nn.Module):
     """
@@ -345,10 +348,10 @@ class DeepCausalMMM(nn.Module):
                 self.time_trend_weight.data = torch.zeros(1)
                 self.time_trend_bias.data = torch.zeros(1)
             
-            print(f"Initialized baselines (Log1p scale):")
-            print(f"   Region baselines range: [{region_means_scaled.min():.3f}, {region_means_scaled.max():.3f}]")
-            print(f"   Global bias (Log1p scale): {self.global_bias.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
-            print(f"   Expected prediction baseline: {region_means_scaled.mean():.3f} -> ~{torch.expm1(torch.tensor(region_means_scaled.mean())).item():.0f} visits")
+            logger.info(f"Initialized baselines (Log1p scale):")
+            logger.info(f"   Region baselines range: [{region_means_scaled.min():.3f}, {region_means_scaled.max():.3f}]")
+            logger.info(f"   Global bias (Log1p scale): {self.global_bias.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
+            logger.info(f"   Expected prediction baseline: {region_means_scaled.mean():.3f} -> ~{torch.expm1(torch.tensor(region_means_scaled.mean())).item():.0f} visits")
             
             # Initialize seasonal components using actual data decomposition
             self._initialize_seasonal_components(y_data)
@@ -392,11 +395,11 @@ class DeepCausalMMM(nn.Module):
             # Store seasonal components (will be used in forward pass)
             self.seasonal_components = seasonal_normalized
             
-            print(f"🌊 Initialized seasonal components:")
-            print(f"   Seasonal coefficient: {self.seasonal_coeff.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
-            print(f"   Components range: [{seasonal_normalized.min():.3f}, {seasonal_normalized.max():.3f}] (Min-Max scaled per region)")
-            print(f"   Components mean: {seasonal_normalized.mean():.3f}")
-            print(f"   Scaling: Min-Max per region (0-1 range) - preserves seasonal patterns")
+            logger.info(f" Initialized seasonal components:")
+            logger.info(f"   Seasonal coefficient: {self.seasonal_coeff.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
+            logger.info(f"   Components range: [{seasonal_normalized.min():.3f}, {seasonal_normalized.max():.3f}] (Min-Max scaled per region)")
+            logger.info(f"   Components mean: {seasonal_normalized.mean():.3f}")
+            logger.info(f"   Scaling: Min-Max per region (0-1 range) - preserves seasonal patterns")
 
     def initialize_stable_coefficients_from_data(self, Xm: torch.Tensor, Xc: torch.Tensor, y: torch.Tensor):
         """
@@ -432,11 +435,11 @@ class DeepCausalMMM(nn.Module):
                 data_scale = y_flat.std() / X_media_flat.std()
                 self.stable_media_coeff.data = beta_media_positive * data_scale
                 
-                print(f"Initialized stable coefficients from data:")
-                print(f"  Media coeff range (POSITIVE-ONLY): [{beta_media_positive.min().item():.4f}, {beta_media_positive.max().item():.4f}]")
+                logger.info(f"Initialized stable coefficients from data:")
+                logger.info(f"  Media coeff range (POSITIVE-ONLY): [{beta_media_positive.min().item():.4f}, {beta_media_positive.max().item():.4f}]")
                 
             except torch.linalg.LinAlgError:
-                print("Warning: Could not solve for media coefficients, using correlation fallback")
+                logger.warning("Warning: Could not solve for media coefficients, using correlation fallback")
                 correlations = torch.zeros(n_media, device=Xm.device)
                 for i in range(n_media):
                     if X_media_flat[:, i].std() > 1e-8:
@@ -464,10 +467,10 @@ class DeepCausalMMM(nn.Module):
                 stable_coeff_scale = torch.exp(self.stable_coeff_scale_raw)  # FULLY LEARNABLE scaling
                 self.stable_ctrl_coeff.data = beta_control * ctrl_data_scale * stable_coeff_scale
                 
-                print(f"  Control coeff range: [{beta_control.min().item():.4f}, {beta_control.max().item():.4f}]")
+                logger.info(f"  Control coeff range: [{beta_control.min().item():.4f}, {beta_control.max().item():.4f}]")
                 
             except torch.linalg.LinAlgError:
-                print("Warning: Could not solve for control coefficients, using correlation fallback")
+                logger.warning("Warning: Could not solve for control coefficients, using correlation fallback")
                 correlations_ctrl = torch.zeros(n_control, device=Xc.device)
                 for i in range(n_control):
                     if X_control_flat[:, i].std() > 1e-8:
@@ -487,7 +490,7 @@ class DeepCausalMMM(nn.Module):
             return
             
         epochs = epochs or self.warm_start_epochs
-        print(f"Starting warm-start training for {epochs} epochs...")
+        logger.info(f"Starting warm-start training for {epochs} epochs...")
         
         # Initialize stable coefficients from data
         self.initialize_stable_coefficients_from_data(Xm, Xc, y)
@@ -538,7 +541,7 @@ class DeepCausalMMM(nn.Module):
             warm_optimizer.step()
             
             if epoch % 10 == 0:
-                print(f"  Warm-start epoch {epoch}/{epochs}, Loss: {loss.item():.6f}")
+                logger.info(f"  Warm-start epoch {epoch}/{epochs}, Loss: {loss.item():.6f}")
         
         # Restore original parameters
         self.coeff_range_raw.data = original_coeff_range_raw
@@ -551,7 +554,7 @@ class DeepCausalMMM(nn.Module):
         for param in self.ctrl_coeff_gen.parameters():
             param.requires_grad = True
             
-        print(f"✅ Warm-start training completed. GRU initialized for stable coefficients.")
+        logger.info(f" Warm-start training completed. GRU initialized for stable coefficients.")
 
     def adstock(self, x: torch.Tensor) -> torch.Tensor:
         """STABILIZED adstock transformation."""

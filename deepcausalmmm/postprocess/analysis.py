@@ -8,6 +8,9 @@ from plotly.subplots import make_subplots
 from typing import Dict, List, Optional, Any
 import os
 
+import logging
+logger = logging.getLogger('deepcausalmmm')
+
 from deepcausalmmm.core.inference import InferenceManager, ModelInference  # ModelInference for legacy compatibility
 from deepcausalmmm.core.scaling import SimpleGlobalScaler
 from deepcausalmmm.core.config import get_default_config
@@ -71,7 +74,7 @@ class ModelAnalyzer:
         if self.pipeline is None:
             raise ValueError("UnifiedDataPipeline is required for this method")
             
-        print(f"\n📊 ModelAnalyzer: Unified Pipeline Analysis")
+        logger.info(f"\n ModelAnalyzer: Unified Pipeline Analysis")
         
         # Get predictions and contributions
         results = self.pipeline.predict_and_postprocess(
@@ -95,9 +98,9 @@ class ModelAnalyzer:
             'y_true': y_true
         }
         
-        print(f"   ✅ Pipeline analysis complete")
-        print(f"   📈 R²: {metrics['pipeline_r2']:.3f}")
-        print(f"   📊 RMSE: {metrics['pipeline_rmse']:.0f}")
+        logger.info(f"    Pipeline analysis complete")
+        logger.info(f"    R²: {metrics['pipeline_r2']:.3f}")
+        logger.info(f"    RMSE: {metrics['pipeline_rmse']:.0f}")
         
         return analysis_results
     

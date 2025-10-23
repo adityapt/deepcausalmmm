@@ -180,7 +180,7 @@ class ResponseCurveFit(object):
                 
             except RuntimeError as re:
                 self.r_2 = 0
-                print(f"   ❌ Fitting failed: {re}")
+                print(f"    Fitting failed: {re}")
     
     def get_summary(self):
         """Get summary of fitted parameters"""
@@ -204,7 +204,7 @@ class ResponseCurveFit(object):
 
 def load_real_mmm_data(filepath="data/MMM Data.csv"):
     """Load and process the real MMM Data.csv"""
-    print(f"📂 Loading Real MMM Data from: {filepath}")
+    print(f" Loading Real MMM Data from: {filepath}")
     
     df = pd.read_csv(filepath)
     
@@ -270,7 +270,7 @@ def load_real_mmm_data(filepath="data/MMM Data.csv"):
     X_control = np.stack(X_control_list, axis=0)
     y = np.stack(y_list, axis=0)
     
-    print(f"   ✅ Loaded: {n_regions} regions × {n_weeks} weeks, {len(media_names)} channels")
+    print(f"    Loaded: {n_regions} regions × {n_weeks} weeks, {len(media_names)} channels")
     
     return X_media, X_control, y, media_names, control_names, df_complete, impression_cols
 
@@ -305,7 +305,7 @@ def train_model_and_get_predictions():
     trainer.create_optimizer_and_scheduler()
     
     # Train
-    print("\n🚀 Training model...")
+    print("\n Training model...")
     full_data = {'X_media': X_media, 'X_control': X_control, 'y': y}
     full_tensors = pipeline.fit_and_transform_training(full_data)
     
@@ -316,7 +316,7 @@ def train_model_and_get_predictions():
         verbose=True
     )
     
-    print(f"\n✅ Training complete!")
+    print(f"\n Training complete!")
     print(f"   Training R²: {training_results['final_train_r2']:.3f}")
     
     # Print Hill parameters from the trained model
@@ -364,7 +364,7 @@ def train_model_and_get_predictions():
     control_contributions_log = postprocess_results['control_contributions']  # [n_regions, n_weeks, n_controls]
     
     # Get model outputs which include baseline and seasonality
-    print("   🔍 Getting baseline and seasonality from model...")
+    print("    Getting baseline and seasonality from model...")
     
     # Re-run model to get all components
     full_data = {'X_media': X_media, 'X_control': X_control, 'y': y}
@@ -391,7 +391,7 @@ def train_model_and_get_predictions():
         seasonal_log = seasonal_log[:, burn_in:]
         predictions_log = predictions_log[:, burn_in:]
     
-    print(f"   ✅ Extracted all components (after burn-in removal):")
+    print(f"    Extracted all components (after burn-in removal):")
     print(f"      Media: {media_contrib_log.shape}")
     print(f"      Control: {control_contrib_log.shape}")
     print(f"      Baseline: {baseline_log.shape}")
@@ -402,7 +402,7 @@ def train_model_and_get_predictions():
     predictions_orig_tensor = torch.expm1(torch.clamp(predictions_log, max=20.0))
     
     # USE PROPORTIONAL ALLOCATION METHOD (same as dashboard)
-    print("\n   📊 Using proportional allocation method to get contributions in original scale...")
+    print("\n    Using proportional allocation method to get contributions in original scale...")
     
     # Get the scaler from pipeline
     scaler = pipeline.get_scaler()
@@ -419,11 +419,11 @@ def train_model_and_get_predictions():
     # Extract proportionally allocated media contributions
     media_contributions_orig = contrib_results['media']  # [n_regions, n_weeks, n_channels] in original scale
     
-    print(f"   ✅ Proportionally allocated contributions computed:")
+    print(f"    Proportionally allocated contributions computed:")
     print(f"      Media contrib (log): [{media_contrib_log.min():.4f}, {media_contrib_log.max():.4f}]")
     print(f"      Media contrib (orig): [{media_contributions_orig.min():.0f}, {media_contributions_orig.max():.0f}]")
     print()
-    print("   📊 Per-channel contribution ranges (original scale):")
+    print("    Per-channel contribution ranges (original scale):")
     
     # Show range for each channel
     for ch_idx, ch_name in enumerate(media_names):
@@ -489,7 +489,7 @@ def example_overall_curve():
     
     # Create sample data
     data = create_sample_data(n_weeks=52, n_regions=5)
-    print(f"\n📊 Created sample data: {len(data)} rows, {data['dmacode'].nunique()} regions")
+    print(f"\n Created sample data: {len(data)} rows, {data['dmacode'].nunique()} regions")
     
     # Initialize fitter for overall level
     fitter = ResponseCurveFitter(
@@ -513,7 +513,7 @@ def example_overall_curve():
     
     # Get summary
     summary = fitter.get_summary()
-    print(f"\n📈 Fitted Parameters:")
+    print(f"\n Fitted Parameters:")
     print(f"   Top (saturation level): ${summary['params']['top']:,.2f}")
     print(f"   Saturation point: ${summary['params']['saturation']:,.2f}")
     print(f"   Slope (steepness): {summary['params']['slope']:.3f}")
@@ -523,12 +523,12 @@ def example_overall_curve():
     new_spends = np.array([10000, 25000, 50000, 75000, 100000])
     predictions = fitter.predict(new_spends)
     
-    print(f"\n🔮 Predictions for new spend levels:")
+    print(f"\n Predictions for new spend levels:")
     for spend, pred in zip(new_spends, predictions):
         print(f"   Spend ${spend:>7,} → Predicted: {pred:>10,.2f}")
     
     # Calculate marginal ROI
-    print(f"\n💰 Marginal ROI Analysis:")
+    print(f"\n Marginal ROI Analysis:")
     for i in range(len(new_spends) - 1):
         delta_spend = new_spends[i + 1] - new_spends[i]
         delta_response = predictions[i + 1] - predictions[i]
@@ -547,7 +547,7 @@ def example_region_curves():
     
     # Create sample data
     data = create_sample_data(n_weeks=52, n_regions=10)
-    print(f"\n📊 Created sample data: {len(data)} rows, {data['dmacode'].nunique()} regions")
+    print(f"\n Created sample data: {len(data)} rows, {data['dmacode'].nunique()} regions")
     
     # Initialize fitter for region level
     fitter = ResponseCurveFitter(
@@ -562,7 +562,7 @@ def example_region_curves():
     region_params = fitter.fit()
     
     # Display results
-    print(f"\n📋 Region Parameters (Top 5 by R²):")
+    print(f"\n Region Parameters (Top 5 by R²):")
     top_regions = region_params.nlargest(5, 'r2')
     print(top_regions.to_string(index=False))
     
@@ -572,19 +572,19 @@ def example_region_curves():
         metric='r2',
         save_path='response_curve_region_comparison.html'
     )
-    print(f"\n📊 Region comparison plot saved to: response_curve_region_comparison.html")
+    print(f"\n Region comparison plot saved to: response_curve_region_comparison.html")
     
     # Identify best and worst performing regions
     best_region = region_params.loc[region_params['r2'].idxmax()]
     worst_region = region_params.loc[region_params['r2'].idxmin()]
     
-    print(f"\n🏆 Best Performing Region:")
+    print(f"\n Best Performing Region:")
     print(f"   Region: {best_region['dmacode']}")
     print(f"   R²: {best_region['r2']:.4f}")
     print(f"   Top: {best_region['top']:,.2f}")
     print(f"   Saturation: {best_region['saturation']:,.2f}")
     
-    print(f"\n⚠️  Worst Performing Region:")
+    print(f"\n  Worst Performing Region:")
     print(f"   Region: {worst_region['dmacode']}")
     print(f"   R²: {worst_region['r2']:.4f}")
     
@@ -703,11 +703,11 @@ def fit_response_curves_to_real_data():
         media_contributions_np = media_contributions
     n_regions, n_weeks, n_channels = media_contributions_np.shape
     
-    print(f"   📊 Using PROPORTIONALLY ALLOCATED contributions (original scale)")
-    print(f"   📊 This correctly distributes total predicted visits across all components")
-    print(f"   📊 Method: contribution_orig = (contrib_log / total_log) × y_pred_orig")
+    print(f"    Using PROPORTIONALLY ALLOCATED contributions (original scale)")
+    print(f"    This correctly distributes total predicted visits across all components")
+    print(f"    Method: contribution_orig = (contrib_log / total_log) × y_pred_orig")
     
-    print(f"\n📊 Processing {n_channels} channels across {n_regions} regions and {n_weeks} weeks")
+    print(f"\n Processing {n_channels} channels across {n_regions} regions and {n_weeks} weeks")
     
     # Process each channel
     all_results = {}
@@ -719,7 +719,7 @@ def fit_response_curves_to_real_data():
         
         # AGGREGATE TO NATIONAL WEEKLY LEVEL (same as dashboard)
         # Sum impressions and contributions across all DMAs for each week
-        print(f"   📊 Aggregating to national weekly level...")
+        print(f"    Aggregating to national weekly level...")
         
         weekly_impressions = []
         weekly_contributions = []
@@ -745,12 +745,12 @@ def fit_response_curves_to_real_data():
         channel_df = channel_df[channel_df['spend'] > 0]
         
         if len(channel_df) < 10:
-            print(f"   ⚠️  Skipping {channel_name}: insufficient non-zero data points ({len(channel_df)})")
+            print(f"     Skipping {channel_name}: insufficient non-zero data points ({len(channel_df)})")
             continue
         
-        print(f"   📊 Data points: {len(channel_df)}")
-        print(f"   💰 Spend range: ${channel_df['spend'].min():,.0f} - ${channel_df['spend'].max():,.0f}")
-        print(f"   📈 Prediction range: {channel_df['predicted'].min():,.0f} - {channel_df['predicted'].max():,.0f}")
+        print(f"    Data points: {len(channel_df)}")
+        print(f"    Spend range: ${channel_df['spend'].min():,.0f} - ${channel_df['spend'].max():,.0f}")
+        print(f"    Prediction range: {channel_df['predicted'].min():,.0f} - {channel_df['predicted'].max():,.0f}")
         
         # Fit overall response curve using user's original ResponseCurveFit class
         try:
@@ -774,14 +774,14 @@ def fit_response_curves_to_real_data():
             summary = fitter.get_summary()
             all_results[channel_name] = summary
             
-            print(f"   ✅ Fitted successfully!")
+            print(f"    Fitted successfully!")
             print(f"      Top: {summary['params']['top']:,.0f}")
             print(f"      Saturation: {summary['params']['saturation']:,.0f}")
             print(f"      Slope: {summary['params']['slope']:.3f}")
             print(f"      R²: {summary['r2']:.4f}")
             
         except Exception as e:
-            print(f"   ❌ Failed to fit: {e}")
+            print(f"    Failed to fit: {e}")
             continue
     
     # Summary
@@ -804,25 +804,25 @@ def fit_response_curves_to_real_data():
         results_df = results_df.sort_values('R²', ascending=False)
         print(results_df.to_string(index=False))
         
-        print(f"\n✅ Successfully fitted {len(all_results)}/{n_channels} channels")
-        print(f"📁 Generated {len(all_results)} HTML response curve files")
+        print(f"\n Successfully fitted {len(all_results)}/{n_channels} channels")
+        print(f" Generated {len(all_results)} HTML response curve files")
     else:
-        print("❌ No channels were successfully fitted")
+        print(" No channels were successfully fitted")
     
     return all_results
 
 
 def main():
     """Run all examples."""
-    print("\n" + "🚀" * 40)
+    print("\n" + "" * 40)
     print("ResponseCurveFitter with Real DeepCausalMMM Data")
-    print("🚀" * 40)
+    print("" * 40)
     
     # Fit response curves to real model predictions
     results = fit_response_curves_to_real_data()
     
     print("\n" + "=" * 80)
-    print("✅ Response curve fitting completed!")
+    print(" Response curve fitting completed!")
     print("=" * 80)
     print("\nGenerated files:")
     for channel_name in results.keys():

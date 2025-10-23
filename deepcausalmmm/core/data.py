@@ -8,6 +8,8 @@ This module handles:
 - Data scaling and preparation
 """
 
+import logging
+
 import pandas as pd
 import numpy as np
 import torch
@@ -17,6 +19,8 @@ from sklearn.model_selection import train_test_split
 
 from deepcausalmmm.exceptions import DataError, BayesianNetworkError, ValidationError
 from deepcausalmmm.core.scaling import SimpleGlobalScaler
+
+logger = logging.getLogger('deepcausalmmm')
 
 # Try to import pgmpy, fallback to simpler approach if not available
 try:
@@ -80,7 +84,7 @@ def create_belief_vectors(
             return result_df, bn_struct
             
         except Exception as e:
-            print(f"Bayesian Network failed: {e}, using fallback")
+            logger.warning(f"Bayesian Network failed: {e}, using fallback")
     
     # Fallback: use control variables directly
     if len(control_vars) > 0:
@@ -175,12 +179,12 @@ def prepare_data_for_training(
     # Handle region creation/validation
     if region_var and region_var in df_work.columns:
         regions = df_work[region_var].unique()
-        print(f"Using existing region column: {len(regions)} regions found")
+        logger.info(f"Using existing region column: {len(regions)} regions found")
     else:
         df_work['region'] = 'All_Data'
         regions = df_work['region'].unique()
         region_var = 'region'
-        print(f"No region column specified, creating single region with {len(df_work)} rows")
+        logger.info(f"No region column specified, creating single region with {len(df_work)} rows")
     
     # Add week if not exists
     if 'week' not in df_work.columns:
@@ -289,13 +293,13 @@ def prepare_data_for_training(
     y = torch.tensor(y_matrix_scaled, dtype=torch.float32)
     R = torch.tensor(region_ids, dtype=torch.long)
     
-    print(f"Data preparation complete:")
-    print(f"  - Regions: {n_regions}")
-    print(f"  - Time steps: {n_time_steps}")
-    print(f"  - Media variables: {len(marketing_vars)} → {n_media_target}")
-    print(f"  - Control variables: {len(control_vars)} → {n_control_target}")
-    print(f"  - Target variable: {dependent_var}")
-    print(f"  - Shapes: X_m={X_m.shape}, X_c={X_c.shape}, y={y.shape}, R={R.shape}")
+    logger.info(f"Data preparation complete:")
+    logger.info(f"  - Regions: {n_regions}")
+    logger.info(f"  - Time steps: {n_time_steps}")
+    logger.info(f"  - Media variables: {len(marketing_vars)} → {n_media_target}")
+    logger.info(f"  - Control variables: {len(control_vars)} → {n_control_target}")
+    logger.info(f"  - Target variable: {dependent_var}")
+    logger.info(f"  - Shapes: X_m={X_m.shape}, X_c={X_c.shape}, y={y.shape}, R={R.shape}")
     
     return {
         'X_m': X_m,
@@ -480,9 +484,9 @@ class UnifiedDataPipeline:
             raise ValueError(f"Not enough training data: need at least {min_train_weeks} training weeks, "
                            f"but only have {train_weeks} with {holdout_ratio:.1%} holdout ratio")
                            
-        if holdout_weeks < burn_in_weeks + 5:  # Need at least 5 weeks after burn-in for meaningful evaluation
-            print(f"   ⚠️ WARNING: Holdout weeks ({holdout_weeks}) is close to burn-in weeks ({burn_in_weeks})")
-            print(f"   ⚠️ After burn-in removal, only {holdout_weeks - burn_in_weeks} weeks will remain for evaluation")
+        if holdout_weeks < burn_in_weeks + 5:  # Warn if holdout is small (though burn-in is added as padding, not removed)
+            logger.warning(f"   WARNING: Holdout weeks ({holdout_weeks}) is small relative to burn-in weeks ({burn_in_weeks})")
+            logger.warning(f"   Note: Burn-in is added as padding, all {holdout_weeks} actual weeks will be evaluated")
         
         # Time series split: train on first weeks, test on last weeks
         # Training data (chronologically first)
@@ -499,13 +503,13 @@ class UnifiedDataPipeline:
             'y': y[:, train_weeks:].astype(np.float32)
         }
         
-        print(f"\n📊 Unified Data Pipeline - Time Series Split (Ratio-Based):")
-        print(f"   🚂 Training: {train_weeks} actual weeks (weeks 1-{train_weeks}) - {train_weeks/n_weeks*100:.1f}%")
-        print(f"   🧪 Holdout: {holdout_weeks} actual weeks (weeks {train_weeks+1}-{n_weeks}) - {holdout_weeks/n_weeks*100:.1f}%")
-        print(f"   🔥 Burn-in Padding: {burn_in_weeks} weeks will be added to BOTH train and holdout")
-        print(f"   📊 Model sees: Train {train_weeks + burn_in_weeks} weeks, Holdout {holdout_weeks + burn_in_weeks} weeks")
-        print(f"   🎯 Evaluation: Remove {burn_in_weeks} padding weeks, evaluate on ALL actual data")
-        print(f"   ⏰ Time series approach: Training on historical data, testing on most recent data")
+        logger.info(f"\n Unified Data Pipeline - Time Series Split (Ratio-Based):")
+        logger.info(f"    Training: {train_weeks} actual weeks (weeks 1-{train_weeks}) - {train_weeks/n_weeks*100:.1f}%")
+        logger.info(f"    Holdout: {holdout_weeks} actual weeks (weeks {train_weeks+1}-{n_weeks}) - {holdout_weeks/n_weeks*100:.1f}%")
+        logger.info(f"    Burn-in Padding: {burn_in_weeks} weeks will be added to BOTH train and holdout")
+        logger.info(f"    Model sees: Train {train_weeks + burn_in_weeks} weeks, Holdout {holdout_weeks + burn_in_weeks} weeks")
+        logger.info(f"    Evaluation: Remove {burn_in_weeks} padding weeks, evaluate on ALL actual data")
+        logger.info(f"    Time series approach: Training on historical data, testing on most recent data")
         
         return train_data, holdout_data
     
@@ -519,10 +523,10 @@ class UnifiedDataPipeline:
         Returns:
             Dictionary with transformed and padded tensors
         """
-        print(f"\n🔧 Unified Data Pipeline - Processing Training Data:")
+        logger.info(f"\n Unified Data Pipeline - Processing Training Data:")
         
         # 1. Add seasonality features to training data BEFORE scaling (CRITICAL FIX)
-        print(f"   🌊 Adding seasonality features to training data...")
+        logger.info(f"    Adding seasonality features to training data...")
         X_control_with_seasonality_raw = self._add_seasonality_features(
             torch.tensor(train_data['X_control']), start_week=0
         )
@@ -552,12 +556,12 @@ class UnifiedDataPipeline:
             'R': R
         }
         
-        print(f"   ✅ Training data processed:")
-        print(f"   📊 Shape: {X_media_padded.shape[0]} regions × {X_media_padded.shape[1]} weeks")
-        print(f"   📺 Media channels: {X_media_padded.shape[2]}")
-        print(f"   🎛️ Control variables: {X_control_padded.shape[2]} (seasonality now handled by model baseline)")
-        print(f"   🔧 Scaler fitted on training data only")
-        print(f"   📏 Added {self.padding_weeks} weeks padding")
+        logger.info(f"   Training data processed:")
+        logger.info(f"   Shape: {X_media_padded.shape[0]} regions × {X_media_padded.shape[1]} weeks")
+        logger.info(f"   Media channels: {X_media_padded.shape[2]}")
+        logger.info(f"   Control variables: {X_control_padded.shape[2]} (seasonality now handled by model baseline)")
+        logger.info(f"   Scaler fitted on training data only")
+        logger.info(f"   Added {self.padding_weeks} weeks padding")
         
         return self.train_tensors
     
@@ -574,10 +578,10 @@ class UnifiedDataPipeline:
         if not self.fitted:
             raise ValueError("Pipeline must be fitted on training data first")
             
-        print(f"\n🧪 Unified Data Pipeline - Processing Holdout Data:")
+        logger.info(f"\n Unified Data Pipeline - Processing Holdout Data:")
         
         # 1. Add seasonality features to holdout data BEFORE scaling (CRITICAL FIX)
-        print(f"   🌊 Adding seasonality features to holdout data BEFORE scaling...")
+        logger.info(f"   Adding seasonality features to holdout data BEFORE scaling...")
         # CRITICAL FIX: Add seasonality BEFORE scaling, then scale everything together
         # This ensures seasonality features are properly scaled with the same distribution
         X_control_with_seasonality_raw = self._add_seasonality_features(
@@ -606,12 +610,12 @@ class UnifiedDataPipeline:
             'R': R
         }
         
-        print(f"   ✅ Holdout data processed with IDENTICAL transformations:")
-        print(f"   📊 Shape: {X_media_padded.shape[0]} regions × {X_media_padded.shape[1]} weeks")
-        print(f"   📺 Media channels: {X_media_padded.shape[2]}")
-        print(f"   🎛️ Control variables: {X_control_padded.shape[2]} (seasonality now handled by model baseline)")
-        print(f"   🔧 Used SAME scaler as training (no data leakage)")
-        print(f"   📏 Added SAME {self.padding_weeks} weeks padding")
+        logger.info(f"   Holdout data processed with IDENTICAL transformations:")
+        logger.info(f"   Shape: {X_media_padded.shape[0]} regions × {X_media_padded.shape[1]} weeks")
+        logger.info(f"   Media channels: {X_media_padded.shape[2]}")
+        logger.info(f"   Control variables: {X_control_padded.shape[2]} (seasonality now handled by model baseline)")
+        logger.info(f"   Used SAME scaler as training (no data leakage)")
+        logger.info(f"   Added SAME {self.padding_weeks} weeks padding")
         
         return self.holdout_tensors
     
@@ -620,7 +624,7 @@ class UnifiedDataPipeline:
         UPDATED: Seasonality is now handled by the model using actual data decomposition.
         This method now returns control variables unchanged.
         """
-        print("   🌊 Seasonality now handled by model's data-driven seasonal decomposition (not as control variable)")
+        logger.info("    Seasonality now handled by model's data-driven seasonal decomposition (not as control variable)")
         return X_control  # Return unchanged - no artificial seasonality added
     
     def _add_padding(self, 
@@ -748,15 +752,15 @@ class UnifiedDataPipeline:
         if not self.fitted:
             raise ValueError("Pipeline must be fitted first")
             
-        print(f"\n📊 Unified Post-Processing:")
+        logger.info(f"\n Unified Post-Processing:")
         
         # 1. Process full dataset for contributions (if requested)
         if combine_with_holdout:
-            print(f"   🔗 Processing full dataset (train + holdout) for contributions...")
+            logger.info(f"    Processing full dataset (train + holdout) for contributions...")
             
             # CRITICAL FIX: Add seasonality features with PROPER temporal alignment
             # Must match how training/holdout data was processed during training
-            print(f"   🌊 Adding seasonality features to full dataset with proper temporal alignment...")
+            logger.info(f"    Adding seasonality features to full dataset with proper temporal alignment...")
             X_control_with_seasonality_raw = self._add_seasonality_features(
                 torch.tensor(X_control), start_week=0  # This is correct for full dataset
             )
@@ -790,10 +794,10 @@ class UnifiedDataPipeline:
             # Inverse transform predictions to original scale
             y_pred_orig = self.scaler.inverse_transform_target(y_pred_eval)
             
-            print(f"   ✅ Full dataset processed: {X_media.shape[0]} regions × {X_media.shape[1]} weeks")
-            print(f"   📈 Predictions shape: {y_pred_orig.shape}")
-            print(f"   📺 Media contributions shape: {media_contrib_eval.shape}")
-            print(f"   🎛️ Control contributions shape: {control_contrib_eval.shape}")
+            logger.info(f"    Full dataset processed: {X_media.shape[0]} regions × {X_media.shape[1]} weeks")
+            logger.info(f"    Predictions shape: {y_pred_orig.shape}")
+            logger.info(f"    Media contributions shape: {media_contrib_eval.shape}")
+            logger.info(f"    Control contributions shape: {control_contrib_eval.shape}")
             
         else:
             # Use only training data
@@ -887,9 +891,9 @@ class UnifiedDataPipeline:
             self.holdout_tensors['X_control']  # [n_regions, holdout_weeks + padding, n_control + seasonality]
         ], dim=1)
         
-        print(f"   🔗 Combined full dataset:")
-        print(f"      📺 Media: {X_media_full.shape}")
-        print(f"      🎛️ Control: {X_control_full.shape} (includes seasonality)")
+        logger.info(f"    Combined full dataset:")
+        logger.info(f"       Media: {X_media_full.shape}")
+        logger.info(f"       Control: {X_control_full.shape} (includes seasonality)")
         
         return {
             'X_media': X_media_full.numpy(),

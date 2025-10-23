@@ -21,6 +21,9 @@ from scipy.optimize import curve_fit
 from sklearn.metrics import r2_score
 from tqdm import tqdm
 
+import logging
+logger = logging.getLogger('deepcausalmmm')
+
 
 class ResponseCurveFit:
     """
@@ -269,7 +272,7 @@ class ResponseCurveFit:
             )
         
             if print_r_sqr:
-                print(f"   R² Score: {self.r_2:.4f}")
+                logger.info(f"   R² Score: {self.r_2:.4f}")
 
             if view_figure:
                 self.figure.show()
@@ -375,13 +378,13 @@ class ResponseCurveFit:
                 
                 if save_figure and output_path and generate_figure:
                     self.figure.write_html(output_path)
-                    print(f"   Figure saved to: {output_path}")
+                    logger.info(f"   Figure saved to: {output_path}")
                 
                 self.fit_flag = True
                 
             except RuntimeError as re:
                 self.r_2 = 0
-                print(f"   ❌ Fitting failed: {re}")
+                logger.warning(f"    Fitting failed: {re}")
 
         elif self.model_level == 'DMA':
             self.generate_figure = False
@@ -445,7 +448,7 @@ class ResponseCurveFit:
                     r_2.append(0)
                     
                     re = "for dmacode: " + str(i) + " " + str(re)
-                    print(re)
+                    logger.warning(re)
                     continue
                 
             return pd.DataFrame({
