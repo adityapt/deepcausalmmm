@@ -5,6 +5,67 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Budget Optimization & Documentation Cleanup
+
+### Added
+- **Budget Optimization Module**: Complete constrained optimization for optimal budget allocation
+- **`postprocess/optimization.py`**: `BudgetOptimizer` class with multiple optimization methods (SLSQP, trust-constr, differential evolution, hybrid)
+- **`postprocess/optimization_utils.py`**: Helper functions for data preparation, curve fitting, and report generation
+- **`examples/example_budget_optimization.py`**: Complete workflow demonstration with constraints and scenarios
+- **`docs/source/api/optimization.rst`**: Comprehensive API documentation for budget optimization
+- **`OptimizationResult`**: Dataclass for optimization results with allocation, predicted response, and detailed metrics
+- **`optimize_budget_from_curves()`**: Convenience function for quick optimization from curve parameters
+
+### Optimization Features
+- **Multiple Methods**: SLSQP (default), trust-constr, differential_evolution, hybrid approaches
+- **Channel Constraints**: Set min/max spend limits based on business requirements or historical bounds
+- **Hill Equation Integration**: Uses fitted response curves for accurate saturation modeling
+- **Scenario Comparison**: Compare current vs optimal vs custom allocations
+- **ROI Maximization**: Maximize predicted response subject to budget and constraints
+- **Detailed Reporting**: Comprehensive reports with spend allocation, response, ROI, and saturation metrics
+
+### Changed
+- **Documentation Cleanup**: Removed ALL emojis from README, CONTRIBUTING, and RST documentation files
+- **Project Structure**: Updated to include optimization modules in all documentation
+- **Feature Lists**: Enhanced to highlight budget optimization and response curves (14+ visualizations)
+- **Key Features Section**: Simplified "No Hardcoding" section to single "Config-Driven" bullet point
+
+### Documentation Updates
+- **README.md**: Added Budget Optimization section with usage examples, updated project structure
+- **CONTRIBUTING.md**: Updated project structure to include optimization modules
+- **docs/source/index.rst**: Added budget optimization to feature list, removed emojis
+- **docs/source/api/index.rst**: Added optimization module to API documentation structure
+- **All Documentation**: Removed emojis from headers, content, and code examples for professional presentation
+
+### API Examples
+```python
+from deepcausalmmm import optimize_budget_from_curves
+
+# Optimize budget with fitted response curves
+result = optimize_budget_from_curves(
+    budget=1_000_000,
+    curve_params=fitted_curves_df,  # DataFrame with: channel, top, bottom, saturation, slope
+    num_weeks=52,
+    constraints={
+        'TV': {'lower': 100000, 'upper': 600000},
+        'Search': {'lower': 150000, 'upper': 500000}
+    },
+    method='SLSQP'
+)
+
+if result.success:
+    print(f"Optimal Allocation: {result.allocation}")
+    print(f"Predicted Response: {result.predicted_response:,.0f}")
+    print(result.by_channel)
+```
+
+### Backward Compatibility
+- All existing APIs unchanged
+- Example scripts maintained
+- No breaking changes to core functionality
+
 ## [1.0.18] - 2025-10-22
 
 ### Professional Code Standards & Documentation

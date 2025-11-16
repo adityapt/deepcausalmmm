@@ -22,6 +22,7 @@ Postprocessing and Analysis
 
    analysis
    response_curves
+   optimization
    visualization
 
 Command Line Interface

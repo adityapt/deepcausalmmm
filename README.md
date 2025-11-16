@@ -1,4 +1,4 @@
-# DeepCausalMMM 🚀
+# DeepCausalMMM
 
 **Advanced Marketing Mix Modeling with Causal Inference and Deep Learning**
 
@@ -14,33 +14,30 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 🎯 Key Features
+## Key Features
 
-### ✅ **No Hardcoding**
-- **100% Learnable Parameters**: All model parameters learned from data
+### Advanced Architecture
 - **Config-Driven**: Every setting configurable via `config.py`
-- **Dataset Agnostic**: Works on any MMM dataset without modifications
-
-### 🧠 **Advanced Architecture**
 - **GRU-Based Temporal Modeling**: Captures complex time-varying effects
 - **DAG Learning**: Discovers causal relationships between channels
 - **Learnable Coefficient Bounds**: Channel-specific, data-driven constraints
 - **Data-Driven Seasonality**: Automatic seasonal decomposition per region
 
-### 📊 **Robust Statistical Methods**
+### Robust Statistical Methods
 - **Huber Loss**: Robust to outliers and extreme values
 - **Multiple Metrics**: RMSE, R², MAE, Trimmed RMSE, Log-space metrics
 - **Advanced Regularization**: L1/L2, sparsity, coefficient-specific penalties
 - **Gradient Clipping**: Parameter-specific clipping for stability
 
-### 🔬 **Comprehensive Analysis**
+### Comprehensive Analysis
 - **14+ Interactive Visualizations**: Complete dashboard with insights
 - **Response Curves**: Non-linear saturation analysis with Hill equations
+- **Budget Optimization**: Constrained optimization for optimal channel allocation
 - **DMA-Level Contributions**: True economic impact calculation
 - **Channel Effectiveness**: Detailed performance analysis
 - **DAG Visualization**: Interactive causal network graphs
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -112,11 +109,11 @@ python dashboard_rmse_optimized.py
 from deepcausalmmm import DeepCausalMMM, get_device
 from deepcausalmmm.core import get_default_config
 
-print(" DeepCausalMMM package imported successfully!")
+print("DeepCausalMMM package imported successfully!")
 print(f"Device: {get_device()}")
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 deepcausalmmm/                      # Project root
@@ -153,6 +150,8 @@ deepcausalmmm/                      # Project root
 │   │   ├── analysis.py            # Statistical analysis utilities
 │   │   ├── comprehensive_analysis.py  # Comprehensive analyzer
 │   │   ├── response_curves.py     # Non-linear response curve fitting (Hill equations)
+│   │   ├── optimization.py        # Budget optimization with response curves
+│   │   ├── optimization_utils.py  # Optimization utility functions
 │   │   └── dag_postprocess.py     # DAG post-processing and analysis
 │   │
 │   └── utils/                      # Utility functions
@@ -163,7 +162,8 @@ deepcausalmmm/                      # Project root
 ├── examples/                       # Example scripts and notebooks
 │   ├── quickstart.ipynb           # Interactive Jupyter notebook for Google Colab
 │   ├── dashboard_rmse_optimized.py # Comprehensive dashboard with 14+ visualizations
-│   └── example_response_curves.py  # Response curve fitting examples
+│   ├── example_response_curves.py  # Response curve fitting examples
+│   └── example_budget_optimization.py  # Budget optimization workflow
 │
 ├── tests/                          # Test suite
 │   ├── __init__.py                # Test package initialization
@@ -195,6 +195,7 @@ deepcausalmmm/                      # Project root
 │       │   ├── inference.rst
 │       │   ├── analysis.rst
 │       │   ├── response_curves.rst # Response curves API
+│       │   ├── optimization.rst    # Budget optimization API
 │       │   ├── utils.rst
 │       │   └── exceptions.rst
 │       ├── examples/             # Example documentation
@@ -209,26 +210,26 @@ deepcausalmmm/                      # Project root
     └── figure_response_curve_simple.png # Response curve figure
 ```
 
-## 🎨 Dashboard Features
+## Dashboard Features
 
 The comprehensive dashboard includes:
 
-1. **📈 Performance Metrics**: Training vs Holdout comparison
-2. **📊 Actual vs Predicted**: Time series visualization
-3. **🎯 Holdout Scatter**: Generalization assessment
-4. **💰 Economic Contributions**: Total KPI per channel
-5. **🥧 Contribution Breakdown**: Donut chart with percentages
-6. **💧 Waterfall Analysis**: Decomposed contribution flow
-7. **📺 Channel Effectiveness**: Coefficient distributions
-8. **🔗 DAG Network**: Interactive causal relationships
-9. **🔥 DAG Heatmap**: Adjacency matrix visualization
-10. **📊 Stacked Contributions**: Time-based channel impact
-11. **📈 Individual Channels**: Detailed channel analysis
-12. **📏 Scaled Data**: Normalized time series
-13. **🎛️ Control Variables**: External factor analysis
-14. **📉 Response Curves**: Non-linear response curves (diminishing returns analysis) with Hill equations
+1. **Performance Metrics**: Training vs Holdout comparison
+2. **Actual vs Predicted**: Time series visualization
+3. **Holdout Scatter**: Generalization assessment
+4. **Economic Contributions**: Total KPI per channel
+5. **Contribution Breakdown**: Donut chart with percentages
+6. **Waterfall Analysis**: Decomposed contribution flow
+7. **Channel Effectiveness**: Coefficient distributions
+8. **DAG Network**: Interactive causal relationships
+9. **DAG Heatmap**: Adjacency matrix visualization
+10. **Stacked Contributions**: Time-based channel impact
+11. **Individual Channels**: Detailed channel analysis
+12. **Scaled Data**: Normalized time series
+13. **Control Variables**: External factor analysis
+14. **Response Curves**: Non-linear response curves (diminishing returns analysis) with Hill equations
 
-## ⚙️ Configuration
+## Configuration
 
 Key configuration parameters:
 
@@ -254,7 +255,7 @@ Key configuration parameters:
 }
 ```
 
-## 🔬 Advanced Features
+## Advanced Features
 
 ### Learnable Parameters
 - **Media Coefficient Bounds**: `F.softplus(coeff_max_raw) * torch.sigmoid(media_coeffs_raw)`
@@ -303,11 +304,58 @@ r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
 print(f"Slope: {slope:.3f}, Saturation: {saturation:.3f}, R²: {r2_score:.3f}")
 ```
 
-## 📊 Performance Benchmarks
+### Budget Optimization
+- **Constrained Optimization**: Find optimal budget allocation across channels
+- **Multiple Methods**: SLSQP (default), trust-constr, differential evolution, hybrid
+- **Hill Equation Integration**: Uses fitted response curves for saturation modeling
+- **Channel Constraints**: Set min/max spend limits based on business requirements
+- **Scenario Comparison**: Compare current vs optimal allocations
+- **ROI Maximization**: Maximize predicted response subject to budget and constraints
+
+```python
+from deepcausalmmm import optimize_budget_from_curves
+
+# After training your model and fitting response curves...
+# Use optimize_budget_from_curves() with your fitted curve parameters
+
+result = optimize_budget_from_curves(
+    budget=1_000_000,
+    curve_params=fitted_curves_df,  # DataFrame with: channel, top, bottom, saturation, slope
+    num_weeks=52,
+    constraints={
+        'TV': {'lower': 100000, 'upper': 600000},
+        'Search': {'lower': 150000, 'upper': 500000},
+        'Social': {'lower': 50000, 'upper': 300000}
+    },
+    method='SLSQP'
+)
+
+# View results
+if result.success:
+    print(f"Optimal Allocation: {result.allocation}")
+    print(f"Predicted Response: {result.predicted_response:,.0f}")
+    print(result.by_channel)
+```
+
+**Example Output:**
+```
+Optimal Allocation: {'TV': 100000, 'Search': 420000, 'Social': 300000, ...}
+Predicted Response: 627,788
+
+Detailed Metrics:
+  channel  total_spend  weekly_spend  roi  spend_pct  response_pct  saturation_pct
+   Search      420,000      8,076.92  0.56      42.0%        37.8%           323%
+   Social      300,000      5,769.23  0.73      30.0%        34.8%           288%
+       TV      100,000      1,923.08  0.13      10.0%         2.1%            64%
+```
+
+See `examples/example_budget_optimization.py` for complete workflow and tips.
+
+## Performance Benchmarks
 
 *Performance benchmarks will be added with masked/anonymized data to demonstrate model capabilities while protecting proprietary information.*
 
-## 🛠️ Development
+## Development
 
 ### Requirements
 - Python 3.8+
@@ -326,11 +374,11 @@ python -m pytest tests/
 ### Contributing
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](LICENSE) file.
 
-## 🎉 Success Stories
+## Success Stories
 
 > "Achieved 93% holdout R² with only 3.6% performance gap - exceptional generalization!"
 
@@ -340,22 +388,22 @@ MIT License - see [LICENSE](LICENSE) file.
 
 > "DMA-level contributions and DAG learning revealed true causal relationships between our marketing channels"
 
-## 🤝 Support
+## Support
 
 - **Documentation**: Comprehensive README with examples
 - **Issues**: Use GitHub issues for bug reports and feature requests
 - **Performance**: All configurations battle-tested and production-ready
 - **Zero Hardcoding**: Fully generalizable across different datasets and industries
 
-## 📚 Documentation
+## Documentation
 
-- **📖 Full Documentation**: [deepcausalmmm.readthedocs.io](https://deepcausalmmm.readthedocs.io/)
-- **🚀 Quick Start Guide**: [Installation & Usage](https://deepcausalmmm.readthedocs.io/en/latest/quickstart.html)
-- **📋 API Reference**: [Complete API Documentation](https://deepcausalmmm.readthedocs.io/en/latest/api/)
-- **📝 Tutorials**: [Step-by-step Guides](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/)
-- **💡 Examples**: [Practical Use Cases](https://deepcausalmmm.readthedocs.io/en/latest/examples/)
+- **Full Documentation**: [deepcausalmmm.readthedocs.io](https://deepcausalmmm.readthedocs.io/)
+- **Quick Start Guide**: [Installation & Usage](https://deepcausalmmm.readthedocs.io/en/latest/quickstart.html)
+- **API Reference**: [Complete API Documentation](https://deepcausalmmm.readthedocs.io/en/latest/api/)
+- **Tutorials**: [Step-by-step Guides](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/)
+- **Examples**: [Practical Use Cases](https://deepcausalmmm.readthedocs.io/en/latest/examples/)
 
-## 📖 Citation
+## Citation
 
 If you use DeepCausalMMM in your research, please cite:
 
@@ -370,17 +418,16 @@ If you use DeepCausalMMM in your research, please cite:
 
 Or click the **"Cite this repository"** button on GitHub for other citation formats (APA, Chicago, MLA).
 
-## 🔗 Quick Links
+## Quick Links
 
 - **Main Dashboard**: `dashboard_rmse_optimized.py` - Complete analysis pipeline
+- **Budget Optimization**: `examples/example_budget_optimization.py` - End-to-end optimization workflow
 - **Core Model**: `deepcausalmmm/core/unified_model.py` - DeepCausalMMM architecture
 - **Configuration**: `deepcausalmmm/core/config.py` - All tunable parameters
 - **Data Pipeline**: `deepcausalmmm/core/data.py` - Data processing and scaling
 
 ---
 
-**DeepCausalMMM** - Where Deep Learning meets Causal Inference for Superior Marketing Mix Modeling 🚀
+**DeepCausalMMM** - Where Deep Learning meets Causal Inference for Superior Marketing Mix Modeling
 
 **arXiv preprint** - https://www.arxiv.org/abs/2510.13087
-
-*Built with ❤️ for the MMM community*

@@ -64,7 +64,7 @@ Test that the package is installed correctly:
     from deepcausalmmm import DeepCausalMMM, get_device
     from deepcausalmmm.core import get_default_config
 
-    print("✅ DeepCausalMMM package imported successfully!")
+    print("DeepCausalMMM package imported successfully!")
     print(f"Device: {get_device()}")
 
 GPU Support

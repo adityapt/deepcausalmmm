@@ -219,4 +219,4 @@ Getting Help
 * **GitHub Discussions**: For questions and general discussion
 * **Documentation**: Check the docs first for common questions
 
-Thank you for contributing to DeepCausalMMM! 🚀
+Thank you for contributing to DeepCausalMMM!

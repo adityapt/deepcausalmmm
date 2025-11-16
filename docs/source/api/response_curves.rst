@@ -108,16 +108,16 @@ Complete Workflow
     print(f"  Fit Quality (R²): {r2:.3f}")
     
     if slope >= 2.0:
-        print("  ✓ Strong S-shaped curve (diminishing returns)")
+        print("  Strong S-shaped curve (diminishing returns)")
     else:
-        print("  ⚠ Gentle curve (less pronounced saturation)")
+        print("  Gentle curve (less pronounced saturation)")
     
     if r2 >= 0.8:
-        print("  ✓ Excellent fit")
+        print("  Excellent fit")
     elif r2 >= 0.6:
-        print("  ✓ Good fit")
+        print("  Good fit")
     else:
-        print("  ⚠ Moderate fit - review data quality")
+        print("  Moderate fit - review data quality")
 
 Advanced Usage
 --------------

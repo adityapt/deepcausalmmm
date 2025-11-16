@@ -22,7 +22,7 @@ Thank you for your interest in contributing to DeepCausalMMM! This document prov
 - **Error handling** with informative messages
 - **Modular design** with clear separation of concerns
 
-##  Getting Started
+## Getting Started
 
 ### Development Setup
 
@@ -47,7 +47,7 @@ pip install -e .[dev]
 
 4. **Verify installation**
 ```bash
-python -c "from deepcausalmmm import DeepCausalMMM, get_device; print(' Package installed successfully!')"
+python -c "from deepcausalmmm import DeepCausalMMM, get_device; print('Package installed successfully!')"
 ```
 
 5. **Run tests to ensure setup**
@@ -92,6 +92,8 @@ deepcausalmmm/                      # Project root
 │   │   ├── analysis.py            # Statistical analysis utilities
 │   │   ├── comprehensive_analysis.py  # Comprehensive analyzer
 │   │   ├── response_curves.py     # Non-linear response curve fitting (Hill equations)
+│   │   ├── optimization.py        # Budget optimization with response curves
+│   │   ├── optimization_utils.py  # Optimization utility functions
 │   │   └── dag_postprocess.py     # DAG post-processing and analysis
 │   │
 │   └── utils/                      # Utility functions
@@ -102,7 +104,8 @@ deepcausalmmm/                      # Project root
 ├── examples/                       # Example scripts and notebooks
 │   ├── quickstart.ipynb           # Interactive Jupyter notebook for Google Colab
 │   ├── dashboard_rmse_optimized.py # Comprehensive dashboard with 14+ visualizations
-│   └── example_response_curves.py  # Response curve fitting examples
+│   ├── example_response_curves.py  # Response curve fitting examples
+│   └── example_budget_optimization.py  # Budget optimization workflow
 │
 ├── tests/                          # Test suite
 │   ├── __init__.py                # Test package initialization
@@ -134,6 +137,7 @@ deepcausalmmm/                      # Project root
 │           ├── inference.rst
 │           ├── analysis.rst
 │           ├── response_curves.rst # Response curves API
+│           ├── optimization.rst    # Budget optimization API
 │           ├── utils.rst
 │           └── exceptions.rst
 │
@@ -144,7 +148,7 @@ deepcausalmmm/                      # Project root
     └── figure_response_curve_simple.png # Response curve figure
 ```
 
-## 🔧 Development Guidelines
+## Development Guidelines
 
 ### **1. Configuration Management**
 
@@ -161,8 +165,8 @@ def __init__(self, config: Dict[str, Any]):
 ```python
 # NEVER hardcode values
 def __init__(self):
-    self.hidden_dim = 320  #  HARDCODED
-    self.dropout = 0.08    #  HARDCODED
+    self.hidden_dim = 320  # HARDCODED
+    self.dropout = 0.08    # HARDCODED
 ```
 
 ### **2. Model Architecture Changes**
@@ -283,7 +287,7 @@ def calculate_contributions(
     """
 ```
 
-##  Performance Standards
+## Performance Standards
 
 ### **Benchmark Requirements**
 
@@ -319,7 +323,7 @@ def test_model_performance_regression():
     assert results['holdout_rmse'] <= 400000
 ```
 
-##  Pull Request Process
+## Pull Request Process
 
 ### **1. Pre-submission Checklist**
 - [ ] **Code follows zero-hardcoding principle**
@@ -332,30 +336,30 @@ def test_model_performance_regression():
 
 ### **2. PR Description Template**
 ```markdown
-##  Purpose
+## Purpose
 Brief description of what this PR accomplishes.
 
-##  Changes Made
+## Changes Made
 - List of specific changes
 - New features added
 - Bug fixes included
 
-##  Performance Impact
+## Performance Impact
 - Benchmark results before/after
 - Any performance changes documented
 - Justification for performance changes
 
-##  Testing
+## Testing
 - Tests added/modified
 - Test coverage maintained
 - Performance regression tests included
 
-##  Documentation
+## Documentation
 - README updated if needed
 - Docstrings added/updated
 - Examples provided for new features
 
-##  Breaking Changes
+## Breaking Changes
 - Any breaking changes listed
 - Migration guide provided if needed
 ```
@@ -367,57 +371,57 @@ Brief description of what this PR accomplishes.
 4. **Documentation review** for clarity and completeness
 5. **Final approval** and merge
 
-##  Bug Reports
+## Bug Reports
 
 ### **Issue Template**
 ```markdown
-##  Bug Description
+## Bug Description
 Clear description of the bug.
 
-##  Steps to Reproduce
+## Steps to Reproduce
 1. Step 1
 2. Step 2
 3. Step 3
 
-##  Expected Behavior
+## Expected Behavior
 What should happen.
 
-##  Actual Behavior  
+## Actual Behavior  
 What actually happens.
 
-##  Environment
+## Environment
 - Python version:
 - PyTorch version:
 - Operating System:
 - DeepCausalMMM version:
 
-##  Additional Context
+## Additional Context
 - Error messages
 - Stack traces
 - Sample data (if applicable)
 ```
 
-##  Feature Requests
+## Feature Requests
 
 ### **Enhancement Template**
 ```markdown
-##  Feature Description
+## Feature Description
 Clear description of the proposed feature.
 
-##  Use Case
+## Use Case
 Why is this feature needed? What problem does it solve?
 
-##  Proposed Implementation
+## Proposed Implementation
 High-level approach to implementing the feature.
 
-##  Performance Considerations
+## Performance Considerations
 Any potential impact on model performance.
 
-##  Related Issues
+## Related Issues
 Links to related issues or discussions.
 ```
 
-##  Code Style
+## Code Style
 
 ### **Python Style Guidelines**
 - **PEP 8** compliance with 100-character line limit
@@ -449,14 +453,14 @@ from deepcausalmmm.core.config import get_default_config
 from deepcausalmmm.utils.device import get_device
 ```
 
-##  Recognition
+## Recognition
 
 Contributors will be recognized in:
 - **CHANGELOG.md** for each release
 - **README.md** contributors section
 - **GitHub releases** with contributor highlights
 
-##  Community
+## Community
 
 - **Be respectful** and constructive in discussions
 - **Help others** learn and contribute
@@ -465,4 +469,4 @@ Contributors will be recognized in:
 
 ---
 
-Thank you for contributing to DeepCausalMMM! Together we're building the future of Marketing Mix Modeling 
+Thank you for contributing to DeepCausalMMM! Together we're building the future of Marketing Mix Modeling.
