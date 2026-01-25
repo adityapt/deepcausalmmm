@@ -292,7 +292,7 @@ class DeepCausalMMM(nn.Module):
     def initialize_baseline(self, y_data: torch.Tensor):
         """Initialize baseline to match target data statistics.
         
-        CRITICAL: y_data is ALREADY in scaled space (log1p transformed)!
+        CRITICAL: y_data is ALREADY in scaled space (y/y_mean per region)!
         Extract ALL parameters directly from the actual data distribution.
         IMPORTANT: Skip padding weeks to avoid baseline bias!
         """
@@ -348,10 +348,23 @@ class DeepCausalMMM(nn.Module):
                 self.time_trend_weight.data = torch.zeros(1)
                 self.time_trend_bias.data = torch.zeros(1)
             
-            logger.info(f"Initialized baselines (Log1p scale):")
+            # Get original scale means for display
+            if hasattr(self, 'scaling_constants'):
+                y_mean_per_region = self.scaling_constants.get('y_mean_per_region')
+                if y_mean_per_region is not None:
+                    avg_original_visits = (region_means_scaled.mean() * y_mean_per_region.mean().item())
+                else:
+                    avg_original_visits = None
+            else:
+                avg_original_visits = None
+            
+            logger.info(f"Initialized baselines (Linear scaled - y/mean):")
             logger.info(f"   Region baselines range: [{region_means_scaled.min():.3f}, {region_means_scaled.max():.3f}]")
-            logger.info(f"   Global bias (Log1p scale): {self.global_bias.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
-            logger.info(f"   Expected prediction baseline: {region_means_scaled.mean():.3f} -> ~{torch.expm1(torch.tensor(region_means_scaled.mean())).item():.0f} visits")
+            logger.info(f"   Global bias (Linear scale): {self.global_bias.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
+            if avg_original_visits is not None:
+                logger.info(f"   Expected prediction baseline: {region_means_scaled.mean():.3f} (normalized) -> ~{avg_original_visits:.0f} visits")
+            else:
+                logger.info(f"   Expected prediction baseline: {region_means_scaled.mean():.3f} (normalized)")
             
             # Initialize seasonal components using actual data decomposition
             self._initialize_seasonal_components(y_data)
@@ -361,14 +374,24 @@ class DeepCausalMMM(nn.Module):
         Initialize seasonal components using multiplicative decomposition per region.
         
         Args:
-            y_data: Target data [n_regions, n_timesteps] in log1p scale
+            y_data: Target data [n_regions, n_timesteps] in linear scaled space (y/mean)
         """
         with torch.no_grad():
             # Skip padding weeks for seasonal decomposition
             y_no_padding = y_data[:, self.burn_in_weeks:] if y_data.shape[1] > self.burn_in_weeks else y_data
             
-            # Convert to numpy and apply expm1 to get original scale for decomposition
-            y_original_scale = torch.expm1(y_no_padding).cpu().numpy()
+            # Convert to original scale by multiplying by region means
+            if hasattr(self, 'scaling_constants'):
+                y_mean_per_region = self.scaling_constants.get('y_mean_per_region')
+                if y_mean_per_region is not None:
+                    # y_original = y_scaled * y_mean
+                    y_original_scale = (y_no_padding * y_mean_per_region[:, :y_no_padding.shape[1]]).cpu().numpy()
+                else:
+                    # Fallback: assume data is already reasonably scaled
+                    y_original_scale = y_no_padding.cpu().numpy()
+            else:
+                # Fallback: assume data is already reasonably scaled
+                y_original_scale = y_no_padding.cpu().numpy()
             
             # Extract seasonal components per region
             seasonal_components = self.seasonality_detector.extract_seasonal_components_per_region(
@@ -427,8 +450,8 @@ class DeepCausalMMM(nn.Module):
             
             try:
                 beta_media = torch.linalg.solve(XtX_reg, Xty)
-                # POSITIVE-ONLY INITIALIZATION: Use sigmoid to ensure non-negative media coefficients
-                beta_media_raw = torch.log(torch.abs(beta_media) + 1e-8)  # Convert to raw for sigmoid
+                # POSITIVE-ONLY INITIALIZATION: Use abs and sigmoid to ensure non-negative media coefficients
+                beta_media_raw = torch.abs(beta_media)  # Ensure positive
                 beta_media_positive = torch.sigmoid(beta_media_raw)  # Range: [0, 1] - POSITIVE ONLY!
                 
                 # Update stable media coefficients
@@ -848,6 +871,9 @@ class DeepCausalMMM(nn.Module):
         # Apply ReLU to ensure baseline is always ≥ 0 (visits can't be negative)
         baseline_positive = F.relu(raw_baseline)  # Always ≥ 0
         
+        # Store baseline WITHOUT seasonal for clean attribution
+        baseline_without_seasonal = F.relu(reg_term + global_bias_positive)
+        
         raw_prediction = media_term + ctrl_term + baseline_positive + trend_term
         y = raw_prediction * F.softplus(self.prediction_scale)
         
@@ -856,9 +882,9 @@ class DeepCausalMMM(nn.Module):
         outputs['control_coefficients'] = ctrl_coeffs
         outputs['contributions'] = media_contrib
         outputs['trend_contribution'] = trend_term
-        outputs['seasonal_contribution'] = seasonal_term  # NEW: Track seasonal contribution (now always ≥ 0)
+        outputs['seasonal_contribution'] = seasonal_term  # Stored separately for clean attribution
         outputs['control_contributions'] = ctrl_contrib
-        outputs['baseline'] = baseline_positive  # FIXED: Always non-negative baseline
+        outputs['baseline'] = baseline_without_seasonal  # Baseline WITHOUT seasonal (for clean attribution)
         outputs['raw_prediction'] = raw_prediction
         outputs['prediction_scale'] = F.softplus(self.prediction_scale)
         outputs['burn_in_weeks'] = self.burn_in_weeks  # NEW: Store for post-processing

@@ -439,6 +439,7 @@ class ModelTrainer:
               R_holdout: Optional[torch.Tensor] = None,
               y_holdout: Optional[torch.Tensor] = None,
               y_full_for_baseline: Optional[torch.Tensor] = None,
+              pipeline: Optional[Any] = None,
               verbose: bool = True) -> Dict[str, Any]:
         """
         Full training loop with warm-start, main training, and holdout evaluation.
@@ -452,11 +453,16 @@ class ModelTrainer:
             X_control_holdout: Optional holdout control data
             R_holdout: Optional holdout region data
             y_holdout: Optional holdout target data
+            y_full_for_baseline: Optional full dataset for baseline initialization
+            pipeline: Optional UnifiedDataPipeline for accessing scaler
             verbose: Whether to show progress
             
         Returns:
             Dictionary with training results
         """
+        # Store pipeline if provided
+        if pipeline is not None:
+            self.pipeline = pipeline
         if self.model is None or self.optimizer is None:
             raise ValueError("Model and optimizer must be created before training")
             
@@ -473,6 +479,10 @@ class ModelTrainer:
             y_holdout = y_holdout.to(self.device)
             
         # Initialize model with data - use full dataset for baseline if provided
+        # CRITICAL: Pass scaling_constants to model for proper initialization
+        scaler = self.pipeline.get_scaler()
+        self.model.scaling_constants = scaler.scaling_constants
+        
         if hasattr(self.model, 'initialize_baseline'):
             baseline_data = y_full_for_baseline if y_full_for_baseline is not None else y_train
             self.model.initialize_baseline(baseline_data)
@@ -573,13 +583,14 @@ class ModelTrainer:
                 pbar.set_postfix(progress_dict)
                 
         # Final evaluation: Convert ONLY final results to original scale for reporting
-        # Keep all training metrics in log space for stability
+        # Keep all training metrics in scaled space for stability
         self.model.eval()
         with torch.no_grad():
             # Final training evaluation in original scale
-            train_pred_log, _, _, _ = self.model(X_media_train, X_control_train, R_train)
-            train_pred_orig = torch.expm1(torch.clamp(train_pred_log, max=20.0))
-            train_true_orig = torch.expm1(torch.clamp(y_train, max=20.0))
+            train_pred_scaled, _, _, _ = self.model(X_media_train, X_control_train, R_train)
+            scaler = self.pipeline.get_scaler()
+            train_pred_orig = scaler.inverse_transform_target(train_pred_scaled)
+            train_true_orig = scaler.inverse_transform_target(y_train)
             
             final_train_rmse_orig = np.sqrt(mean_squared_error(
                 train_true_orig.detach().cpu().numpy().flatten(),
@@ -592,15 +603,15 @@ class ModelTrainer:
             
             # Final holdout evaluation in original scale (if available)
             if X_media_holdout is not None and y_holdout is not None:
-                holdout_pred_log, _, _, _ = self.model(X_media_holdout, X_control_holdout, R_holdout)
-                holdout_pred_orig = torch.expm1(torch.clamp(holdout_pred_log, max=20.0))
-                holdout_true_orig = torch.expm1(torch.clamp(y_holdout, max=20.0))
+                holdout_pred_scaled, _, _, _ = self.model(X_media_holdout, X_control_holdout, R_holdout)
+                holdout_pred_orig = scaler.inverse_transform_target(holdout_pred_scaled)
+                holdout_true_orig = scaler.inverse_transform_target(y_holdout)
                 
                 # Convert to numpy for robust metrics
                 y_true_np = holdout_true_orig.detach().cpu().numpy().flatten()
                 y_pred_np = holdout_pred_orig.detach().cpu().numpy().flatten()
-                y_true_log_np = y_holdout.detach().cpu().numpy().flatten()
-                y_pred_log_np = holdout_pred_log.detach().cpu().numpy().flatten()
+                y_true_scaled_np = y_holdout.detach().cpu().numpy().flatten()
+                y_pred_scaled_np = holdout_pred_scaled.detach().cpu().numpy().flatten()
                 
                 # Standard metrics (original scale)
                 final_holdout_rmse_orig = np.sqrt(mean_squared_error(y_true_np, y_pred_np))
@@ -625,12 +636,12 @@ class ModelTrainer:
                     holdout_trimmed_rmse = final_holdout_rmse_orig
                 
                 # 3. Log-space R² (should be excellent!)
-                holdout_r2_log = r2_score(y_true_log_np, y_pred_log_np)
+                holdout_r2_scaled = r2_score(y_true_scaled_np, y_pred_scaled_np)
                 
-                # 4. Log-space RMSE 
-                holdout_rmse_log = np.sqrt(mean_squared_error(y_true_log_np, y_pred_log_np))
+                # 4. Scaled-space RMSE 
+                holdout_rmse_scaled = np.sqrt(mean_squared_error(y_true_scaled_np, y_pred_scaled_np))
                 
-                final_holdout_loss_orig = last_holdout_loss  # Keep log-space loss
+                final_holdout_loss_orig = last_holdout_loss  # Keep scaled-space loss
             else:
                 final_holdout_rmse_orig = None
                 final_holdout_r2_orig = None
@@ -639,8 +650,8 @@ class ModelTrainer:
                 holdout_mae_orig = None
                 holdout_median_ae = None
                 holdout_trimmed_rmse = None
-                holdout_r2_log = None
-                holdout_rmse_log = None
+                holdout_r2_scaled = None
+                holdout_rmse_scaled = None
         
         final_results = {
             'model': self.model,
@@ -662,8 +673,8 @@ class ModelTrainer:
                 'holdout_mae_orig': holdout_mae_orig,           # Mean Absolute Error (original scale)
                 'holdout_median_ae': holdout_median_ae,         # Median Absolute Error (original scale)  
                 'holdout_trimmed_rmse': holdout_trimmed_rmse,   # Trimmed RMSE (95% of data, removes outliers)
-                'holdout_r2_log': holdout_r2_log,               # R² in log space (should be excellent!)
-                'holdout_rmse_log': holdout_rmse_log,           # RMSE in log space (training metric)
+                'holdout_r2_scaled': holdout_r2_scaled,         # R² in scaled space (y/mean)
+                'holdout_rmse_scaled': holdout_rmse_scaled,     # RMSE in scaled space (training metric)
             })
             
         return final_results
