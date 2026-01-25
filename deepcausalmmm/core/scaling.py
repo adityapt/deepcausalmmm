@@ -94,6 +94,11 @@ class SimpleGlobalScaler:
         # Linear scaling by region mean - preserves additive decomposition
         # y_scaled = y / y_mean ensures components can be easily attributed in original space
         
+        # CRITICAL: Calculate and STORE y_mean_per_region from TRAINING data ONLY
+        # This prevents data leakage when transforming holdout data
+        y_mean_per_region = y_tensor.mean(dim=1, keepdim=True)  # [n_regions, 1]
+        self.scaling_constants['y_mean_per_region'] = y_mean_per_region
+        
         # Store parameters (no total_impressions needed for share-of-voice)
         self.params = SimpleScalingParams(
             total_impressions=None,  # Not needed for per-timestep share-of-voice
@@ -163,11 +168,12 @@ class SimpleGlobalScaler:
         X_control_scaled = torch.clamp(X_control_scaled, min=-clip_range, max=clip_range)
         
         # Target scaling: Linear scaling by region mean - preserves additivity
-        y_mean_per_region = y_tensor.mean(dim=1, keepdim=True)  # [n_regions, 1]
-        y_scaled = y_tensor / (y_mean_per_region + 1e-8)  # Normalize by region mean
+        # CRITICAL FIX: Use STORED y_mean_per_region from training data (no data leakage!)
+        y_mean_per_region = self.scaling_constants.get('y_mean_per_region')
+        if y_mean_per_region is None:
+            raise ValueError("y_mean_per_region not found in scaling_constants. Must call fit() before transform().")
         
-        # Store region means for inverse transform
-        self.scaling_constants['y_mean_per_region'] = y_mean_per_region
+        y_scaled = y_tensor / (y_mean_per_region + 1e-8)  # Normalize by region mean FROM TRAINING
         
         # Convert back to Float32 for model compatibility
         y_scaled_float32 = y_scaled.float()

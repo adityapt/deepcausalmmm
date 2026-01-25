@@ -202,7 +202,7 @@ class ResponseCurveFit(object):
             )
 
 
-def load_real_mmm_data(filepath="data/MMM Data.csv"):
+def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
     """Load and process the real MMM Data.csv"""
     print(f" Loading Real MMM Data from: {filepath}")
     
@@ -210,8 +210,8 @@ def load_real_mmm_data(filepath="data/MMM Data.csv"):
     
     # Identify columns
     impression_cols = [col for col in df.columns if 'impressions_' in col]
-    value_cols = [col for col in df.columns if 'value_' in col and col != 'value_visits_visits']
-    target_col = 'value_visits_visits'
+    control_cols = [col for col in df.columns if col.startswith('control_')]
+    target_col = 'target_visits'
     region_col = 'dmacode'
     time_col = 'weekid'
     
@@ -223,10 +223,9 @@ def load_real_mmm_data(filepath="data/MMM Data.csv"):
         media_names.append(clean_name)
     
     control_names = []
-    for col in value_cols:
-        clean_name = col.replace('value_', '').replace('econmetricsmsa_', '').replace('mortgagemetrics_', '').replace('moodys_', '')
-        clean_name = clean_name.replace('_sm', '').replace('_', ' ').title()
-        control_names.append(clean_name)
+    for col in control_cols:
+        # For control columns like 'control_01', just keep the name as-is
+        control_names.append(col)
     
     # Get unique regions and weeks
     regions = sorted(df[region_col].unique())
@@ -243,8 +242,8 @@ def load_real_mmm_data(filepath="data/MMM Data.csv"):
     for col in impression_cols:
         df_complete[col] = df_complete[col].fillna(0)
     
-    for col in value_cols + [target_col]:
-        df_complete[col] = df_complete.groupby(region_col)[col].fillna(method='ffill').fillna(method='bfill')
+    for col in control_cols + [target_col]:
+        df_complete[col] = df_complete.groupby(region_col)[col].ffill().bfill()
         if df_complete[col].isna().any():
             df_complete[col] = df_complete[col].fillna(df_complete[col].mean())
     
@@ -263,7 +262,7 @@ def load_real_mmm_data(filepath="data/MMM Data.csv"):
     for region_idx in range(n_regions):
         region_data = df_complete[df_complete['region_idx'] == region_idx].sort_values('week_idx')
         X_media_list.append(region_data[impression_cols].values.astype(np.float32))
-        X_control_list.append(region_data[value_cols].values.astype(np.float32))
+        X_control_list.append(region_data[control_cols].values.astype(np.float32))
         y_list.append(region_data[target_col].values.astype(np.float32))
     
     X_media = np.stack(X_media_list, axis=0)
@@ -306,13 +305,11 @@ def train_model_and_get_predictions():
     
     # Train
     print("\n Training model...")
-    full_data = {'X_media': X_media, 'X_control': X_control, 'y': y}
-    full_tensors = pipeline.fit_and_transform_training(full_data)
     
     training_results = trainer.train(
         train_tensors['X_media'], train_tensors['X_control'],
         train_tensors['R'], train_tensors['y'],
-        y_full_for_baseline=full_tensors['y'],
+        pipeline=pipeline,
         verbose=True
     )
     

@@ -266,14 +266,14 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
             y_eval = y_padded[:, -y_padded.size(1):].detach()
             
             # SIMPLIFIED: Use sqrt of MSE loss for training monitoring
-            # (Note: This is in log space, but consistent for training monitoring)
+            # (Note: This is in SCALED space y/y_mean, consistent for training monitoring)
             rmse = torch.sqrt(mse_loss).item()
             
-            # R2 in log space (for training monitoring consistency)
+            # R2 in SCALED space (y/y_mean) for training monitoring consistency
             r2 = r2_score(y_eval.numpy().flatten(), pred_eval.numpy().flatten())
             
-            train_losses.append(total_loss.item())  # Training loss (scaled log space)
-            train_rmses.append(rmse)  # RMSE (log space - for training monitoring)
+            train_losses.append(total_loss.item())  # Training loss (scaled space y/y_mean)
+            train_rmses.append(rmse)  # RMSE (scaled space - for training monitoring)
             train_r2s.append(r2)
         
         # Scheduler step
@@ -1029,15 +1029,15 @@ def create_beautiful_dashboard():
     print(f"       Holdout R²: {results.get('final_holdout_r2', 'N/A')}")
     print(f"    All RMSE values calculated on ORIGINAL UNSCALED data")
     
-    # Display robust metrics if available
-    if 'holdout_mae_orig' in results:
-        print(f"\n    ROBUST METRICS (Option 1 - Outlier Resistant):")
-        print(f"       Holdout MAE: {results['holdout_mae_orig']:,.0f} visits")
-        print(f"       Holdout Median AE: {results['holdout_median_ae']:,.0f} visits")
-        print(f"       Holdout Trimmed RMSE (95%): {results['holdout_trimmed_rmse']:,.0f} visits")
-        print(f"       Holdout R² (Log-space): {results['holdout_r2_log']:.3f}")
-        print(f"       Holdout RMSE (Log-space): {results['holdout_rmse_log']:.3f}")
-        print(f"    Huber Loss Training: {'ENABLED' if config.get('use_huber_loss', False) else 'DISABLED'}")
+    # Display both R² spaces for transparency
+    print(f"\n    R² COMPARISON (Scaled vs Original Space):")
+    print(f"       Training R² (scaled space y/y_mean):  {train_r2s[-1]:.3f}  # Temporal patterns only")
+    print(f"       Training R² (original scale visits):  {results['final_train_r2']:.3f}  # Includes region baselines")
+    print(f"       Holdout R² (scaled space y/y_mean):   (see TQDM)")
+    print(f"       Holdout R² (original scale visits):   {results['final_holdout_r2']:.3f}  # Business-relevant metric")
+    print(f"    ")
+    print(f"    NOTE: Scaled space R² is lower because it removes the 'easy' between-region variance.")
+    print(f"          Original scale R² is what stakeholders care about (actual visit predictions).")
     
     # Set final metrics for compatibility (use UNSCALED training metrics for overall dashboard)
     final_rmse = train_rmse_unscaled  # Use unscaled training RMSE
@@ -1530,9 +1530,9 @@ def create_beautiful_dashboard():
     log_mae = np.mean(np.abs(total_actual_scaled - total_predicted_scaled))
     
     fig_scaled_timeseries.update_layout(
-        title=f'Scaled Data: Actual vs Predicted Over Time (Log1p Space)<br>RMSE: {log_rmse:.4f} | MAE: {log_mae:.4f} | Aggregated Across All {n_regions} Regions',
+        title=f'Scaled Data: Actual vs Predicted Over Time (y/y_mean Space)<br>RMSE: {log_rmse:.4f} | MAE: {log_mae:.4f} | Aggregated Across All {n_regions} Regions',
         xaxis_title='Week',
-        yaxis_title='Log1p(Visits) - Scaled Space',
+        yaxis_title='y/y_mean (Scaled Space)',
         height=600,
         hovermode='x unified'
     )
@@ -1579,21 +1579,65 @@ def create_beautiful_dashboard():
     # Trim all components to match predictions_orig shape [190, 109]
     target_weeks = predictions_orig.shape[1]  # 109 weeks
     
-    # Trim from the end to keep the most recent weeks
-    baseline_trimmed = outputs['baseline'][:, -target_weeks:]
-    media_trimmed = media_contributions[:, -target_weeks:, :]
-    ctrl_trimmed = ctrl_contributions[:, -target_weeks:, :]
-    seasonal_trimmed = outputs['seasonal_contributions'][:, -target_weeks:]
+    # Get SCALED contributions from a fresh forward pass (not the already-transformed ones!)
+    processed_data = results['pipeline'].get_processed_full_data()
+    X_media_full_for_contrib = torch.tensor(processed_data['X_media'])
+    X_control_full_for_contrib = torch.tensor(processed_data['X_control'])
+    R_full_for_contrib = torch.arange(X_media_full_for_contrib.shape[0]).unsqueeze(1).expand(-1, X_media_full_for_contrib.shape[1]).long()
     
-    # Use the package's improved inverse_transform_contributions method
-    # which does proportional allocation for ALL components
+    with torch.no_grad():
+        model.eval()
+        _, _, _, outputs_scaled = model(X_media_full_for_contrib, X_control_full_for_contrib, R_full_for_contrib)
+    
+    # Extract SCALED components and trim to match predictions
+    baseline_trimmed = outputs_scaled['baseline'][:, -target_weeks:]
+    media_trimmed = outputs_scaled['contributions'][:, -target_weeks:, :]  # Scaled media contributions
+    ctrl_trimmed = outputs_scaled['control_contributions'][:, -target_weeks:, :]  # Scaled control contributions
+    seasonal_trimmed = outputs_scaled['seasonal_contribution'][:, -target_weeks:]
+    
+    # DEBUG: Check scaled component ranges
+    print(f"\n DEBUG SCALED COMPONENTS (before inverse transform):")
+    print(f"   baseline_trimmed sum: {baseline_trimmed.sum().item():.2f}")
+    print(f"   media_trimmed sum: {media_trimmed.sum().item():.2f}")
+    print(f"   seasonal_trimmed sum: {seasonal_trimmed.sum().item():.2f}")
+    print(f"   ctrl_trimmed sum: {ctrl_trimmed.sum().item():.2f}")
+    
+    # Also check what raw_prediction sums to (from full forward pass)
+    processed_data = results['pipeline'].get_processed_full_data()
+    X_media_full = torch.tensor(processed_data['X_media'])
+    X_control_full = torch.tensor(processed_data['X_control'])
+    R_full = torch.arange(X_media_full.shape[0]).unsqueeze(1).expand(-1, X_media_full.shape[1]).long()
+    
+    with torch.no_grad():
+        model.eval()
+        y_pred_scaled, _, _, outputs_full = model(X_media_full, X_control_full, R_full)
+        raw_pred = outputs_full['raw_prediction'][:, -target_weeks:]  # Trim to match
+        
+        print(f"\n DEBUG: raw_prediction (scaled) sum: {raw_pred.sum().item():.2f}")
+        print(f" DEBUG: y_pred_scaled sum (after prediction_scale): {y_pred_scaled[:, -target_weeks:].sum().item():.2f}")
+        print(f" DEBUG: predictions_orig sum (after inverse): {predictions_orig.sum().item():,.0f}")
+        
+        components_sum_scaled = baseline_trimmed.sum() + media_trimmed.sum() + seasonal_trimmed.sum() + ctrl_trimmed.sum()
+        print(f"\n DEBUG: Components sum (scaled): {components_sum_scaled.item():.2f}")
+        print(f" DEBUG: raw_prediction sum (scaled): {raw_pred.sum().item():.2f}")
+        print(f" DEBUG: Difference: {abs(components_sum_scaled - raw_pred.sum()).item():.2f}")
+    
+    # Use the package's inverse_transform_contributions method
+    # With linear scaling, this is simple multiplication by y_mean * prediction_scale
     scaler = pipeline.get_scaler()
+    
+    # Get prediction_scale from the CORRECT model outputs (outputs_scaled, not old outputs dict!)
+    pred_scale = outputs_scaled.get('prediction_scale', torch.ones(1))
+    
+    print(f"\n DEBUG: prediction_scale = {pred_scale.item() if hasattr(pred_scale, 'item') else pred_scale}")
+    print(f" DEBUG: y_mean_per_region mean = {scaler.scaling_constants['y_mean_per_region'].mean().item():,.0f}")
+    
     contrib_results = scaler.inverse_transform_contributions(
         media_contributions=media_trimmed,
-        y_pred_orig=predictions_orig,
         baseline=baseline_trimmed,
         control_contributions=ctrl_trimmed,
-        seasonal_contributions=seasonal_trimmed
+        seasonal_contributions=seasonal_trimmed,
+        prediction_scale=pred_scale
     )
     
     print(f"    Proportionally allocated contributions computed:")
@@ -1748,37 +1792,8 @@ def create_beautiful_dashboard():
     fig_effectiveness.write_html(effectiveness_path)
     plots_created.append(("Channel Effectiveness", effectiveness_path))
     
-    # Plot 8: Economic Contribution Percentages - DONUT CHART
-    fig_contrib_pct = go.Figure()
-    
-    # Calculate percentage contributions based on TOTAL ECONOMIC IMPACT (visits)
-    total_economic_impact = total_economic_contributions.sum()
-    economic_contrib_percentages = (total_economic_contributions / total_economic_impact) * 100
-    
-    fig_contrib_pct.add_trace(
-        go.Pie(
-            labels=media_names,
-            values=total_economic_contributions,  # Use actual visit values, not percentages
-            hole=0.4,  # Creates donut chart
-            hovertemplate='<b>%{label}</b><br>Total Visits: %{value:,.0f}<br>Share: %{percent}<extra></extra>',
-            textinfo='label+percent',
-            textposition='auto'
-        )
-    )
-    
-    fig_contrib_pct.update_layout(
-        title='Total Economic Contribution by Channel<br><sub>Donut Chart: Total Visits Generated</sub>',
-        height=600,
-        annotations=[dict(text=f'Total<br>{total_economic_impact:,.0f}<br>Visits', x=0.5, y=0.5, 
-                         font_size=14, showarrow=False)]
-    )
-    
-    contrib_pct_path = f"{dashboard_dir}/contribution_percentages.html"
-    fig_contrib_pct.write_html(contrib_pct_path)
-    plots_created.append(("Contribution Percentages", contrib_pct_path))
-    
-    # Plot 9: Proper Waterfall Chart with Proportional Allocation
-    print(f"    Creating proper waterfall chart...")
+    # Plot 8: Prepare Waterfall Data First (needed for both waterfall and donut)
+    print(f"    Calculating waterfall component totals...")
     
     # Use contrib_results already calculated above
     # Extract contributions in original scale (visits)
@@ -1790,6 +1805,60 @@ def create_beautiful_dashboard():
     
     # Get total visits (should match sum of components)
     total_visits = predictions_orig.sum().item()
+    
+    # DEBUG: Verify components sum to total
+    components_sum = waterfall_baseline_total + waterfall_media_contrib.sum() + waterfall_ctrl_contrib.sum() + waterfall_seasonal_contrib
+    print(f"\n" + "=" * 80)
+    print(f"WATERFALL COMPONENT TOTALS:")
+    print(f"=" * 80)
+    print(f"  Baseline (without seasonal): {waterfall_baseline_total:,.0f}")
+    print(f"  Seasonal: {waterfall_seasonal_contrib:,.0f}")
+    print(f"  Media (all channels): {waterfall_media_contrib.sum():,.0f}")
+    print(f"  Controls (all): {waterfall_ctrl_contrib.sum():,.0f}")
+    print(f"  -" * 40)
+    print(f"  Components sum: {components_sum:,.0f}")
+    print(f"  Predictions total: {total_visits:,.0f}")
+    print(f"  Difference: {abs(components_sum - total_visits):,.0f} ({abs(components_sum - total_visits) / total_visits * 100:.3f}%)")
+    print(f"=" * 80)
+    
+    # Plot 8a: Overall Attribution Breakdown - DONUT CHART
+    print(f"    Creating overall attribution donut chart...")
+    fig_contrib_pct = go.Figure()
+    
+    # Calculate OVERALL attribution (not just media breakdown)
+    overall_baseline = waterfall_baseline_total
+    overall_seasonal = waterfall_seasonal_contrib
+    overall_media = waterfall_media_contrib.sum()  # Total media across all channels
+    overall_controls = waterfall_ctrl_contrib.sum() if len(waterfall_ctrl_contrib) > 0 else 0
+    
+    overall_labels = ['Baseline', 'Seasonality', 'Media', 'Controls']
+    overall_values = [overall_baseline, overall_seasonal, overall_media, overall_controls]
+    overall_colors = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA']  # Plotly default colors
+    
+    fig_contrib_pct.add_trace(
+        go.Pie(
+            labels=overall_labels,
+            values=overall_values,
+            hole=0.4,  # Creates donut chart
+            marker=dict(colors=overall_colors),
+            hovertemplate='<b>%{label}</b><br>Total Visits: %{value:,.0f}<br>Share: %{percent}<extra></extra>',
+            textinfo='label+percent',
+            textposition='auto',
+            textfont=dict(size=14)
+        )
+    )
+    
+    total_attribution = sum(overall_values)
+    fig_contrib_pct.update_layout(
+        title='Overall Attribution Breakdown<br><sub>Total Contribution by Component Type</sub>',
+        height=600,
+        annotations=[dict(text=f'Total<br>{total_attribution:,.0f}<br>Visits', x=0.5, y=0.5, 
+                         font_size=14, showarrow=False)]
+    )
+    
+    contrib_pct_path = f"{dashboard_dir}/contribution_percentages.html"
+    fig_contrib_pct.write_html(contrib_pct_path)
+    plots_created.append(("Overall Attribution", contrib_pct_path))
     
     # Prepare data for waterfall chart with TOTAL ECONOMIC VALUES
     measures = ['relative'] * len(media_names)
@@ -1812,11 +1881,10 @@ def create_beautiful_dashboard():
     values.insert(0, waterfall_baseline_total)
     labels.insert(0, 'Baseline')
     
-    # Add total at the end - USE ACTUAL PREDICTIONS, NOT SUM OF COMPONENTS
-    # CRITICAL: In log-space, y = baseline + media + control + seasonal (additive)
-    # In original space: y = exp(baseline + media + control + seasonal)
-    # NOT: y = exp(baseline) + exp(media) + exp(control) + exp(seasonal)
-    # So we use the actual sum of predictions, not sum of converted components
+    # Add total at the end - USE ACTUAL PREDICTIONS
+    # CRITICAL: In linear scaled space (y/y_mean), components are additive
+    # In original space: y = (baseline + media + control + seasonal) * y_mean * prediction_scale
+    # Components should sum to total after inverse transformation
     total_visits = predictions_orig.sum().item()  # Actual total from predictions
     measures.append('total')
     values.append(total_visits)
@@ -1878,16 +1946,17 @@ def create_beautiful_dashboard():
             X_media_holdout = holdout_tensors['X_media']
             X_control_holdout = holdout_tensors['X_control'] 
             R_holdout = holdout_tensors['R']
-            y_holdout_log = holdout_tensors['y']
+            y_holdout_scaled = holdout_tensors['y']
             
-            # Forward pass (same as ModelTrainer line 434)
-            holdout_pred_log, _, _, _ = model(X_media_holdout, X_control_holdout, R_holdout)
+            # Forward pass (same as ModelTrainer)
+            holdout_pred_scaled, _, _, _ = model(X_media_holdout, X_control_holdout, R_holdout)
             
-            # Convert to original scale (same as ModelTrainer lines 435-436)
-            holdout_pred_orig = torch.expm1(torch.clamp(holdout_pred_log, max=20.0))
-            holdout_true_orig = torch.expm1(torch.clamp(y_holdout_log, max=20.0))
+            # Convert to original scale using scaler (LINEAR SCALING: y * y_mean_per_region)
+            scaler = pipeline.get_scaler()
+            holdout_pred_orig = scaler.inverse_transform_target(holdout_pred_scaled)
+            holdout_true_orig = scaler.inverse_transform_target(y_holdout_scaled)
             
-            # Flatten for R² calculation (same as ModelTrainer lines 443-445)
+            # Flatten for R² calculation (same as ModelTrainer)
             holdout_actual_flat = holdout_true_orig.detach().cpu().numpy().flatten()
             holdout_pred_flat = holdout_pred_orig.detach().cpu().numpy().flatten()
             
@@ -1981,12 +2050,12 @@ def create_beautiful_dashboard():
             print(f"        Hill: a={hill_a:.4f}, g={hill_g:.6f}, Adstock α={alpha:.4f}")
         
         # Extract Push channel data
-        push_contrib_log = media_contributions[:, :, push_idx]  # [regions, weeks]
-        print(f"       Log contributions: [{push_contrib_log.min():.6f}, {push_contrib_log.max():.6f}]")
+        push_contrib_scaled = media_contributions[:, :, push_idx]  # [regions, weeks] - in scaled space
+        print(f"       Scaled contributions (y/y_mean): [{push_contrib_scaled.min():.6f}, {push_contrib_scaled.max():.6f}]")
         
-        # USE PROPORTIONALLY ALLOCATED CONTRIBUTIONS (same as CSV export)
-        push_contrib_orig = contrib_results['media'][:, :, push_idx]  # [regions, weeks] - proportionally allocated
-        print(f"       Proportionally allocated contributions: [{push_contrib_orig.min():.2f}, {push_contrib_orig.max():.2f}]")
+        # USE INVERSE TRANSFORMED CONTRIBUTIONS (same as CSV export)
+        push_contrib_orig = contrib_results['media'][:, :, push_idx]  # [regions, weeks] - in original scale (visits)
+        print(f"       Original scale contributions (visits): [{push_contrib_orig.min():.2f}, {push_contrib_orig.max():.2f}]")
         
         # AGGREGATE TO NATIONAL LEVEL BY WEEK
         # Sum across all regions for each week
@@ -2037,12 +2106,12 @@ def create_beautiful_dashboard():
     else:
         print(f"     Push channel not found in media channels")
     
-    # Plot 14: Response Curves for All Channels
-    print(f"\n    Fitting response curves for all channels...")
+    # Plot 14: Unified Response Curves Plot
+    print(f"\n    Creating unified response curves for all channels...")
     from deepcausalmmm import ResponseCurveFit
     
     response_curve_results = {}
-    response_curve_paths = []
+    fig_unified_curves = go.Figure()
     
     for ch_idx, ch_name in enumerate(media_names):
         print(f"      Channel {ch_idx+1}/{len(media_names)}: {ch_name}")
@@ -2068,7 +2137,7 @@ def create_beautiful_dashboard():
             continue
         
         try:
-            # Fit response curve
+            # Fit response curve (without generating individual plots)
             fitter = ResponseCurveFit(
                 channel_df,
                 bottom_param=False,
@@ -2076,27 +2145,65 @@ def create_beautiful_dashboard():
                 date_col='week_monday'
             )
             
-            output_path = f"{dashboard_dir}/response_curve_{ch_name.replace(' ', '_')}.html"
-            
             fitter.fit(
                 title=f"Response Curve: {ch_name}",
                 x_label="Weekly Impressions (National)",
                 y_label="Weekly Contributions (Visits)",
                 print_r_sqr=False,
-                generate_figure=True,
-                save_figure=True,
-                output_path=output_path
+                generate_figure=False,  # Don't generate individual plots
+                save_figure=False
             )
             
             summary = fitter.get_summary()
             response_curve_results[ch_name] = summary
-            response_curve_paths.append((ch_name, output_path))
             
-            print(f"          R²={summary['r2']:.3f}, Slope={summary['params']['slope']:.3f}")
+            # Get fitted parameters
+            slope = summary['params']['slope']
+            saturation = summary['params']['saturation']
+            
+            # Create smooth curve for visualization (starting from 0)
+            x_min = 0  # Start all curves from 0 impressions
+            x_max = channel_df['impressions'].max()
+            x_range = np.linspace(x_min, x_max, 100)
+            
+            # Hill equation: y = slope * x^n / (saturation^n + x^n), typically n=1 for simplicity
+            y_curve = slope * x_range / (saturation + x_range)
+            
+            # Add curve to unified plot
+            fig_unified_curves.add_trace(go.Scatter(
+                x=x_range,
+                y=y_curve,
+                mode='lines',
+                name=ch_name.replace('impressions_', '').replace('_', ' ')[:15],
+                line=dict(width=2),
+                hovertemplate=f'<b>{ch_name}</b><br>Impressions: %{{x:,.0f}}<br>Predicted Visits: %{{y:,.0f}}<extra></extra>'
+            ))
+            
+            print(f"          Slope={slope:.3f}, Saturation={saturation:,.0f}")
             
         except Exception as e:
             print(f"          Failed: {e}")
             continue
+    
+    # Configure unified plot
+    fig_unified_curves.update_layout(
+        title='Response Curves: All Media Channels<br><sub>Fitted Hill Curves (Impressions vs Predicted Visits)</sub>',
+        xaxis_title='Weekly Impressions (National)',
+        yaxis_title='Predicted Weekly Contributions (Visits)',
+        height=700,
+        hovermode='closest',
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=0.99,
+            xanchor="right",
+            x=0.99
+        )
+    )
+    
+    # Save unified plot
+    unified_curves_path = f"{dashboard_dir}/response_curves_unified.html"
+    fig_unified_curves.write_html(unified_curves_path)
     
     print(f"    Fitted {len(response_curve_results)}/{len(media_names)} response curves")
     
@@ -2198,7 +2305,7 @@ def create_beautiful_dashboard():
         </div>
         
         <div class="plot-container">
-            <div class="plot-title">Scaled Data: Actual vs Predicted Over Time (Log1p Space)</div>
+            <div class="plot-title">Scaled Data: Actual vs Predicted Over Time (y/y_mean Space)</div>
             <iframe src="scaled_actual_vs_predicted_timeseries.html"></iframe>
         </div>
         
@@ -2260,34 +2367,9 @@ def create_beautiful_dashboard():
         
         <div class="section-header"> Response Curves: Saturation Analysis</div>
         
-        <div class="insights">
-            <h3> Response Curve Summary</h3>
-            <p>Hill equation curves fitted to national weekly aggregated data (impressions vs. contributions).</p>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                <tr style="background: #f0f0f0; font-weight: bold;">
-                    <th style="padding: 8px; border: 1px solid #ddd;">Channel</th>
-                    <th style="padding: 8px; border: 1px solid #ddd;">Slope</th>
-                    <th style="padding: 8px; border: 1px solid #ddd;">Saturation</th>
-                    <th style="padding: 8px; border: 1px solid #ddd;">R²</th>
-                </tr>
-                {''.join([f'''
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #ddd;">{ch_name}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd;">{summary['params']['slope']:.3f}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd;">{summary['params']['saturation']:,.0f}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd;">{summary['r2']:.3f}</td>
-                </tr>
-                ''' for ch_name, summary in sorted(response_curve_results.items(), key=lambda x: x[1]['r2'], reverse=True)])}
-            </table>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 20px;">
-            {''.join([f'''
-            <div class="plot-container">
-                <div class="plot-title">{ch_name}</div>
-                <iframe src="{path.split('/')[-1]}" style="height: 500px;"></iframe>
-            </div>
-            ''' for ch_name, path in response_curve_paths])}
+        <div class="plot-container">
+            <div class="plot-title">Unified Response Curves: All Media Channels</div>
+            <iframe src="response_curves_unified.html" style="height: 700px;"></iframe>
         </div>
         
         <div class="insights">
@@ -2343,7 +2425,7 @@ def create_beautiful_dashboard():
         print(f" Holdout RMSE: {holdout_rmse:,.0f} visits ({holdout_relative:.1f}%)")
         print(f" Holdout R²: {holdout_r2:.3f}")
     print(f" Training R²: {final_r2:.3f}")
-    print(f" Training Best RMSE: {best_rmse:.4f} (log space)")
+    print(f" Training Best RMSE: {best_rmse:.4f} (scaled space y/y_mean)")
     
     print(f" Dashboard Location: {dashboard_path}")
     

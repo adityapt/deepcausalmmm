@@ -34,10 +34,6 @@ Here's a complete example of training a DeepCausalMMM model:
     train_data, holdout_data = pipeline.temporal_split(X_media, X_control, y)
     train_tensors = pipeline.fit_and_transform_training(train_data)
     holdout_tensors = pipeline.transform_holdout(holdout_data)
-    
-    # Get full dataset for baseline initialization
-    full_data = {'X_media': X_media, 'X_control': X_control, 'y': y}
-    full_tensors = pipeline.fit_and_transform_training(full_data)
 
     # 5. Train with ModelTrainer (recommended approach)
     trainer = ModelTrainer(config)
@@ -53,7 +49,7 @@ Here's a complete example of training a DeepCausalMMM model:
         train_tensors['R'], train_tensors['y'],
         holdout_tensors['X_media'], holdout_tensors['X_control'],
         holdout_tensors['R'], holdout_tensors['y'],
-        y_full_for_baseline=full_tensors['y'],
+        pipeline=pipeline,
         verbose=True
     )
 

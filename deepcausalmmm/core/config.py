@@ -13,8 +13,8 @@ def get_default_config() -> Dict[str, Any]:
         'random_seed': 42,
         
         # Model architecture parameters - STABLE PROVEN CONFIGURATION
-        'hidden_dim': 320,  # PROVEN optimal balance
-        'dropout': 0.08,    # PROVEN stable dropout
+        'hidden_dim': 280,  # Moderately reduced to improve generalization
+        'dropout': 0.12,    # Moderately increased for better generalization
         'gru_layers': 1,     # REVERT to single layer for stability
         'ctrl_hidden_ratio': 0.5,  # Control hidden size as ratio of main hidden (NO HARDCODING!)
         'use_layer_norm': True,  # Add layer normalization for training stability
@@ -23,7 +23,7 @@ def get_default_config() -> Dict[str, Any]:
         'use_residual_connections': False,  # DISABLE - was causing instability
         
         # Training parameters - REVERT TO STABLE SETTINGS
-        'n_epochs': 2500,  # Full 2500 epochs for production run
+        'n_epochs': 1500,  # Max epochs (early stopping will trigger earlier)
         'learning_rate': 0.01,  # REVERT to proven stable LR
         'temporal_regularization': 0.04,  # REVERT to proven stable regularization
         'gru_sparsity_weight': 0.1,    # Weight for GRU parameter sparsity in total sparsity calculation
@@ -49,8 +49,21 @@ def get_default_config() -> Dict[str, Any]:
         # These control loss balancing and should be stable, not learned
         'dag_weight': 0.008,          # Minimal DAG regularization for stability
         'sparsity_weight': 0.001,     # Minimal sparsity regularization for stability  
-        'l1_weight': 1e-5,            # Ultra-light L1 regularization
-        'l2_weight': 5e-5,            # Ultra-light L2 regularization
+        'l1_weight': 5e-5,            # Moderately increased L1 (5x)
+        'l2_weight': 2e-4,            # Moderately increased L2 (4x)
+        
+        # Visualization settings for DAG network and charts
+        'visualization': {
+            'correlation_threshold': 0.30,  # Show edges with >30% probability (was 65% - too high!)
+            'max_edges_per_node': 3,        # Top 3 strongest connections per channel
+            'node_opacity': 0.7,
+            'line_opacity': 0.6,
+            'fill_opacity': 0.1,
+            'marker_size': 8,
+            'edge_width_multiplier': 8,
+            'subplot_vertical_spacing': 0.08,
+            'subplot_horizontal_spacing': 0.06,
+        },
         
         # REVERTED COEFFICIENT REGULARIZATION to proven stable values
         'coeff_l2_weight': 0.03,      # REVERT to proven stable L2 penalty
@@ -79,7 +92,7 @@ def get_default_config() -> Dict[str, Any]:
         
         # REVERT Early stopping to proven stable values
         'early_stopping': True,   # ENABLE for efficient training
-        'patience': 1500,  # REVERT to proven stable patience
+        'patience': 300,  # Reduced to stop earlier when holdout stops improving
         'min_delta': 5e-6,  # REVERT to proven stable threshold
         'restore_best_weights': False,  # REVERT - keep simple
         
@@ -92,7 +105,7 @@ def get_default_config() -> Dict[str, Any]:
             'type': 'adamw',
             'betas': (0.9, 0.999),
             'eps': 1e-8,
-            'weight_decay': 1e-5  # OPTIMAL weight decay for precision regularization
+            'weight_decay': 5e-5  # Moderately increased for better generalization (5x)
         },
         
         # Learning rate scheduler - ULTRA-AGGRESSIVE OPTIMIZATION
@@ -105,7 +118,7 @@ def get_default_config() -> Dict[str, Any]:
         },
         
         # Time series splitting parameters - REDUCE TEMPORAL GAP
-        'holdout_ratio': 0.08,  # Reduced holdout to minimize temporal distribution shift
+        'holdout_ratio': 0.12,  # Increased to 12% for better validation signal
         'use_holdout': True,  # Whether to use holdout evaluation
         'min_train_weeks': 40,  # Reduced minimum weeks for training
         
@@ -117,18 +130,6 @@ def get_default_config() -> Dict[str, Any]:
             'extreme_clip_threshold': 2.0,  # Threshold for extreme distribution shift
             'standard_clip_range': 5.0,     # BALANCED clipping range
             'aggressive_clip_range': 3.5,   # MODERATE clipping range
-        },
-        
-        # Visualization constants
-        'visualization': {
-            'correlation_threshold': 0.65,   # Threshold for showing only strong correlations (top ~20%)
-            'edge_width_multiplier': 8,      # Multiplier for edge width in DAG
-            'node_opacity': 0.7,             # Node opacity in plots
-            'line_opacity': 0.6,             # Line opacity in plots
-            'fill_opacity': 0.1,             # Fill area opacity
-            'marker_size': 8,                # Default marker size
-            'subplot_vertical_spacing': 0.08,  # Vertical spacing between subplots
-            'subplot_horizontal_spacing': 0.06,  # Horizontal spacing between subplots
         },
         
         # Training display constants
