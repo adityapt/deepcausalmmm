@@ -218,7 +218,8 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
             min_lr=config['scheduler']['min_lr']
         )
     else:
-        scheduler = CosineAnnealingLR(optimizer, T_max=config['n_epochs'])
+        # TEST MODE: Use 100 for quick testing, config['n_epochs'] for full run
+        scheduler = CosineAnnealingLR(optimizer, T_max=100)
     
     print(f"    Training Configuration from Config:")
     print(f"       Epochs: {config['n_epochs']}")
@@ -232,8 +233,8 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
     print(f"    Config-driven warm-start training for {config['warm_start_epochs']} epochs...")
     model.warm_start_training(X_media_padded, X_control_padded, R, y_padded, optimizer)
     
-    # Main training
-    print(f"    Main training for {config['n_epochs']} epochs...")
+    # Main training - TEST MODE
+    print(f"    TEST MODE: Main training for 100 epochs (change to {config['n_epochs']} for full run)...")
     model.train()
     
     train_losses = []
@@ -243,7 +244,9 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
     best_rmse = float('inf')
     patience_counter = 0
     
-    progress_bar = tqdm(range(config['n_epochs']), desc="Config-Driven Training")
+    # TEST MODE: Hardcoded to 100 epochs for quick error checking
+    # Change this line to: range(config['n_epochs']) for full 2500 epoch run
+    progress_bar = tqdm(range(100), desc="TEST MODE: 100 epochs")
     
     for epoch in progress_bar:
         optimizer.zero_grad()
@@ -618,7 +621,6 @@ def create_beautiful_dashboard():
             holdout_tensors['X_media'], holdout_tensors['X_control'],
             holdout_tensors['R'], holdout_tensors['y'],
             # y_full_for_baseline=y_full_scaled,  # REMOVED: Causes data leakage
-            pipeline=pipeline,
             verbose=True
         )
     else:
@@ -626,7 +628,6 @@ def create_beautiful_dashboard():
             train_tensors['X_media'], train_tensors['X_control'],
             train_tensors['R'], train_tensors['y'],
             # y_full_for_baseline=y_full_scaled,  # REMOVED: Causes data leakage
-            pipeline=pipeline,
             verbose=True
         )
         
@@ -1583,25 +1584,86 @@ def create_beautiful_dashboard():
     baseline_trimmed = outputs['baseline'][:, -target_weeks:]
     media_trimmed = media_contributions[:, -target_weeks:, :]
     ctrl_trimmed = ctrl_contributions[:, -target_weeks:, :]
-    seasonal_trimmed = outputs['seasonal_contributions'][:, -target_weeks:]
     
-    # Use the package's improved inverse_transform_contributions method
-    # which does proportional allocation for ALL components
-    scaler = pipeline.get_scaler()
-    contrib_results = scaler.inverse_transform_contributions(
-        media_contributions=media_trimmed,
-        y_pred_orig=predictions_orig,
-        baseline=baseline_trimmed,
-        control_contributions=ctrl_trimmed,
-        seasonal_contributions=seasonal_trimmed
-    )
+    # Handle seasonal - try different key names
+    if 'seasonal_contribution' in outputs:
+        seasonal_trimmed = outputs['seasonal_contribution'][:, -target_weeks:]
+    elif 'seasonal_contributions' in outputs:
+        seasonal_trimmed = outputs['seasonal_contributions'][:, -target_weeks:]
+    else:
+        seasonal_trimmed = torch.zeros_like(baseline_trimmed)
+        print("    WARNING: No seasonal contribution found in outputs")
     
-    print(f"    Proportionally allocated contributions computed:")
+    # Handle raw_prediction - may not exist in all versions
+    if 'raw_prediction' in outputs:
+        raw_pred_trimmed = outputs['raw_prediction'][:, -target_weeks:]
+    else:
+        print("    WARNING: raw_prediction not in outputs, calculating from components...")
+        # Calculate raw_prediction from components
+        media_sum = media_trimmed.sum(dim=-1)
+        ctrl_sum = ctrl_trimmed.sum(dim=-1) 
+        raw_pred_trimmed = baseline_trimmed + media_sum + ctrl_sum
+        if 'trend_contribution' in outputs:
+            raw_pred_trimmed = raw_pred_trimmed + outputs['trend_contribution'][:, -target_weeks:]
+    
+    # Calculate trend: raw_prediction - (baseline + media_sum + controls_sum)
+    media_sum_trimmed = media_trimmed.sum(dim=-1)
+    ctrl_sum_trimmed = ctrl_trimmed.sum(dim=-1)
+    trend_trimmed = raw_pred_trimmed - baseline_trimmed - media_sum_trimmed - ctrl_sum_trimmed
+    
+    # FIXED ATTRIBUTION: Use raw_prediction as denominator (includes ALL components)
+    # The model's raw_prediction = media + controls + baseline + trend (all in log-space)
+    # This fixes the bug where trend was missing from the denominator!
+    print(f"    Computing CORRECTED proportional attribution (using raw_prediction)...")
+    
+    contrib_results = {}
+    
+    # Calculate ratios in log-space using raw_prediction
+    baseline_ratio = baseline_trimmed / (raw_pred_trimmed + 1e-8)
+    media_ratios = media_trimmed / (raw_pred_trimmed.unsqueeze(-1) + 1e-8)
+    ctrl_ratios = ctrl_trimmed / (raw_pred_trimmed.unsqueeze(-1) + 1e-8)
+    seasonal_ratio = seasonal_trimmed / (raw_pred_trimmed + 1e-8)
+    trend_ratio = trend_trimmed / (raw_pred_trimmed + 1e-8)
+    
+    # Apply ratios to original-space predictions (proportional allocation)
+    contrib_results['baseline'] = predictions_orig * baseline_ratio
+    contrib_results['media'] = predictions_orig.unsqueeze(-1) * media_ratios
+    contrib_results['control'] = predictions_orig.unsqueeze(-1) * ctrl_ratios
+    contrib_results['seasonal'] = predictions_orig * seasonal_ratio
+    contrib_results['trend'] = predictions_orig * trend_ratio
+    
+    print(f"    CORRECTED proportional attribution computed:")
     print(f"      Media: {contrib_results['media'].shape}")
     print(f"      Baseline: {contrib_results['baseline'].shape}")
     print(f"      Seasonal: {contrib_results['seasonal'].shape}")
-    if 'control' in contrib_results:
-        print(f"      Control: {contrib_results['control'].shape}")
+    print(f"      Control: {contrib_results['control'].shape}")
+    print(f"      Trend: {contrib_results['trend'].shape}")
+    
+    # Verification: Check that components sum to prediction
+    total_pred = predictions_orig.sum().item()
+    total_baseline = contrib_results['baseline'].sum().item()
+    total_media = contrib_results['media'].sum().item()
+    total_control = contrib_results['control'].sum().item()
+    total_seasonal = contrib_results['seasonal'].sum().item()
+    total_trend = contrib_results['trend'].sum().item()
+    
+    components_sum = total_baseline + total_media + total_control + total_seasonal + total_trend
+    
+    print(f"\n    ════════════════════════════════════════════════════════")
+    print(f"    CORRECTED ATTRIBUTION PERCENTAGES (Original Space):")
+    print(f"    ════════════════════════════════════════════════════════")
+    print(f"      Baseline:  {total_baseline:15,.0f} visits ({total_baseline/total_pred*100:5.1f}%)")
+    print(f"      Media:     {total_media:15,.0f} visits ({total_media/total_pred*100:5.1f}%)")
+    print(f"      Controls:  {total_control:15,.0f} visits ({total_control/total_pred*100:5.1f}%)")
+    print(f"      Seasonal:  {total_seasonal:15,.0f} visits ({total_seasonal/total_pred*100:5.1f}%)")
+    print(f"      Trend:     {total_trend:15,.0f} visits ({total_trend/total_pred*100:5.1f}%)")
+    print(f"      " + "-" * 60)
+    print(f"      TOTAL:     {total_pred:15,.0f} visits (100.0%)")
+    print(f"\n      Components sum: {components_sum:,.0f}")
+    print(f"      Prediction:     {total_pred:,.0f}")
+    print(f"      Difference:     {abs(components_sum - total_pred):,.0f}")
+    print(f"      Match: {abs(components_sum - total_pred) < 1000}")
+    print(f"    ════════════════════════════════════════════════════════\n")
     
     # ========================================================================
     

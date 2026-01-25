@@ -23,7 +23,7 @@ def get_default_config() -> Dict[str, Any]:
         'use_residual_connections': False,  # DISABLE - was causing instability
         
         # Training parameters - REVERT TO STABLE SETTINGS
-        'n_epochs': 2500,  # Changed to 2500 for better convergence
+        'n_epochs': 2500,  # Full 2500 epochs for production run
         'learning_rate': 0.01,  # REVERT to proven stable LR
         'temporal_regularization': 0.04,  # REVERT to proven stable regularization
         'gru_sparsity_weight': 0.1,    # Weight for GRU parameter sparsity in total sparsity calculation

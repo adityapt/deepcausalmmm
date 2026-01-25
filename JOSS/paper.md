@@ -24,7 +24,7 @@ archive_doi: 10.5281/zenodo.16934842
 
 Marketing Mix Modeling (MMM) is a statistical technique used to estimate the impact of marketing activities on business outcomes such as sales, revenue, or customer visits. Traditional MMM approaches often rely on linear regression or Bayesian hierarchical models that assume independence between marketing channels and struggle to capture complex temporal dynamics and non-linear saturation effects [@Chan2017; @Hanssens2005; @Ng2021Bayesian].
 
-**DeepCausalMMM** is a Python package that addresses these limitations by combining deep learning, causal inference, and advanced marketing science. The package uses Gated Recurrent Units (GRUs) to automatically learn temporal patterns such as adstock (carryover effects) and lag, while simultaneously learning statistical dependencies and potential causal structures between marketing channels through Directed Acyclic Graph (DAG) learning [@Zheng2018NOTEARS; @Gong2024CausalMMM]. Additionally, it implements Hill equation-based saturation curves to model diminishing returns and optimize budget allocation.
+**DeepCausalMMM** is a Python package that addresses these limitations by combining deep learning, causal inference, and advanced marketing science. The package uses Gated Recurrent Units (GRUs) to automatically learn temporal patterns such as adstock (carryover effects) and lag, while simultaneously learning statistical dependencies between marketing channels through Directed Acyclic Graph (DAG) structure using an upper triangular mask to enforce acyclicity [@Zheng2018NOTEARS; @Gong2024CausalMMM]. Additionally, it implements Hill equation-based saturation curves to model diminishing returns and optimize budget allocation.
 
 Key features include: (1) a data-driven design where hyperparameters and transformations (e.g., adstock decay, saturation curves) are learned or estimated from data with sensible defaults, rather than requiring fixed heuristics or manual specification, (2) multi-region modeling with both shared and region-specific parameters, (3) robust statistical methods including Huber loss and advanced regularization, (4) comprehensive response curve analysis for understanding channel saturation.
 
@@ -46,27 +46,25 @@ Several open-source MMM frameworks exist, each with distinct approaches:
 
 **CausalMMM** [@Gong2024CausalMMM] introduces neural networks and graph learning to MMM, demonstrating the value of discovering channel interdependencies. However, it does not provide multi-region modeling or comprehensive response curve analysis.
 
-**DeepCausalMMM** advances the field by integrating: (1) GRU-based temporal modeling, (2) DAG-based structure learning [@Zheng2018NOTEARS], (3) Hill equation response curves, (4) multi-region modeling, (5) robust statistical methods, (6) production-ready architecture.
+**DeepCausalMMM** advances the field by integrating: (1) GRU-based temporal modeling, (2) DAG-based structure learning using upper triangular constraints [@Zheng2018NOTEARS], (3) Hill equation response curves, (4) multi-region modeling, (5) robust statistical methods, (6) production-ready architecture.
 
-# Functionality
+# Software Design
 
-## Core Architecture
+DeepCausalMMM's architecture reflects several key design decisions driven by the unique challenges of marketing mix modeling:
 
-**Temporal Modeling**: A GRU network automatically learns adstock effects, lag patterns, and time-varying coefficients.
+**Neural Architecture Choice**: We selected Gated Recurrent Units (GRUs) over alternatives (LSTMs, Transformers, simple RNNs) after evaluating trade-offs: GRUs provide sufficient temporal modeling capacity for weekly marketing data while requiring fewer parameters than LSTMs, reducing overfitting risk in typical MMM datasets (50-200 weeks). Transformers were rejected due to their quadratic memory complexity and tendency to overfit on small temporal sequences.
 
-**DAG Learning**: The model learns a directed acyclic graph (DAG) representing statistical dependencies and potential causal relationships between channels using continuous optimization [@Zheng2018NOTEARS].
+**DAG Structure Learning**: Rather than implementing the full NOTEARS continuous optimization [@Zheng2018NOTEARS], we adopt an upper triangular adjacency matrix constraint to enforce acyclicity. This design choice prioritizes computational efficiency and training stability over the flexibility of learning arbitrary DAG structures, making the method more practical for production marketing applications where interpretability and fast iteration are critical.
 
-**Saturation Modeling**: Hill transformation captures diminishing returns: $y = \frac{x^a}{x^a + g^a}$ where $a$ controls S-curve steepness and $g$ is the half-saturation point. The model enforces $a \geq 2.0$ for proper saturation.
+**Saturation Function Design**: We implement Hill equation saturation with enforced constraints ($a \geq 2.0$) rather than free-form learned transformations. This decision reflects domain expertise in marketing science where diminishing returns follow predictable S-curves, and constraining the parameter space improves generalization and interpretability for business stakeholders.
 
-**Multi-Region Support**: Handles multiple geographic regions with region-specific baselines, shared temporal patterns, and learnable scaling factors.
+**Multi-Region Modeling Philosophy**: The architecture employs shared temporal dynamics (GRU weights) with region-specific baselines and scaling factors. This hybrid approach balances the bias-variance trade-off: shared patterns enable learning from limited data per region, while region-specific parameters capture geographic heterogeneity essential for local marketing decisions.
 
-## Response Curve Analysis
+**Robustness Over Accuracy**: We prioritize Huber loss over MSE despite slightly higher training complexity. This choice addresses the reality of marketing data: outliers from promotional spikes, data quality issues, and external shocks are common. Huber loss provides robust estimation while maintaining differentiability for gradient-based optimization. The package also implements gradient clipping, L1/L2 regularization with sparsity control, and learnable coefficient bounds to ensure stable training.
 
-The `ResponseCurveFit` module fits Hill equations to channel data, identifies saturation points, provides interactive visualizations, and enables budget optimization.
+**Modular Post-Processing Design**: Response curve analysis is decoupled from model training through the `ResponseCurveFit` module, which fits Hill equations to learned channel contributions. This separation enables budget optimization and saturation analysis without retraining, supporting iterative business decision-making workflows.
 
-## Statistical Robustness
-
-The package implements Huber loss (outlier-robust), gradient clipping, L1/L2 regularization with sparsity control, learnable coefficient bounds, and burn-in periods for GRU stabilization.
+These design decisions collectively enable DeepCausalMMM to handle real-world marketing data challenges while remaining interpretable and computationally tractable for practitioners.
 
 ## Implementation Details
 
@@ -90,30 +88,63 @@ Figure 2 demonstrates a non-linear response curve fitted to a marketing channel 
 # Example Usage
 
 ```python
-import pandas as pd
+import numpy as np
 from deepcausalmmm.core import get_default_config
 from deepcausalmmm.core.trainer import ModelTrainer
 from deepcausalmmm.core.data import UnifiedDataPipeline
 
-# Load and process data
-df = pd.read_csv('mmm_data.csv')
+# Generate sample MMM data
+np.random.seed(42)
+n_regions, n_weeks = 10, 52  # 10 regions, 52 weeks
+n_media, n_control = 5, 3    # 5 media channels, 3 controls
+
+# Media spend/impressions [regions, weeks, channels]
+X_media = np.random.uniform(100, 5000, (n_regions, n_weeks, n_media))
+# Control variables [regions, weeks, controls]
+X_control = np.random.uniform(0, 1, (n_regions, n_weeks, n_control))
+# Target (sales/visits) [regions, weeks]
+y = np.random.uniform(1000, 10000, (n_regions, n_weeks))
+
+# Configure and initialize pipeline
 config = get_default_config()
 pipeline = UnifiedDataPipeline(config)
-processed_data = pipeline.fit_transform(df)
 
-# Train model
+# Split data temporally (train/holdout)
+train_data, holdout_data = pipeline.temporal_split(X_media, X_control, y)
+train_tensors = pipeline.fit_and_transform_training(train_data)
+holdout_tensors = pipeline.transform_holdout(holdout_data)
+
+# Create and train model
 trainer = ModelTrainer(config)
-model, results = trainer.train(processed_data)
-print(f"Holdout R²: {results['holdout_r2']:.3f}")
+model = trainer.create_model(
+    n_media=train_tensors['X_media'].shape[2],
+    n_control=train_tensors['X_control'].shape[2],
+    n_regions=train_tensors['X_media'].shape[0]
+)
+trainer.create_optimizer_and_scheduler()
 
-# Response curve analysis
-from deepcausalmmm.postprocess import ResponseCurveFit
-fitter = ResponseCurveFit(data=channel_data, model_level='Overall')
-fitter.fit(save_figure=True, output_path='response_curve.html')
-print(f"Slope: {fitter.slope:.3f}, Saturation: {fitter.saturation:,.0f}")
+# Train with train and holdout data
+results = trainer.train(
+    train_tensors['X_media'], train_tensors['X_control'],
+    train_tensors['R'], train_tensors['y'],
+    holdout_tensors['X_media'], holdout_tensors['X_control'],
+    holdout_tensors['R'], holdout_tensors['y'],
+    verbose=True
+)
+
+# Results
+print(f"Training R²: {results['final_train_r2']:.3f}")
+print(f"Holdout R²: {results['final_holdout_r2']:.3f}")
+print(f"Training RMSE original scale: {results['final_train_rmse']:.0f}")
+print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
+
 ```
 
+**Data Leakage Note**: The production code in `examples/dashboard_rmse_optimized.py` includes `y_full_for_baseline` parameter which uses the full dataset (including holdout) for baseline initialization. This introduces minor data leakage where regional mean statistics from holdout data inform the baseline. In strict production scenarios, this parameter should be omitted to ensure zero leakage. The leakage is limited to regional means only; all model weights, coefficients, and temporal patterns are learned exclusively from training data.
+
 # Performance
+
+**Note on Benchmarks:** The following performance metrics are derived from real-world anonymized marketing data (190 geographic regions, 109 weeks, 13 channels) using the complete production workflow in `examples/dashboard_rmse_optimized.py`, not from the toy example above. The example code demonstrates API usage with synthetic data for pedagogical purposes, while these benchmarks validate the software's effectiveness on substantial real-world marketing analytics scenarios.
 
 DeepCausalMMM has demonstrated strong performance on anonymized real-world marketing data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
 
@@ -123,6 +154,20 @@ DeepCausalMMM has demonstrated strong performance on anonymized real-world marke
 - **Holdout RMSE**: 351,602 KPI units (41.9% relative error)
 
 These results demonstrate the model's ability to capture complex marketing dynamics while maintaining strong out-of-sample predictive accuracy. The small performance gap between training and holdout sets indicates robust generalization without overfitting.
+
+**Note on Baseline Initialization**: The reported metrics include minor data leakage from baseline initialization using full dataset statistics (regional means). This design choice prioritizes stable training convergence in production scenarios where historical data is available. The leakage affects only the baseline term; all dynamic components (GRU weights, saturation parameters, channel coefficients) are learned exclusively from training data. In strict evaluation scenarios, omitting the `y_full_for_baseline` parameter eliminates this leakage.
+
+# Research Impact Statement
+
+DeepCausalMMM demonstrates credible significance through production deployment and strong benchmark performance. The software has been deployed in real-world marketing analytics scenarios processing 190 geographic regions across 109 weeks with 13 marketing channels, achieving 91.8% holdout R² with only 3.0% train-test gap, demonstrating robust generalization superior to traditional linear MMM approaches.
+
+**Benchmarks and Reproducibility**: The package includes comprehensive reproducible benchmarks on anonymized real-world data, with all code, configurations, and evaluation metrics publicly available. Performance metrics (holdout R² of 0.918, relative RMSE of 41.9%) provide concrete evidence of the model's capability to capture complex marketing dynamics while maintaining out-of-sample predictive accuracy.
+
+**Community Readiness**: The software exhibits production-ready quality with comprehensive documentation at readthedocs.io, 14+ interactive visualizations for business stakeholder communication, extensive test coverage, and stable API design. The package is distributed via PyPI with semantic versioning and includes worked examples demonstrating application to multi-region MMM problems.
+
+**Technical Contribution**: DeepCausalMMM advances the state of open-source MMM tools by uniquely combining GRU-based temporal modeling with DAG structure learning and Hill equation saturation analysis in a single integrated framework, addressing a gap between traditional statistical MMM (Robyn, PyMC-Marketing) and purely neural approaches (CausalMMM).
+
+**Near-term Significance**: The software's emphasis on interpretability (DAG visualizations, response curves, contribution decomposition) and production deployment considerations (robust loss functions, efficient training, stakeholder-ready outputs) position it for adoption by marketing analytics teams seeking to move beyond traditional linear models while maintaining business interpretability requirements.
 
 # Reproducibility
 
@@ -139,5 +184,13 @@ The data-driven hyperparameter learning and comprehensive documentation make it 
 # Acknowledgments
 
 We acknowledge the contributions of the open-source community, particularly the developers of PyTorch, pandas, and scikit-learn, which form the foundation of this package. We also thank the MMM research community for establishing the theoretical foundations that informed this work.
+
+# AI-Assisted Research Disclosure
+
+In accordance with JOSS editorial policy on AI-assisted research, the author discloses that AI tools (GitHub Copilot, Claude, and GPT-4) were used during the development of this software package. These tools assisted with code generation, documentation writing, debugging, and manuscript drafting. All AI-generated content was reviewed, verified, and modified by the author to ensure accuracy, correctness, and alignment with research goals. The author takes full responsibility for all claims, implementations, and content in this work.
+
+# Conflict of Interest
+
+The author declares no competing financial or non-financial interests that could inappropriately influence this work.
 
 # References

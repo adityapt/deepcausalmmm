@@ -88,11 +88,11 @@ class SimpleGlobalScaler:
         iqr_factor = self.scaling_constants.get('iqr_to_std_factor', 1.349)
         control_std = control_iqr.unsqueeze(0).unsqueeze(0) * iqr_factor
         
-        # Target scaling: Pure log1p transformation (handles zeros and keeps positive after inverse)
+        # Target scaling: Linear scaling by region mean - preserves additivity
         y_tensor = torch.DoubleTensor(y) if not isinstance(y, torch.Tensor) else y.double()
         
-        # Pure log1p transformation - no additional standardization needed
-        # log1p(y) = log(1 + y) handles zeros and compresses large values naturally
+        # Linear scaling by region mean - preserves additive decomposition
+        # y_scaled = y / y_mean ensures components can be easily attributed in original space
         
         # Store parameters (no total_impressions needed for share-of-voice)
         self.params = SimpleScalingParams(
@@ -162,8 +162,12 @@ class SimpleGlobalScaler:
             
         X_control_scaled = torch.clamp(X_control_scaled, min=-clip_range, max=clip_range)
         
-        # Target scaling: Pure log1p transformation
-        y_scaled = torch.log1p(y_tensor)  # log(1 + y) - that's it!
+        # Target scaling: Linear scaling by region mean - preserves additivity
+        y_mean_per_region = y_tensor.mean(dim=1, keepdim=True)  # [n_regions, 1]
+        y_scaled = y_tensor / (y_mean_per_region + 1e-8)  # Normalize by region mean
+        
+        # Store region means for inverse transform
+        self.scaling_constants['y_mean_per_region'] = y_mean_per_region
         
         # Convert back to Float32 for model compatibility
         y_scaled_float32 = y_scaled.float()
@@ -190,8 +194,12 @@ class SimpleGlobalScaler:
         if y_scaled.dtype != torch.float64:
             y_scaled = y_scaled.double()
         
-        # Inverse pure log1p transformation
-        y_orig = torch.expm1(y_scaled)  # exp(y) - 1, perfect inverse of log1p
+        # Inverse linear scaling: multiply by region mean
+        y_mean_per_region = self.scaling_constants.get('y_mean_per_region')
+        if y_mean_per_region is None:
+            raise ValueError("y_mean_per_region not found in scaling_constants. Was the scaler fitted properly?")
+        
+        y_orig = y_scaled * y_mean_per_region
         
         # Ensure non-negative (visits can't be negative)
         y_orig = torch.clamp(y_orig, min=0)
@@ -202,23 +210,27 @@ class SimpleGlobalScaler:
     def inverse_transform_contributions(
         self,
         media_contributions: torch.Tensor,  # [n_regions, n_timesteps, n_channels]
-        y_pred_orig: torch.Tensor,  # [n_regions, n_timesteps] - predictions in original scale
-        baseline: torch.Tensor = None,  # [n_regions, n_timesteps] - baseline in log-space
-        control_contributions: torch.Tensor = None,  # [n_regions, n_timesteps, n_controls] - in log-space
-        seasonal_contributions: torch.Tensor = None,  # [n_regions, n_timesteps] - in log-space
+        baseline: torch.Tensor = None,  # [n_regions, n_timesteps] - baseline in scaled space
+        control_contributions: torch.Tensor = None,  # [n_regions, n_timesteps, n_controls] - in scaled space
+        seasonal_contributions: torch.Tensor = None,  # [n_regions, n_timesteps] - in scaled space
+        trend_contributions: torch.Tensor = None,  # [n_regions, n_timesteps] - in scaled space
+        prediction_scale: torch.Tensor = None,  # Scalar or [1] - model's prediction_scale factor
     ) -> dict:
         """
-        Inverse transform ALL contributions to original scale using proportional allocation.
+        Inverse transform ALL contributions to original scale using simple multiplication.
         
-        This method uses proportional allocation from log-space to properly distribute
-        the actual predictions across all components (baseline, media, control, seasonal).
+        With linear scaling (y/y_mean), the inverse transform is straightforward:
+        component_orig = component_scaled * prediction_scale * y_mean_per_region
+        
+        This preserves additivity: sum(components_orig) = prediction_orig
         
         Args:
-            media_contributions: Media contributions in log-space [regions, timesteps, channels]
-            y_pred_orig: Predictions in original scale [regions, timesteps]
-            baseline: Baseline in log-space [regions, timesteps]
-            control_contributions: Control contributions in log-space [regions, timesteps, controls]
-            seasonal_contributions: Seasonal contributions in log-space [regions, timesteps]
+            media_contributions: Media contributions in scaled space [regions, timesteps, channels]
+            baseline: Baseline in scaled space [regions, timesteps]
+            control_contributions: Control contributions in scaled space [regions, timesteps, controls]
+            seasonal_contributions: Seasonal contributions in scaled space [regions, timesteps]
+            trend_contributions: Trend contributions in scaled space [regions, timesteps]
+            prediction_scale: Model's prediction_scale factor (from F.softplus(self.prediction_scale))
             
         Returns:
             Dictionary with all contributions in original scale
@@ -226,44 +238,41 @@ class SimpleGlobalScaler:
         if not self.fitted:
             raise ValueError("Scaler must be fitted before inverse transform")
         
-        # Calculate total in log-space for each region-week
-        # total_log = baseline + sum(media) + sum(control) + seasonal
-        total_log = torch.zeros_like(media_contributions[:, :, 0])  # [regions, timesteps]
+        # Get region means
+        y_mean_per_region = self.scaling_constants.get('y_mean_per_region')
+        if y_mean_per_region is None:
+            raise ValueError("y_mean_per_region not found in scaling_constants")
         
-        if baseline is not None:
-            total_log = total_log + baseline
+        # If no prediction_scale provided, default to 1.0
+        if prediction_scale is None:
+            prediction_scale = torch.tensor(1.0)
         
-        # Sum media contributions across channels
-        total_log = total_log + media_contributions.sum(dim=2)
+        # Ensure prediction_scale is scalar
+        if prediction_scale.numel() > 1:
+            prediction_scale = prediction_scale.squeeze()
         
-        if control_contributions is not None:
-            total_log = total_log + control_contributions.sum(dim=2)
-        
-        if seasonal_contributions is not None:
-            total_log = total_log + seasonal_contributions
-        
-        # Calculate ratios in log-space (component / total) for each region-week
-        # Then apply to actual predictions
         results = {}
         
-        # Baseline contributions
+        # Simple multiplication for each component
+        # component_orig = component_scaled * prediction_scale * y_mean
+        
         if baseline is not None:
-            baseline_ratio = baseline / (total_log + 1e-8)
-            results['baseline'] = y_pred_orig * baseline_ratio
+            results['baseline'] = baseline * prediction_scale * y_mean_per_region
         
         # Media contributions (per channel)
-        media_ratios = media_contributions / (total_log.unsqueeze(-1) + 1e-8)
-        results['media'] = y_pred_orig.unsqueeze(-1) * media_ratios
+        results['media'] = media_contributions * prediction_scale * y_mean_per_region.unsqueeze(-1)
         
         # Control contributions (per control)
         if control_contributions is not None:
-            control_ratios = control_contributions / (total_log.unsqueeze(-1) + 1e-8)
-            results['control'] = y_pred_orig.unsqueeze(-1) * control_ratios
+            results['control'] = control_contributions * prediction_scale * y_mean_per_region.unsqueeze(-1)
         
         # Seasonal contributions
         if seasonal_contributions is not None:
-            seasonal_ratio = seasonal_contributions / (total_log + 1e-8)
-            results['seasonal'] = y_pred_orig * seasonal_ratio
+            results['seasonal'] = seasonal_contributions * prediction_scale * y_mean_per_region
+        
+        # Trend contributions
+        if trend_contributions is not None:
+            results['trend'] = trend_contributions * prediction_scale * y_mean_per_region
         
         return results
     

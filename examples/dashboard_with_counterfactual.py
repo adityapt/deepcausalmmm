@@ -618,7 +618,6 @@ def create_beautiful_dashboard():
             holdout_tensors['X_media'], holdout_tensors['X_control'],
             holdout_tensors['R'], holdout_tensors['y'],
             # y_full_for_baseline=y_full_scaled,  # REMOVED: Causes data leakage
-            pipeline=pipeline,
             verbose=True
         )
     else:
@@ -626,7 +625,6 @@ def create_beautiful_dashboard():
             train_tensors['X_media'], train_tensors['X_control'],
             train_tensors['R'], train_tensors['y'],
             # y_full_for_baseline=y_full_scaled,  # REMOVED: Causes data leakage
-            pipeline=pipeline,
             verbose=True
         )
         
@@ -713,6 +711,153 @@ def create_beautiful_dashboard():
     print(f"    Holdout R²: {results['final_holdout_r2']:.3f}")
     print(f"    Performance Gap: {results['final_train_r2'] - results['final_holdout_r2']:.3f} ({((results['final_train_r2'] - results['final_holdout_r2'])/results['final_train_r2']*100):.1f}%)")
     print(f"    All data processed with consistent transformations")
+    
+    # COUNTERFACTUAL ATTRIBUTION TESTING
+    print(f"\n" + "=" * 80)
+    print(f"COUNTERFACTUAL ATTRIBUTION TEST")
+    print(f"=" * 80)
+    print(f"Testing what the trained model predicts with different components zeroed out...")
+    
+    def predict_counterfactual(X_media_input, X_control_input, model, pipeline, n_weeks_orig):
+        """Helper function to predict with counterfactual inputs"""
+        # Add seasonality features
+        X_control_with_seasonality = pipeline._add_seasonality_features(
+            torch.tensor(X_control_input), start_week=0
+        )
+        
+        # Transform
+        X_media_scaled, X_control_scaled, _ = pipeline.scaler.transform(
+            X_media_input, X_control_with_seasonality.numpy(), np.zeros_like(X_media_input[:, :, 0])
+        )
+        
+        # Add padding
+        X_media_padded, X_control_padded, _ = pipeline._add_padding(
+            X_media_scaled, X_control_scaled, torch.zeros(X_media_scaled.shape[0], X_media_scaled.shape[1])
+        )
+        
+        # Create region tensor
+        n_regions_cf = X_media_padded.shape[0]
+        R = torch.arange(n_regions_cf, dtype=torch.long)
+        
+        # Predict
+        model.eval()
+        with torch.no_grad():
+            y_pred_log, _, _, _ = model(X_media_padded, X_control_padded, R)
+        
+        # Remove padding and inverse transform
+        burn_in = config['burn_in_weeks']
+        y_pred_log_eval = y_pred_log[:, burn_in:burn_in+n_weeks_orig]
+        y_pred_orig = torch.expm1(torch.clamp(y_pred_log_eval, max=20.0))
+        
+        return y_pred_orig.sum().item()
+    
+    # Test 1: Full prediction (already have this)
+    total_actual = y.sum()
+    print(f"\nTest 1: Full Model (All Components):")
+    print(f"   Total Actual Visits:            {total_actual:,.0f}")
+    
+    # Use the postprocess predictions for full model
+    total_full_pred = postprocess_results['predictions'].sum().item()
+    print(f"   Full Model Prediction:          {total_full_pred:,.0f} visits")
+    print(f"   Prediction Accuracy:            {(total_full_pred / total_actual * 100):.1f}%")
+    
+    # Test 2: Zero Media
+    print(f"\nTest 2: ZERO Media (Baseline + Controls Only):")
+    X_media_zero = np.zeros_like(X_media)
+    total_no_media = predict_counterfactual(X_media_zero, X_control, model, pipeline, n_weeks)
+    media_incremental = total_full_pred - total_no_media
+    print(f"   Prediction WITHOUT Media:       {total_no_media:,.0f} visits")
+    print(f"   Media Incremental:              {media_incremental:,.0f} visits")
+    print(f"   Media % of Prediction:          {(media_incremental / total_full_pred * 100):.1f}%")
+    print(f"   Media % of Actual:              {(media_incremental / total_actual * 100):.1f}%")
+    
+    # Test 3: Zero Controls
+    print(f"\nTest 3: ZERO Controls (Baseline + Media Only):")
+    X_control_zero = np.zeros_like(X_control)
+    total_no_controls = predict_counterfactual(X_media, X_control_zero, model, pipeline, n_weeks)
+    control_incremental = total_full_pred - total_no_controls
+    print(f"   Prediction WITHOUT Controls:    {total_no_controls:,.0f} visits")
+    print(f"   Control Incremental:            {control_incremental:,.0f} visits")
+    print(f"   Control % of Prediction:        {(control_incremental / total_full_pred * 100):.1f}%")
+    
+    # Test 4: Baseline Only
+    print(f"\nTest 4: Baseline ONLY (No Media, No Controls):")
+    total_baseline_only = predict_counterfactual(X_media_zero, X_control_zero, model, pipeline, n_weeks)
+    print(f"   Prediction with ONLY Baseline:  {total_baseline_only:,.0f} visits")
+    print(f"   Baseline % of Prediction:       {(total_baseline_only / total_full_pred * 100):.1f}%")
+    print(f"   Baseline % of Actual:           {(total_baseline_only / total_actual * 100):.1f}%")
+    
+    # Summary
+    print(f"\n" + "=" * 80)
+    print(f"COUNTERFACTUAL ATTRIBUTION SUMMARY")
+    print(f"=" * 80)
+    print(f"   Baseline (Organic):             {total_baseline_only:,.0f} visits ({(total_baseline_only / total_full_pred * 100):>5.1f}%)")
+    print(f"   Controls Incremental:           {control_incremental:,.0f} visits ({(control_incremental / total_full_pred * 100):>5.1f}%)")
+    print(f"   Media Incremental:              {media_incremental:,.0f} visits ({(media_incremental / total_full_pred * 100):>5.1f}%)")
+    print(f"   " + "-" * 76)
+    print(f"   TOTAL:                          {total_full_pred:,.0f} visits ( 100.0%)")
+    
+    # Verify sum
+    components_sum = total_baseline_only + control_incremental + media_incremental
+    print(f"\n   Components Sum Check:           {components_sum:,.0f} visits")
+    print(f"   Matches Prediction:             {abs(components_sum - total_full_pred) < 1000}")
+    
+    # Compare with proportional method
+    print(f"\n" + "=" * 80)
+    print(f"COMPARISON: Counterfactual vs Proportional Allocation")
+    print(f"=" * 80)
+    print(f"   Dashboard Proportional Method:")
+    print(f"      Media:                       93.6%")
+    print(f"      Baseline + Controls:         6.4%")
+    print(f"")
+    print(f"   Counterfactual Method:")
+    print(f"      Media:                       {(media_incremental / total_full_pred * 100):.1f}%")
+    print(f"      Baseline:                    {(total_baseline_only / total_full_pred * 100):.1f}%")
+    print(f"      Controls:                    {(control_incremental / total_full_pred * 100):.1f}%")
+    print(f"")
+    print(f"   Difference (Proportional - Counterfactual):")
+    print(f"      Media Difference:            {93.6 - (media_incremental / total_full_pred * 100):+.1f} percentage points")
+    
+    # Interpretation
+    print(f"\n" + "=" * 80)
+    print(f"INTERPRETATION")
+    print(f"=" * 80)
+    
+    cf_media_pct = (media_incremental / total_full_pred * 100)
+    if abs(93.6 - cf_media_pct) < 5:
+        print(f"   CONSISTENT: Both methods show ~{cf_media_pct:.0f}% media attribution")
+        print(f"   The proportional allocation method aligns with counterfactual analysis.")
+    elif abs(93.6 - cf_media_pct) < 20:
+        print(f"   MODERATE GAP: {abs(93.6 - cf_media_pct):.1f} percentage point difference")
+        print(f"   The methods give somewhat different results. This suggests interaction")
+        print(f"   effects in the log-space transformation.")
+    else:
+        print(f"   LARGE GAP: {abs(93.6 - cf_media_pct):.1f} percentage point difference!")
+        print(f"   The proportional allocation method is significantly different from")
+        print(f"   the counterfactual 'what-if' analysis. This is a major discrepancy.")
+    
+    if cf_media_pct > 80:
+        print(f"\n   HIGH MEDIA DEPENDENCY:")
+        print(f"   Model suggests {cf_media_pct:.0f}% of visits are driven by media.")
+        print(f"   This means:")
+        print(f"   - Without media, visits would drop to ~{total_baseline_only:,.0f} ({(total_baseline_only/total_actual*100):.0f}% of current)")
+        print(f"   - Very low organic/baseline traffic")
+        print(f"   - May indicate model is overfitting to media correlations")
+    elif cf_media_pct > 50:
+        print(f"\n   MODERATE MEDIA DEPENDENCY:")
+        print(f"   Model suggests {cf_media_pct:.0f}% of visits are driven by media.")
+        print(f"   This is higher than typical MMM ranges (20-40%) but may be valid")
+        print(f"   for highly media-dependent businesses.")
+    elif cf_media_pct > 20:
+        print(f"\n   TYPICAL MEDIA ATTRIBUTION:")
+        print(f"   Model suggests {cf_media_pct:.0f}% of visits are driven by media.")
+        print(f"   This is within standard MMM ranges (20-50%).")
+    else:
+        print(f"\n   LOW MEDIA ATTRIBUTION:")
+        print(f"   Model suggests {cf_media_pct:.0f}% of visits are driven by media.")
+        print(f"   Baseline and controls dominate the prediction.")
+    
+    print(f"=" * 80)
     
     # Legacy function for compatibility (will be removed later)
     def predict_on_data(model, scaler, X_media_data, X_control_data, n_regions, padding_weeks=0):
