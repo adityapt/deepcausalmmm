@@ -152,10 +152,8 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 
 DeepCausalMMM has demonstrated strong performance on anonymized real-world marketing data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
 
-- **Training R²**: 0.947, **Holdout R²**: 0.839
-- **Performance Gap**: 10.8% (indicating strong generalization)
-- **Training RMSE**: 314,692 KPI units (42.8% relative error)
-- **Holdout RMSE**: 351,602 KPI units (41.9% relative error)
+- **Training R²**: 0.956, **Holdout R²**: 0.839
+- **Performance Gap**: 12.2% (indicating strong generalization)
 
 **Attribution Quality**:
 - Components sum to 100% with perfect additivity through linear scaling architecture
