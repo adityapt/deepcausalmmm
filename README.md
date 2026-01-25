@@ -146,11 +146,13 @@ deepcausalmmm/                      # Project root
 ├── README.md                       # This documentation
 ├── LICENSE                         # MIT License
 ├── CHANGELOG.md                    # Version history and changes
+├── RELEASE_NOTES_1.0.19.md         # Latest release notes
 ├── CONTRIBUTING.md                 # Development guidelines
 ├── CODE_OF_CONDUCT.md              # Code of conduct
 ├── CITATION.cff                    # Citation metadata for Zenodo/GitHub
 ├── Makefile                        # Build and development tasks
 ├── MANIFEST.in                     # Package manifest for distribution
+├── test_release_v1_0_19.py         # Comprehensive release test script
 │
 ├── deepcausalmmm/                  # Main package directory
 │   ├── __init__.py                 # Package initialization and exports
@@ -188,7 +190,9 @@ deepcausalmmm/                      # Project root
 │   ├── quickstart.ipynb           # Interactive Jupyter notebook for Google Colab
 │   ├── dashboard_rmse_optimized.py # Comprehensive dashboard with 14+ visualizations
 │   ├── example_response_curves.py  # Response curve fitting examples
-│   └── example_budget_optimization.py  # Budget optimization workflow
+│   ├── example_budget_optimization.py  # Budget optimization workflow
+│   └── data/                      # Example data directory
+│       └── MMM Data.csv           # Anonymized real-world MMM dataset
 │
 ├── tests/                          # Test suite
 │   ├── __init__.py                # Test package initialization
