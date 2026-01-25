@@ -232,6 +232,28 @@ class ModelTrainer:
             dag_loss = self.model.get_dag_loss() if hasattr(self.model, 'get_dag_loss') else 0
             sparsity_loss = self.model.get_sparsity_loss() if hasattr(self.model, 'get_sparsity_loss') else 0
             
+            # NEW: Attribution prior regularization with DYNAMIC SCALING
+            attribution_reg_raw = outputs.get('attribution_reg_loss_raw', torch.tensor(0.0, device=predictions.device))
+            if attribution_reg_raw.item() > 0:
+                # Scale attribution loss to match MSE magnitude (multi-task learning approach)
+                mse_scale = mse_loss.detach()  # Don't backprop through scaling factor
+                attribution_reg_scaled = attribution_reg_raw * (mse_scale / (attribution_reg_raw.detach() + 1e-8))
+                # Apply weight (0.5 = equal priority to prediction and attribution)
+                attribution_reg = self.model.attribution_reg_weight * attribution_reg_scaled
+            else:
+                attribution_reg = torch.tensor(0.0, device=predictions.device)
+            
+            # NEW: Seasonal regularization with DYNAMIC SCALING
+            seasonal_reg_raw = outputs.get('seasonal_reg_loss_raw', torch.tensor(0.0, device=predictions.device))
+            if seasonal_reg_raw.item() > 0:
+                # Scale seasonal loss to match MSE magnitude (same approach as attribution)
+                mse_scale = mse_loss.detach()
+                seasonal_reg_scaled = seasonal_reg_raw * (mse_scale / (seasonal_reg_raw.detach() + 1e-8))
+                # Apply weight (0.1 = lower priority than attribution)
+                seasonal_reg = self.model.seasonal_reg_weight * seasonal_reg_scaled
+            else:
+                seasonal_reg = torch.tensor(0.0, device=predictions.device)
+            
             # Add L1 and L2 regularization
             l1_reg = sum(torch.sum(torch.abs(param)) for param in self.model.parameters())
             l2_reg = sum(torch.sum(param ** 2) for param in self.model.parameters())
@@ -240,7 +262,9 @@ class ModelTrainer:
                          self.config.get('dag_weight', 1.0) * dag_loss + 
                          self.config.get('sparsity_weight', 0.1) * sparsity_loss +
                          self.config.get('l1_weight', 0.0) * l1_reg +
-                         self.config.get('l2_weight', 0.0) * l2_reg)
+                         self.config.get('l2_weight', 0.0) * l2_reg +
+                         attribution_reg +  # Media attribution prior (dynamically scaled)
+                         seasonal_reg)  # Seasonal regularization (prevent suppression)
             
             # Backward pass
             total_loss.backward()
@@ -299,6 +323,28 @@ class ModelTrainer:
         dag_loss = self.model.get_dag_loss() if hasattr(self.model, 'get_dag_loss') else 0
         sparsity_loss = self.model.get_sparsity_loss() if hasattr(self.model, 'get_sparsity_loss') else 0
         
+        # NEW: Attribution prior regularization with DYNAMIC SCALING
+        attribution_reg_raw = outputs.get('attribution_reg_loss_raw', torch.tensor(0.0, device=predictions.device))
+        if attribution_reg_raw.item() > 0:
+            # Scale attribution loss to match MSE magnitude (multi-task learning approach)
+            mse_scale = mse_loss.detach()  # Don't backprop through scaling factor
+            attribution_reg_scaled = attribution_reg_raw * (mse_scale / (attribution_reg_raw.detach() + 1e-8))
+            # Apply weight (0.5 = equal priority to prediction and attribution)
+            attribution_reg = self.model.attribution_reg_weight * attribution_reg_scaled
+        else:
+            attribution_reg = torch.tensor(0.0, device=predictions.device)
+        
+        # NEW: Seasonal regularization with DYNAMIC SCALING
+        seasonal_reg_raw = outputs.get('seasonal_reg_loss_raw', torch.tensor(0.0, device=predictions.device))
+        if seasonal_reg_raw.item() > 0:
+            # Scale seasonal loss to match MSE magnitude (same approach as attribution)
+            mse_scale = mse_loss.detach()
+            seasonal_reg_scaled = seasonal_reg_raw * (mse_scale / (seasonal_reg_raw.detach() + 1e-8))
+            # Apply weight (0.1 = lower priority than attribution)
+            seasonal_reg = self.model.seasonal_reg_weight * seasonal_reg_scaled
+        else:
+            seasonal_reg = torch.tensor(0.0, device=predictions.device)
+        
         # HYBRID APPROACH: Fixed regularization weights for stable training
         # Only core model parameters (coefficients, ranges) are learnable - not loss balancing
         l1_reg = sum(torch.sum(torch.abs(param)) for param in self.model.parameters())
@@ -309,7 +355,9 @@ class ModelTrainer:
                      self.config.get('dag_weight', 0.005) * dag_loss +      # Minimal DAG regularization
                      self.config.get('sparsity_weight', 0.001) * sparsity_loss + # Minimal sparsity regularization  
                      self.config.get('l1_weight', 1e-5) * l1_reg +         # Ultra-light L1
-                     self.config.get('l2_weight', 5e-5) * l2_reg)          # Ultra-light L2
+                     self.config.get('l2_weight', 5e-5) * l2_reg +         # Ultra-light L2
+                     attribution_reg +                                     # Media attribution prior (dynamically scaled)
+                     seasonal_reg)                                         # Seasonal regularization (prevent suppression)
         
         # Backward pass
         total_loss.backward()
@@ -438,7 +486,6 @@ class ModelTrainer:
               X_control_holdout: Optional[torch.Tensor] = None,
               R_holdout: Optional[torch.Tensor] = None,
               y_holdout: Optional[torch.Tensor] = None,
-              y_full_for_baseline: Optional[torch.Tensor] = None,
               pipeline: Optional[Any] = None,
               verbose: bool = True) -> Dict[str, Any]:
         """
@@ -453,7 +500,6 @@ class ModelTrainer:
             X_control_holdout: Optional holdout control data
             R_holdout: Optional holdout region data
             y_holdout: Optional holdout target data
-            y_full_for_baseline: Optional full dataset for baseline initialization
             pipeline: Optional UnifiedDataPipeline for accessing scaler
             verbose: Whether to show progress
             
@@ -478,16 +524,21 @@ class ModelTrainer:
             R_holdout = R_holdout.to(self.device)
             y_holdout = y_holdout.to(self.device)
             
-        # Initialize model with data - use full dataset for baseline if provided
+        # Initialize model with data
         # CRITICAL: Pass scaling_constants to model for proper initialization
         scaler = self.pipeline.get_scaler()
         self.model.scaling_constants = scaler.scaling_constants
         
         if hasattr(self.model, 'initialize_baseline'):
-            baseline_data = y_full_for_baseline if y_full_for_baseline is not None else y_train
-            self.model.initialize_baseline(baseline_data)
+            self.model.initialize_baseline(y_train)
         if hasattr(self.model, 'initialize_stable_coefficients_from_data'):
             self.model.initialize_stable_coefficients_from_data(X_media_train, X_control_train, y_train)
+        
+        # Initialize Hill parameters from data distribution (data-driven, not hard-coded)
+        if hasattr(self.model, 'initialize_hill_from_data'):
+            logger.info("\n Initializing Hill parameters from channel-specific SOV distributions...")
+            self.model.initialize_hill_from_data(X_media_train)
+            logger.info("   Hill initialization complete - each channel has its own saturation curve")
             
         # Warm-start training
         self.warm_start_training(X_media_train, X_control_train, R_train, y_train, verbose)

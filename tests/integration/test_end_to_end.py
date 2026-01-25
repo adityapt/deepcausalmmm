@@ -19,13 +19,13 @@ def synthetic_mmm_data():
     n_media_channels = 4
     n_control_vars = 3
     
-    # Generate media data (impressions/spend)
+    # Generate media data (impressions/spend) - shape: [n_regions, n_weeks, n_media_channels]
     media_data = np.random.exponential(1000, (n_regions, n_weeks, n_media_channels))
     
-    # Generate control variables (temperature, holidays, etc.)
-    control_data = np.random.normal(0, 1, (n_regions, n_control_vars, n_weeks))
+    # Generate control variables (temperature, holidays, etc.) - shape: [n_regions, n_weeks, n_control_vars]
+    control_data = np.random.normal(0, 1, (n_regions, n_weeks, n_control_vars))
     
-    # Generate target variable (sales/visits) with some relationship to media
+    # Generate target variable (sales/visits) with some relationship to media - shape: [n_regions, n_weeks]
     base_sales = 10000
     media_effect = np.sum(media_data * 0.001, axis=2)  # Simple linear effect
     noise = np.random.normal(0, 500, (n_regions, n_weeks))
@@ -44,27 +44,34 @@ def test_model_trainer_basic_training(synthetic_mmm_data):
     config['learning_rate'] = 0.01
     config['hidden_dim'] = 32  # Smaller for testing
     
+    # Create pipeline (required for v1.0.19+)
+    from deepcausalmmm.core.data import UnifiedDataPipeline
+    pipeline = UnifiedDataPipeline(config)
+    
+    # Split and process data
+    train_data, _ = pipeline.temporal_split(media_data, control_data, target)
+    train_tensors = pipeline.fit_and_transform_training(train_data)
+    
     # Create trainer
     trainer = ModelTrainer(config)
     
     # Create model
     model = trainer.create_model(
-        n_media=media_data.shape[2],
-        n_control=control_data.shape[1],
-        n_regions=media_data.shape[0]
+        n_media=train_tensors['X_media'].shape[2],
+        n_control=train_tensors['X_control'].shape[2],
+        n_regions=train_tensors['X_media'].shape[0]
     )
     
     # Create optimizer and scheduler (required before training)
     trainer.create_optimizer_and_scheduler()
     
-    # Convert to tensors
-    X_media = torch.FloatTensor(media_data)
-    X_control = torch.FloatTensor(control_data.transpose(0, 2, 1))  # Transpose to match expected shape
-    R = torch.arange(media_data.shape[0]).long().unsqueeze(1).repeat(1, media_data.shape[1])
-    y = torch.FloatTensor(target)
-    
-    # Train model (basic training without holdout)
-    results = trainer.train(X_media, X_control, R, y, verbose=False)
+    # Train model with pipeline
+    results = trainer.train(
+        train_tensors['X_media'], train_tensors['X_control'],
+        train_tensors['R'], train_tensors['y'],
+        pipeline=pipeline,
+        verbose=False
+    )
     
     # Check that training completed
     assert 'train_losses' in results
@@ -119,7 +126,7 @@ def test_simple_global_scaler_integration(synthetic_mmm_data):
     scaler = SimpleGlobalScaler()
     X_media_scaled, X_control_scaled, y_scaled = scaler.fit_transform(
         media_data, 
-        control_data.transpose(0, 2, 1), 
+        control_data, 
         target
     )
     
@@ -159,13 +166,13 @@ def test_model_inference_basic(synthetic_mmm_data):
     
     model = DeepCausalMMM(
         n_media=media_data.shape[2],
-        ctrl_dim=control_data.shape[1],
+        ctrl_dim=control_data.shape[2],  # Fixed: shape is now [regions, weeks, controls]
         n_regions=media_data.shape[0]
     )
     
     # Convert to tensors
     X_media = torch.FloatTensor(media_data)
-    X_control = torch.FloatTensor(control_data.transpose(0, 2, 1))
+    X_control = torch.FloatTensor(control_data)
     R = torch.arange(media_data.shape[0]).long().unsqueeze(1).repeat(1, media_data.shape[1])
     
     # Test inference
