@@ -62,7 +62,7 @@ DeepCausalMMM's architecture reflects several key design decisions driven by the
 
 **Robustness**: Huber loss addresses marketing data outliers (promotional spikes, data quality issues) while maintaining differentiability. Gradient clipping and L1/L2 regularization ensure stable training.
 
-**Linear Scaling**: y/y_mean scaling enables components to sum exactly to 100% in original scale, prioritizing interpretability for marketing stakeholders.
+**Linear Scaling**: y/y_mean scaling is applied per region to the dependent variable, enabling components to sum exactly to 100% in original scale, prioritizing interpretability for marketing stakeholders.
 
 **Attribution Prior Regularization**: Configurable priors with dynamic loss scaling prevent unrealistic distributions (e.g., >90% media), addressing neural MMM's tendency toward business-illogical attributions.
 
