@@ -347,7 +347,21 @@ Key configuration parameters:
 - **Performance Metrics**: R², slope, and saturation point for each channel
 
 ```python
+import pandas as pd
+import numpy as np
 from deepcausalmmm.postprocess import ResponseCurveFit
+
+# After training your model, prepare channel data for response curve fitting
+# Assuming you have model outputs with media contributions
+
+# Example: Create channel data from your model results
+# Replace this with actual data extraction from your trained model
+n_weeks = 104
+channel_data = pd.DataFrame({
+    'week': pd.date_range('2024-01-01', periods=n_weeks, freq='W'),
+    'impressions': np.random.uniform(100000, 500000, n_weeks),  # Replace with actual impressions
+    'contributions': np.random.uniform(1000, 5000, n_weeks)     # Replace with model contributions
+})
 
 # Fit response curves to channel data
 fitter = ResponseCurveFit(
@@ -374,14 +388,25 @@ print(f"Slope: {slope:.3f}, Saturation: {saturation:.3f}, R²: {r2_score:.3f}")
 - **ROI Maximization**: Maximize predicted response subject to budget and constraints
 
 ```python
+import pandas as pd
 from deepcausalmmm import optimize_budget_from_curves
 
 # After training your model and fitting response curves...
-# Use optimize_budget_from_curves() with your fitted curve parameters
+# Create a DataFrame with fitted curve parameters for each channel
+# Replace this with actual fitted parameters from your response curve fitting
 
+fitted_curves_df = pd.DataFrame({
+    'channel': ['TV', 'Search', 'Social', 'Display', 'Radio'],
+    'top': [2.5, 3.0, 2.2, 1.8, 2.0],              # Hill parameter (slope at inflection)
+    'bottom': [0.0, 0.0, 0.0, 0.0, 0.0],           # Minimum response
+    'saturation': [500000, 300000, 200000, 150000, 400000],  # Saturation point (impressions)
+    'slope': [0.002, 0.003, 0.004, 0.002, 0.001]   # Initial slope
+})
+
+# Optimize budget allocation
 result = optimize_budget_from_curves(
     budget=1_000_000,
-    curve_params=fitted_curves_df,  # DataFrame with: channel, top, bottom, saturation, slope
+    curve_params=fitted_curves_df,
     num_weeks=52,
     constraints={
         'TV': {'lower': 100000, 'upper': 600000},
