@@ -149,7 +149,7 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 
 # Performance
 
-**Note on Benchmarks:** The performance metrics reported below were generated using the end-to-end workflow in `examples/dashboard_rmse_optimized.py` and an anonymized dataset included in the repository at `examples/data/MMM Data.csv`. This ensures reviewers can reproduce the reported numbers and figures using the public code and data artifacts provided.
+**Note on Benchmarks:** The performance metrics reported below were generated using the end-to-end workflow in `examples/dashboard_rmse_optimized.py` and an anonymized dataset included in the repository at `examples/data/MMM Data.csv`. This ensures reviewers can reproduce the reported numbers and figures using the public code and data artifacts provided. The dataset contains no personally identifiable information (PII) and is distributed solely for the purpose of reproducing the results reported here.
 
 In an applied real-world marketing analytics use case, DeepCausalMMM achieved the following results on anonymized data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
 
@@ -195,7 +195,7 @@ The data-driven hyperparameter learning and comprehensive documentation make it 
 
 # Acknowledgments
 
-We acknowledge the contributions of the open-source community, particularly the developers of PyTorch, pandas, and scikit-learn, which form the foundation of this package. We also thank the MMM research community for establishing the theoretical foundations that informed this work.
+The author acknowledges the contributions of the open-source community, particularly the developers of PyTorch, pandas, and scikit-learn, which form the foundation of this package. The author also thanks the MMM research community for establishing the theoretical foundations that informed this work.
 
 This work received no specific external funding, and no sponsor had any role in the design, implementation, or reporting of this software.
 
@@ -203,8 +203,10 @@ This work received no specific external funding, and no sponsor had any role in 
 
 The author used AI-assisted tools (including ChatGPT and Claude) during development for limited assistance with code drafting, debugging support, documentation editing, and manuscript drafting. All AI-assisted outputs were reviewed, verified, and substantially edited by the author. The author takes full responsibility for the software, analyses, and all claims in this manuscript.
 
-# Conflict of Interest
+# Conflict of Interest and Provenance
 
 The author declares no competing financial or non-financial interests that could inappropriately influence this work.
+
+This work was conducted independently during the author's personal time (weekends) and does not represent the views of any employer.
 
 # References
