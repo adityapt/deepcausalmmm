@@ -65,7 +65,37 @@ pip install -e .
 pip install torch pandas numpy plotly networkx statsmodels scikit-learn tqdm
 ```
 
-> **Note:** The code examples below are for **version 1.0.19+** (currently in development on the `feature/remove-log-scaling` branch). If you're using the PyPI version (1.0.18), please clone the repository to access the latest examples, or wait for the v1.0.19 release.
+---
+
+## ⚠️ **IMPORTANT: Version Compatibility**
+
+**The code examples in this README are for version 1.0.19+ (unreleased)**
+
+If you installed from PyPI (`pip install deepcausalmmm`), you have **v1.0.18** which has a **completely different API**. The examples below will NOT work for v1.0.18.
+
+### For Current PyPI Users (v1.0.18):
+```bash
+# Option 1: Install the development version (recommended for testing)
+pip uninstall deepcausalmmm
+pip install git+https://github.com/adityapt/deepcausalmmm.git@feature/remove-log-scaling
+
+# Option 2: Clone and install locally
+git clone https://github.com/adityapt/deepcausalmmm.git
+cd deepcausalmmm
+git checkout feature/remove-log-scaling
+pip install -e .
+
+# Option 3: Wait for v1.0.19 release (coming soon)
+```
+
+### API Changes in v1.0.19:
+- ✅ **New**: `pipeline` parameter in `ModelTrainer.train()`
+- ✅ **Fixed**: Proper data scaling without leakage
+- ✅ **Fixed**: Correct attribution calculation
+- ✅ **New**: `ConfigurableDataGenerator.generate_mmm_dataset()` method
+- ❌ **Removed**: `y_full_for_baseline` parameter (data leakage fix)
+
+---
 
 ### Basic Usage
 
