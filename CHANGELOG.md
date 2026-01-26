@@ -7,64 +7,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Budget Optimization & Documentation Cleanup
+## [1.0.19] - 2026-01-25
+
+### Linear Scaling & Attribution Architecture
+
+### Breaking Changes
+- **Scaling Method**: Changed from log1p transformation to linear scaling (y/y_mean per region) for additive attribution
+- **Attribution Calculation**: Components now sum exactly to 100% in original scale
+- **Model Output**: All predictions and contributions in KPI units (not log-space)
 
 ### Added
-- **Budget Optimization Module**: Complete constrained optimization for optimal budget allocation
-- **`postprocess/optimization.py`**: `BudgetOptimizer` class with multiple optimization methods (SLSQP, trust-constr, differential evolution, hybrid)
-- **`postprocess/optimization_utils.py`**: Helper functions for data preparation, curve fitting, and report generation
-- **`examples/example_budget_optimization.py`**: Complete workflow demonstration with constraints and scenarios
-- **`docs/source/api/optimization.rst`**: Comprehensive API documentation for budget optimization
-- **`OptimizationResult`**: Dataclass for optimization results with allocation, predicted response, and detailed metrics
-- **`optimize_budget_from_curves()`**: Convenience function for quick optimization from curve parameters
+- **Linear Scaling Architecture**: y/y_mean per region scaling enabling perfect additivity
+- **Attribution Prior Regularization**: Configurable media contribution targets (e.g., 30-50%)
+- **Dynamic Loss Scaling**: Automatic scaling of regularization losses to match prediction loss magnitude
+- **Data-Driven Hill Initialization**: Channel-specific Hill parameter (g) initialization from SOV percentiles
+- **Seasonal Regularization**: Optional regularization to prevent seasonal suppression
+- **Integrated Attribution**: Components (baseline, seasonal, media, controls) sum to 100% with negligible error
 
-### Optimization Features
-- **Multiple Methods**: SLSQP (default), trust-constr, differential_evolution, hybrid approaches
-- **Channel Constraints**: Set min/max spend limits based on business requirements or historical bounds
-- **Hill Equation Integration**: Uses fitted response curves for accurate saturation modeling
-- **Scenario Comparison**: Compare current vs optimal vs custom allocations
-- **ROI Maximization**: Maximize predicted response subject to budget and constraints
-- **Detailed Reporting**: Comprehensive reports with spend allocation, response, ROI, and saturation metrics
+### Enhanced
+- **`core/unified_model.py`**: Redesigned forward pass for linear scaling and additive attribution
+- **`core/scaling.py`**: Complete rewrite for linear scaling (y/y_mean) and proper inverse transforms
+- **`core/trainer.py`**: Added data-driven Hill initialization call, dynamic loss scaling for regularization
+- **`examples/dashboard_rmse_optimized.py`**: Fixed 3 critical bugs in waterfall calculations
+- **Waterfall Chart**: Fixed double-counting seasonality, double inverse transformation, wrong prediction_scale
+- **Response Curves**: Unified visualization with all channels in single plot, curves start from zero
+
+### Fixed
+- **Data Leakage Bug**: `y_mean_per_region` now calculated from training data only (not holdout)
+- **Seasonal Initialization**: Corrected tensor slicing to prevent seasonal suppression
+- **Double-Counting Seasonality**: Separated baseline and seasonal contributions for attribution
+- **Waterfall Inflation**: Fixed 3 bugs causing 4-10x inflation in contribution totals
+- **Hill Parameter Similarity**: All channels now learn distinct saturation curves via data-driven initialization
+- **Example Scripts**: Fixed `example_response_curves.py` for current data format and API
 
 ### Changed
-- **Documentation Cleanup**: Removed ALL emojis from README, CONTRIBUTING, and RST documentation files
-- **Project Structure**: Updated to include optimization modules in all documentation
-- **Feature Lists**: Enhanced to highlight budget optimization and response curves (14+ visualizations)
-- **Key Features Section**: Simplified "No Hardcoding" section to single "Config-Driven" bullet point
+- **Terminology**: Replaced "visits" with "KPI units" throughout documentation
+- **Attribution Display**: Waterfall and donut charts now show correct totals in original scale
+- **Response Curves**: Simplified to single unified plot (removed scatter, parameter table)
+- **Visualization Thresholds**: Lowered DAG network threshold to 0.30 for better visibility
+- **Configuration**: Added `media_contribution_prior`, `attribution_reg_weight`, `seasonal_prior`, `seasonal_reg_weight`
+
+### Performance
+- **Training R²**: 0.950 (target 0.93 achieved)
+- **Holdout R²**: 0.842 (target 0.8 achieved with moderate regularization)
+- **Performance Gap**: 10.8% (strong generalization on temporal holdout)
+- **Attribution Accuracy**: Media 38.7%, Baseline 40.3%, Seasonal 25.6%, Controls 0.9%
+- **Additivity Error**: <0.1% (components sum exactly to 100%)
+- **Training Stability**: Improved with dynamic loss scaling and balanced regularization
 
 ### Documentation Updates
-- **README.md**: Added Budget Optimization section with usage examples, updated project structure
-- **CONTRIBUTING.md**: Updated project structure to include optimization modules
-- **docs/source/index.rst**: Added budget optimization to feature list, removed emojis
-- **docs/source/api/index.rst**: Added optimization module to API documentation structure
-- **All Documentation**: Removed emojis from headers, content, and code examples for professional presentation
+- **README.md**: Updated with linear scaling, attribution priors, data-driven Hill initialization, "KPI units" terminology
+- **JOSS/paper.md**: Added Software Design sections for linear scaling, attribution priors, Hill initialization
+- **docs/source/quickstart.rst**: Already current with pipeline parameter and zero-leakage best practices
+- **examples/quickstart.ipynb**: Fixed to use current API, removed emojis
+- **examples/example_response_curves.py**: Fixed data loading for current CSV structure, updated API calls
 
-### API Examples
+### API Changes
 ```python
-from deepcausalmmm import optimize_budget_from_curves
+# Linear scaling is now default (no user code changes needed)
+# Components automatically sum to 100% in original scale
 
-# Optimize budget with fitted response curves
-result = optimize_budget_from_curves(
-    budget=1_000_000,
-    curve_params=fitted_curves_df,  # DataFrame with: channel, top, bottom, saturation, slope
-    num_weeks=52,
-    constraints={
-        'TV': {'lower': 100000, 'upper': 600000},
-        'Search': {'lower': 150000, 'upper': 500000}
-    },
-    method='SLSQP'
-)
+# Configure attribution priors (optional)
+config['media_contribution_prior'] = 0.40  # Target 40% media attribution
+config['attribution_reg_weight'] = 0.5     # Regularization strength (0.5 = balanced)
 
-if result.success:
-    print(f"Optimal Allocation: {result.allocation}")
-    print(f"Predicted Response: {result.predicted_response:,.0f}")
-    print(result.by_channel)
+# Seasonal regularization (optional)
+config['seasonal_prior'] = 0.20           # Target 20% seasonal contribution
+config['seasonal_reg_weight'] = 0.2       # Regularization strength
 ```
 
+### Technical Details
+- **Scaling Method**: `y_scaled = y / y_mean_per_region` (replaces log1p)
+- **Inverse Transform**: `y_orig = y_scaled * prediction_scale * y_mean_per_region`
+- **Attribution Loss**: `(media_contribution - prior * total_prediction)²` with dynamic scaling
+- **Hill Initialization**: `g_init = SOV_75th_percentile` per channel (not uniform)
+- **Seasonality**: Min-max [0, 1] scaling with optional regularization to prevent suppression
+
 ### Backward Compatibility
-- All existing APIs unchanged
-- Example scripts maintained
-- No breaking changes to core functionality
+- **API**: No breaking changes to user-facing API
+- **Model Loading**: Old log-space models not compatible (retrain required)
+- **Data Format**: Same data format requirements
+- **Configuration**: New config keys are optional (sensible defaults)
+
+### Migration Guide
+For users upgrading from v1.0.18:
+1. **Retrain models**: Log-space models not compatible with linear scaling
+2. **Update scripts**: Change "visits" to "KPI units" in custom visualizations
+3. **Configure priors**: Set `media_contribution_prior` if you have business targets
+4. **Review attribution**: Contributions now sum to 100% and may differ from log-space results
+
+## [1.0.18] - 2025-10-22
+
+### Budget Optimization & Documentation Cleanup
 
 ## [1.0.18] - 2025-10-22
 

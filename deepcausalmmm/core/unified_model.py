@@ -179,7 +179,8 @@ class DeepCausalMMM(nn.Module):
         # Initialize hill_a so that softplus(hill_a) >= 2.0 naturally (without clamp floor)
         # softplus(2.5) ≈ 2.58, giving room to learn both up and down within [2.0, 5.0]
         self.hill_a = nn.Parameter(torch.ones(n_media) * 2.5)  # softplus(2.5) ≈ 2.58
-        self.hill_g = nn.Parameter(torch.rand(n_media) * 0.2 + 0.1)  # 0.1-0.3
+        # hill_g will be initialized per-channel based on SOV data in initialize_hill_from_data()
+        self.hill_g = nn.Parameter(torch.rand(n_media) * 0.2 + 0.1)  # Default: 0.1-0.3 (will be overwritten)
         
         # CAUSAL DAG components - discover meaningful relationships
         if enable_dag and enable_interactions:
@@ -243,6 +244,14 @@ class DeepCausalMMM(nn.Module):
                 nn.init.xavier_uniform_(layer.weight, gain=0.1)
                 nn.init.zeros_(layer.bias)
         
+        # ATTRIBUTION PRIOR: Target media contribution (business knowledge)
+        self.media_contribution_prior = 0.40  # 40% is typical for MMM
+        self.attribution_reg_weight = 0.5  # Balance between prediction and attribution (0.5 = equal priority)
+        
+        # SEASONAL REGULARIZATION: Prevent seasonal_coeff from being suppressed to zero
+        self.seasonal_prior = 1.0  # Target seasonal coefficient value
+        self.seasonal_reg_weight = 0.1  # Weight for seasonal regularization (lower than attribution)
+        
         # REGION-SPECIFIC baselines - IMPROVED initialization
         self.region_baseline = nn.Parameter(torch.randn(n_regions) * 0.1)
         
@@ -251,8 +260,9 @@ class DeepCausalMMM(nn.Module):
         self.prediction_scale = nn.Parameter(torch.ones(1))
         
         # NEW: Time trend component to handle growth patterns
-        self.time_trend_weight = nn.Parameter(torch.zeros(1))  # Learnable trend strength
-        self.time_trend_bias = nn.Parameter(torch.zeros(1))    # Trend intercept
+        # FROZEN: Set to zero and not learnable (disabled per user request)
+        self.register_buffer('time_trend_weight', torch.zeros(1))  # FROZEN at 0
+        self.register_buffer('time_trend_bias', torch.zeros(1))    # FROZEN at 0
         
         # NEW: Seasonal component with learnable coefficient
         self.seasonal_coeff = nn.Parameter(torch.ones(1))  # Learnable seasonal coefficient
@@ -263,8 +273,8 @@ class DeepCausalMMM(nn.Module):
         self.coeff_range_raw = nn.Parameter(torch.tensor(0.0))  # exp(0) = 1.0, no upper bound
         self.ctrl_coeff_range_raw = nn.Parameter(torch.tensor(0.0))  # exp(0) = 1.0, no upper bound
         
-        # FULLY LEARNABLE: Trend strength with no artificial constraints
-        self.trend_damping_raw = nn.Parameter(torch.tensor(0.0))  # exp(0) = 1.0, can learn any positive value
+        # FROZEN: Trend damping (disabled - trend is frozen at zero)
+        self.register_buffer('trend_damping_raw', torch.tensor(0.0))  # FROZEN - not learnable
         
         # HYBRID APPROACH: Fixed regularization weights (handled in trainer)
         # Only core model parameters are learnable - not loss balancing weights
@@ -292,7 +302,7 @@ class DeepCausalMMM(nn.Module):
     def initialize_baseline(self, y_data: torch.Tensor):
         """Initialize baseline to match target data statistics.
         
-        CRITICAL: y_data is ALREADY in scaled space (log1p transformed)!
+        CRITICAL: y_data is ALREADY in scaled space (y/y_mean per region)!
         Extract ALL parameters directly from the actual data distribution.
         IMPORTANT: Skip padding weeks to avoid baseline bias!
         """
@@ -317,41 +327,28 @@ class DeepCausalMMM(nn.Module):
             # softplus(0) = 1.0, so no initial scaling applied
             self.prediction_scale.data = torch.FloatTensor([0.0])  # softplus(0) = 1.0
             
-            # 4. TIME TREND: Extract actual trend from data (if exists)
-            if n_timesteps > 1:
-                # Calculate time-series trend across all regions
-                time_steps = np.arange(n_timesteps, dtype=np.float32)
-                y_time_series = y_numpy.mean(axis=0)  # Average across regions over time
-                
-                # Linear regression: y = slope * t + intercept
-                time_mean = time_steps.mean()
-                y_mean = y_time_series.mean()
-                
-                numerator = np.sum((time_steps - time_mean) * (y_time_series - y_mean))
-                denominator = np.sum((time_steps - time_mean) ** 2)
-                
-                if denominator > 1e-8:  # Avoid division by zero
-                    actual_slope = numerator / denominator
-                    actual_intercept = y_mean - actual_slope * time_mean
-                    
-                    # FULLY LEARNABLE: No hardcoded trend damping bounds
-                    # Let model discover optimal trend strength - can be any positive value
-                    learned_trend_damping = torch.exp(self.trend_damping_raw)  # Range: [0, ∞] - no artificial limits!
-                    self.time_trend_weight.data = torch.FloatTensor([actual_slope * learned_trend_damping.item()])
-                    self.time_trend_bias.data = torch.FloatTensor([actual_intercept * learned_trend_damping.item()])
-                else:
-                    # No detectable trend
-                    self.time_trend_weight.data = torch.zeros(1)
-                    self.time_trend_bias.data = torch.zeros(1)
-            else:
-                # Single timestep - no trend
-                self.time_trend_weight.data = torch.zeros(1)
-                self.time_trend_bias.data = torch.zeros(1)
+            # 4. TIME TREND: DISABLED - Frozen at zero (user request)
+            # Trend is a buffer (not a parameter), so it won't be learned during training
+            # No need to set - already initialized to zero in __init__
+            logger.info(f"   Trend initialization: DISABLED (FROZEN at zero - not learnable)")
             
-            logger.info(f"Initialized baselines (Log1p scale):")
+            # Get original scale means for display
+            if hasattr(self, 'scaling_constants'):
+                y_mean_per_region = self.scaling_constants.get('y_mean_per_region')
+                if y_mean_per_region is not None:
+                    avg_original_visits = (region_means_scaled.mean() * y_mean_per_region.mean().item())
+                else:
+                    avg_original_visits = None
+            else:
+                avg_original_visits = None
+            
+            logger.info(f"Initialized baselines (Linear scaled - y/mean):")
             logger.info(f"   Region baselines range: [{region_means_scaled.min():.3f}, {region_means_scaled.max():.3f}]")
-            logger.info(f"   Global bias (Log1p scale): {self.global_bias.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
-            logger.info(f"   Expected prediction baseline: {region_means_scaled.mean():.3f} -> ~{torch.expm1(torch.tensor(region_means_scaled.mean())).item():.0f} visits")
+            logger.info(f"   Global bias (Linear scale): {self.global_bias.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
+            if avg_original_visits is not None:
+                logger.info(f"   Expected prediction baseline: {region_means_scaled.mean():.3f} (normalized) -> ~{avg_original_visits:.0f} visits")
+            else:
+                logger.info(f"   Expected prediction baseline: {region_means_scaled.mean():.3f} (normalized)")
             
             # Initialize seasonal components using actual data decomposition
             self._initialize_seasonal_components(y_data)
@@ -361,22 +358,33 @@ class DeepCausalMMM(nn.Module):
         Initialize seasonal components using multiplicative decomposition per region.
         
         Args:
-            y_data: Target data [n_regions, n_timesteps] in log1p scale
+            y_data: Target data [n_regions, n_timesteps] in linear scaled space (y/mean)
         """
         with torch.no_grad():
             # Skip padding weeks for seasonal decomposition
             y_no_padding = y_data[:, self.burn_in_weeks:] if y_data.shape[1] > self.burn_in_weeks else y_data
             
-            # Convert to numpy and apply expm1 to get original scale for decomposition
-            y_original_scale = torch.expm1(y_no_padding).cpu().numpy()
+            # Convert to original scale by multiplying by region means
+            if hasattr(self, 'scaling_constants'):
+                y_mean_per_region = self.scaling_constants.get('y_mean_per_region')
+                if y_mean_per_region is not None:
+                    # y_original = y_scaled * y_mean
+                    # y_mean_per_region shape: [n_regions, 1], broadcasts to [n_regions, n_timesteps]
+                    y_original_scale = (y_no_padding * y_mean_per_region).cpu().numpy()
+                else:
+                    # Fallback: assume data is already reasonably scaled
+                    y_original_scale = y_no_padding.cpu().numpy()
+            else:
+                # Fallback: assume data is already reasonably scaled
+                y_original_scale = y_no_padding.cpu().numpy()
             
             # Extract seasonal components per region
             seasonal_components = self.seasonality_detector.extract_seasonal_components_per_region(
                 y_original_scale, start_week=0
             )
             
-            # Apply Min-Max scaling per region to bring seasonality to 0-1 range
-            # This preserves seasonal patterns while normalizing scale
+            # Apply Min-Max scaling per region to bring seasonality to [0, 1] range
+            # This ensures seasonality can only ADD to baseline, never subtract
             n_regions, n_weeks = seasonal_components.shape
             seasonal_normalized = torch.zeros_like(seasonal_components)
             
@@ -397,9 +405,63 @@ class DeepCausalMMM(nn.Module):
             
             logger.info(f" Initialized seasonal components:")
             logger.info(f"   Seasonal coefficient: {self.seasonal_coeff.item():.3f} [LEARNABLE - constrained ≥ 0 via softplus]")
-            logger.info(f"   Components range: [{seasonal_normalized.min():.3f}, {seasonal_normalized.max():.3f}] (Min-Max scaled per region)")
+            logger.info(f"   Components range: [{seasonal_normalized.min():.3f}, {seasonal_normalized.max():.3f}] (Min-Max scaled [0, 1])")
             logger.info(f"   Components mean: {seasonal_normalized.mean():.3f}")
-            logger.info(f"   Scaling: Min-Max per region (0-1 range) - preserves seasonal patterns")
+            logger.info(f"   Scaling: Min-Max per region - seasonality can only ADD to baseline")
+
+    def initialize_hill_from_data(self, Xm: torch.Tensor):
+        """
+        Initialize hill_g based on per-channel SOV (Share of Voice) distribution.
+        
+        For each channel, hill_g is set to the 60th percentile of its SOV values,
+        ensuring the inflection point matches where the channel typically operates.
+        
+        Args:
+            Xm: Media data [n_regions, n_timesteps, n_channels] in SOV-scaled space [0, 1]
+        """
+        with torch.no_grad():
+            B, T, n_media = Xm.shape
+            
+            # Skip padding weeks
+            Xm_no_padding = Xm[:, self.burn_in_weeks:] if T > self.burn_in_weeks else Xm
+            
+            logger.info(f"\n📊 Initializing Hill g parameters from SOV data:")
+            
+            for i in range(n_media):
+                # Get all SOV values for this channel
+                channel_sov = Xm_no_padding[:, :, i].flatten()
+                
+                # Filter out zeros (weeks with no spend)
+                channel_sov_nonzero = channel_sov[channel_sov > 1e-4]
+                
+                if len(channel_sov_nonzero) > 10:
+                    # Use 60th percentile as inflection point
+                    # This ensures the channel shows good S-curve behavior around typical spend levels
+                    p60 = torch.quantile(channel_sov_nonzero, 0.6).item()
+                    
+                    # Clamp to reasonable range [0.05, 0.9]
+                    # - Below 0.05: Too early saturation
+                    # - Above 0.9: Inflection too late (most data will be linear)
+                    g_target = max(0.05, min(0.9, p60))
+                    
+                    # Convert to raw value (before softplus)
+                    # softplus(x) = log(1 + exp(x)), so inverse: x = log(exp(g) - 1)
+                    # For numerical stability, use: x = g + log(exp(-g) + 1) - log(2) for g > 1
+                    if g_target > 0.5:
+                        g_raw = np.log(np.exp(g_target) - 1.0)
+                    else:
+                        g_raw = np.log(g_target / (1.0 - g_target + 1e-8))
+                    
+                    self.hill_g.data[i] = g_raw
+                    
+                    logger.info(f"   Channel {i+1:2d}: p60={p60:.4f} → g_target={g_target:.4f} (raw={g_raw:.4f})")
+                else:
+                    # Not enough data, keep default
+                    logger.info(f"   Channel {i+1:2d}: Insufficient data, keeping default g")
+            
+            logger.info(f"\n✅ Hill g initialization complete")
+            g_after_softplus = torch.nn.functional.softplus(self.hill_g)
+            logger.info(f"   Range after softplus: [{g_after_softplus.min():.4f}, {g_after_softplus.max():.4f}]")
 
     def initialize_stable_coefficients_from_data(self, Xm: torch.Tensor, Xc: torch.Tensor, y: torch.Tensor):
         """
@@ -427,8 +489,8 @@ class DeepCausalMMM(nn.Module):
             
             try:
                 beta_media = torch.linalg.solve(XtX_reg, Xty)
-                # POSITIVE-ONLY INITIALIZATION: Use sigmoid to ensure non-negative media coefficients
-                beta_media_raw = torch.log(torch.abs(beta_media) + 1e-8)  # Convert to raw for sigmoid
+                # POSITIVE-ONLY INITIALIZATION: Use abs and sigmoid to ensure non-negative media coefficients
+                beta_media_raw = torch.abs(beta_media)  # Ensure positive
                 beta_media_positive = torch.sigmoid(beta_media_raw)  # Range: [0, 1] - POSITIVE ONLY!
                 
                 # Update stable media coefficients
@@ -809,9 +871,9 @@ class DeepCausalMMM(nn.Module):
         ctrl_contrib = Xc * ctrl_coeffs
         ctrl_term = ctrl_contrib.sum(-1)  # [B, T]
         
-        # Region baseline - IMPROVED with region-specific baselines
+        # Region baseline - CONSTRAINED to be non-negative
         region_ids = R[:, 0] if R.dim() > 1 else R  # Handle both 1D and 2D region tensors
-        region_baselines = self.region_baseline[region_ids]  # [B]
+        region_baselines = F.softplus(self.region_baseline[region_ids])  # CONSTRAINED: Always ≥ 0
         reg_term = region_baselines.unsqueeze(1).expand(-1, T)  # [B, T]
         
         # NEW: Time trend component - Add linear growth capability
@@ -833,37 +895,85 @@ class DeepCausalMMM(nn.Module):
                 pad_size = T - seasonal_data.shape[1]
                 seasonal_slice = F.pad(seasonal_data, (pad_size, 0), mode='replicate')
             
-            # CONSTRAINT: Ensure seasonal coefficient is non-negative (seasonality can't reduce baseline below zero)
+            # CONSTRAINT: Ensure seasonal coefficient is non-negative (seasonality can only add to baseline)
             seasonal_coeff_positive = F.softplus(self.seasonal_coeff)  # Always ≥ 0
-            # Apply constrained seasonal coefficient - seasonal_slice[region_ids] is already [B, T]
+            # Apply constrained seasonal coefficient
             seasonal_term = seasonal_coeff_positive * seasonal_slice[region_ids]
         
         # PREDICTION - CORRECT: Total baseline = global_bias + region_deviation + seasonality
         # CONSTRAINT: Ensure global_bias is non-negative (baseline visits can't be negative)
         global_bias_positive = F.softplus(self.global_bias)  # Always ≥ 0
         
-        # CRITICAL FIX: Ensure the ENTIRE baseline is non-negative (business logic constraint)
-        # Calculate raw baseline first
-        raw_baseline = reg_term + global_bias_positive + seasonal_term
-        # Apply ReLU to ensure baseline is always ≥ 0 (visits can't be negative)
-        baseline_positive = F.relu(raw_baseline)  # Always ≥ 0
+        # COMPUTE BASELINE (calculate once, use for both prediction and attribution)
+        baseline_without_seasonal = F.relu(reg_term + global_bias_positive)  # Baseline WITHOUT seasonal
         
-        raw_prediction = media_term + ctrl_term + baseline_positive + trend_term
+        # Step 1: Compute total raw prediction
+        raw_prediction = media_term + ctrl_term + baseline_without_seasonal + seasonal_term + trend_term
+        
+        # Step 3: Scale final prediction
         y = raw_prediction * F.softplus(self.prediction_scale)
         
-        # Store outputs
+        # Store outputs (direct computation)
         outputs['coefficients'] = media_coeffs
         outputs['control_coefficients'] = ctrl_coeffs
-        outputs['contributions'] = media_contrib
-        outputs['trend_contribution'] = trend_term
-        outputs['seasonal_contribution'] = seasonal_term  # NEW: Track seasonal contribution (now always ≥ 0)
-        outputs['control_contributions'] = ctrl_contrib
-        outputs['baseline'] = baseline_positive  # FIXED: Always non-negative baseline
+        outputs['contributions'] = media_contrib  # [B, T, n_media]
+        outputs['trend_contribution'] = trend_term  # Trend is frozen at 0
+        outputs['control_contributions'] = ctrl_contrib  # [B, T, n_control]
+        outputs['seasonal_contribution'] = seasonal_term  # Seasonal component (separate for waterfall)
+        outputs['baseline'] = baseline_without_seasonal  # Baseline WITHOUT seasonal (avoids double-counting)
         outputs['raw_prediction'] = raw_prediction
         outputs['prediction_scale'] = F.softplus(self.prediction_scale)
-        outputs['burn_in_weeks'] = self.burn_in_weeks  # NEW: Store for post-processing
+        outputs['burn_in_weeks'] = self.burn_in_weeks
         
-        return y, media_coeffs, media_contrib, outputs
+        # DEBUG: Verify components sum to raw_prediction
+        components_sum = media_term + ctrl_term + baseline_without_seasonal + seasonal_term + trend_term
+        diff = torch.abs(components_sum - raw_prediction).mean().item()
+        
+        # Also verify per-channel media_contrib sums to media_term
+        media_contrib_sum = media_contrib.sum(dim=-1)  # Sum across channels
+        media_diff = torch.abs(media_contrib_sum - media_term).mean().item()
+        
+        if diff > 1e-5:
+            print(f"⚠️  WARNING: Components don't sum to raw_prediction! Diff: {diff:.6f}")
+        if media_diff > 1e-5:
+            print(f"⚠️  WARNING: media_contrib.sum() != media_term! Diff: {media_diff:.6f}")
+        
+        # ======================================================================
+        # ATTRIBUTION REGULARIZATION: Media contribution should match prior
+        # ======================================================================
+        # Use ABSOLUTE value constraint (not ratio) to prevent "make everything tiny" loophole
+        # Target: media_term should be ~40% of total_prediction in absolute terms
+        
+        # Calculate target media contribution (40% of total prediction)
+        target_media = self.media_contribution_prior * raw_prediction  # [B, T]
+        
+        # Regularization loss: penalize deviation from target absolute contribution
+        attribution_reg_loss_raw = F.mse_loss(media_term, target_media)
+        
+        # For monitoring: also calculate actual proportion
+        media_proportion = media_term / (raw_prediction + 1e-8)
+        
+        # DYNAMIC SCALING: Scale attribution loss to match MSE magnitude
+        # This ensures both losses are comparable before weighting
+        # We'll compute MSE in trainer and pass it here, but for now store raw loss
+        outputs['attribution_reg_loss_raw'] = attribution_reg_loss_raw
+        outputs['media_proportion'] = media_proportion.mean()  # For monitoring
+        outputs['media_term_mean'] = media_term.mean()  # For debugging
+        outputs['target_media_mean'] = target_media.mean()  # For debugging
+        
+        # ======================================================================
+        # SEASONAL REGULARIZATION: Prevent seasonal_coeff from going to zero
+        # ======================================================================
+        # Target: seasonal_coeff should stay near its prior (e.g., 1.0)
+        # This prevents the model from suppressing seasonality
+        seasonal_prior = getattr(self, 'seasonal_prior', 1.0)
+        seasonal_reg_loss_raw = F.mse_loss(
+            F.softplus(self.seasonal_coeff),  # Current seasonal coefficient
+            torch.tensor([seasonal_prior], device=self.seasonal_coeff.device)  # Target prior
+        )
+        outputs['seasonal_reg_loss_raw'] = seasonal_reg_loss_raw
+        
+        return y, media_coeffs, media_contrib, outputs  # Return direct contributions
     
     def get_dag_loss(self) -> torch.Tensor:
         """Light DAG regularization - allows meaningful causal relationships while preventing over-connectivity."""

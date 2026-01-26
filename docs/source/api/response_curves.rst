@@ -18,7 +18,7 @@ Key Features
 
 * **Hill Equation Fitting**: Fits S-shaped saturation curves to channel data
 * **Automatic Aggregation**: Aggregates DMA-week data to national weekly level
-* **Proportional Allocation**: Correctly scales log-space contributions to original scale
+* **Direct Attribution**: Works with additive contributions from linear scaling (v1.0.19+)
 * **Interactive Visualizations**: Plotly-based plots with hover details
 * **Performance Metrics**: R², slope, and saturation point for each channel
 * **Backward Compatibility**: Maintains support for legacy method names

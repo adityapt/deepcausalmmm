@@ -10,15 +10,17 @@ Here's a complete example of training a DeepCausalMMM model:
 
 .. code-block:: python
 
-    import pandas as pd
-    import torch
-    from deepcausalmmm import DeepCausalMMM, get_device
+    import numpy as np
+    from deepcausalmmm import get_device
     from deepcausalmmm.core import get_default_config
     from deepcausalmmm.core.trainer import ModelTrainer
     from deepcausalmmm.core.data import UnifiedDataPipeline
 
-    # 1. Load your data
-    df = pd.read_csv('your_mmm_data.csv')
+    # 1. Prepare your data (or load from CSV and reshape)
+    # Data shape: [n_regions, n_weeks, n_channels]
+    X_media = np.random.uniform(100, 5000, (10, 52, 5))    # Media spend/impressions
+    X_control = np.random.uniform(0, 1, (10, 52, 3))       # Control variables
+    y = np.random.uniform(1000, 10000, (10, 52))           # Target variable
 
     # 2. Get optimized configuration
     config = get_default_config()
@@ -29,16 +31,33 @@ Here's a complete example of training a DeepCausalMMM model:
 
     # 4. Process data with unified pipeline
     pipeline = UnifiedDataPipeline(config)
-    processed_data = pipeline.fit_transform(df)
+    train_data, holdout_data = pipeline.temporal_split(X_media, X_control, y)
+    train_tensors = pipeline.fit_and_transform_training(train_data)
+    holdout_tensors = pipeline.transform_holdout(holdout_data)
 
     # 5. Train with ModelTrainer (recommended approach)
     trainer = ModelTrainer(config)
-    model, results = trainer.train(processed_data)
+    model = trainer.create_model(
+        n_media=train_tensors['X_media'].shape[2],
+        n_control=train_tensors['X_control'].shape[2],
+        n_regions=train_tensors['X_media'].shape[0]
+    )
+    trainer.create_optimizer_and_scheduler()
+    
+    results = trainer.train(
+        train_tensors['X_media'], train_tensors['X_control'],
+        train_tensors['R'], train_tensors['y'],
+        holdout_tensors['X_media'], holdout_tensors['X_control'],
+        holdout_tensors['R'], holdout_tensors['y'],
+        pipeline=pipeline,
+        verbose=True
+    )
 
     # 6. View results
-    print(f"Training RMSE: {results['train_rmse']:.0f}")
-    print(f"Holdout RMSE: {results['holdout_rmse']:.0f}")
-    print(f"Holdout R²: {results['holdout_r2']:.3f}")
+    print(f"Training RMSE: {results['final_train_rmse']:.0f}")
+    print(f"Training R²: {results['final_train_r2']:.3f}")
+    print(f"Holdout RMSE: {results['final_holdout_rmse']:.0f}")
+    print(f"Holdout R²: {results['final_holdout_r2']:.3f}")
 
 One-Command Analysis
 --------------------
@@ -61,7 +80,13 @@ This will:
 Data Format Requirements
 ------------------------
 
-Your MMM dataset should be a CSV file with the following structure:
+DeepCausalMMM expects data in NumPy array format with shape **[n_regions, n_weeks, n_channels]**:
+
+* **X_media**: Media spend or impressions [n_regions, n_weeks, n_media_channels]
+* **X_control**: Control variables [n_regions, n_weeks, n_control_variables]
+* **y**: Target variable [n_regions, n_weeks]
+
+If loading from CSV, you'll need to reshape your data. Your CSV should have this structure:
 
 .. code-block:: text
 
@@ -70,13 +95,29 @@ Your MMM dataset should be a CSV file with the following structure:
     2023-01-08,DMA_1,13200,1200,600,...,0.1,18,...
     ...
 
-Required columns:
+To convert from CSV to the required format:
 
-* **Date column**: Weekly time periods
-* **Region column**: Geographic identifiers (DMA, region, etc.)
-* **Target variable**: Your KPI (visits, sales, conversions, etc.)
-* **Media channels**: Spend or impression data for each channel
-* **Control variables**: External factors (weather, events, etc.)
+.. code-block:: python
+
+    import pandas as pd
+    import numpy as np
+    
+    df = pd.read_csv('mmm_data.csv')
+    regions = df['region'].unique()
+    weeks = df['week'].unique()
+    
+    # Reshape to [regions, weeks, channels]
+    X_media = np.stack([
+        df.pivot(index='region', columns='week', values=col).values
+        for col in media_columns
+    ], axis=-1)
+    
+    X_control = np.stack([
+        df.pivot(index='region', columns='week', values=col).values
+        for col in control_columns
+    ], axis=-1)
+    
+    y = df.pivot(index='region', columns='week', values='target').values
 
 Configuration Customization
 ----------------------------
@@ -86,6 +127,7 @@ Customize the model for your specific use case:
 .. code-block:: python
 
     from deepcausalmmm.core import get_default_config
+    from deepcausalmmm.core.trainer import ModelTrainer
 
     # Get base configuration
     config = get_default_config()
@@ -96,13 +138,15 @@ Customize the model for your specific use case:
         'learning_rate': 0.005,     # Fine-tune learning rate
         'hidden_dim': 256,          # Model capacity
         'dropout': 0.1,             # Regularization
-        'holdout_ratio': 0.15,      # Validation split
+        'holdout_ratio': 0.15,      # Validation split (default 0.08)
         'burn_in_weeks': 8,         # GRU stabilization
     })
 
-    # Train with custom config
+    # Train with custom config (see Basic Usage for full data preparation)
     trainer = ModelTrainer(config)
-    model, results = trainer.train(processed_data)
+    model = trainer.create_model(n_media, n_control, n_regions)
+    trainer.create_optimizer_and_scheduler()
+    results = trainer.train(...)
 
 Model Inference
 ---------------
