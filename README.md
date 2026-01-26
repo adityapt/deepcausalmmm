@@ -46,10 +46,10 @@
 pip install deepcausalmmm
 ```
 
-#### From GitHub (Development Version - v1.0.19)
+#### From GitHub (Development Version)
 ```bash
 # Install the latest development version with all fixes
-pip install git+https://github.com/adityapt/deepcausalmmm.git@feature/remove-log-scaling
+pip install git+https://github.com/adityapt/deepcausalmmm.git
 ```
 
 #### Manual Installation
@@ -69,23 +69,22 @@ pip install torch pandas numpy plotly networkx statsmodels scikit-learn tqdm
 
 ## IMPORTANT: Version Compatibility
 
-**The code examples in this README are for version 1.0.19+ (unreleased)**
+**The code examples in this README are for version 1.0.19+**
 
-If you installed from PyPI (`pip install deepcausalmmm`), you have **v1.0.18** which has a **completely different API**. The examples below will NOT work for v1.0.18.
+If you installed from PyPI previously (`pip install deepcausalmmm`), you might have **v1.0.18** or below which has a **completely different API**. The examples below will NOT work for v1.0.18 and below.
 
-### For Current PyPI Users (v1.0.18):
+### For Current PyPI Users (v1.0.18 and below):
 ```bash
-# Option 1: Install the development version (recommended for testing)
-pip uninstall deepcausalmmm
-pip install git+https://github.com/adityapt/deepcausalmmm.git@feature/remove-log-scaling
+# Option 1: Upgrade to latest version from PyPi
+pip install --upgrade deepcausalmmm
+# OR shorthand
+pip install -U deepcausalmmm
 
-# Option 2: Clone and install locally
-git clone https://github.com/adityapt/deepcausalmmm.git
-cd deepcausalmmm
-git checkout feature/remove-log-scaling
-pip install -e .
+# Option 2: Install the development version (from GitHub)
+pip install --upgrade git+https://github.com/adityapt/deepcausalmmm.git
 
-# Option 3: Wait for v1.0.19 release (coming soon)
+# Option 3: Force reinstall if you have conflicts
+pip install --upgrade --force-reinstall deepcausalmmm
 ```
 
 ### API Changes in v1.0.19:
@@ -350,7 +349,7 @@ Key configuration parameters:
 ### Learnable Parameters
 - **Media Coefficient Bounds**: `F.softplus(coeff_max_raw) * torch.sigmoid(media_coeffs_raw)`
 - **Control Coefficients**: Unbounded with gradient clipping
-- **Trend Damping**: `torch.exp(trend_damping_raw)` 
+- **Trend Damping**: Disabled for now, will be enabled in future releases
 - **Baseline Components**: Non-negative via `F.softplus`
 - **Seasonal Coefficient**: Learnable seasonal contribution
 
@@ -361,7 +360,7 @@ Key configuration parameters:
 - **Min-Max Seasonality**: Regional seasonal scaling (0-1) using `seasonal_decompose`
 - **Consistent Transforms**: Same scaling applied to train/holdout splits
 - **DMA-Level Processing**: True economic contributions calculated per region
-- **Attribution Priors**: Media contribution regularization (40% target) with dynamic loss scaling
+- **Attribution Priors**: Media contribution regularization with dynamic loss scaling
 - **Data-Driven Hill Initialization**: Hill parameters initialized from channel-specific SOV percentiles
 
 ### Regularization Strategy
@@ -479,11 +478,11 @@ See `examples/example_budget_optimization.py` for complete workflow and tips.
 **Real-World Validation** (190 regions, 109 weeks, 13 channels, 7 controls):
 
 - **Training R²**: 0.950 | **Holdout R²**: 0.842
-- **Performance Gap**: 10.8% (indicating strong generalization)
-- **Generalization Gap**: 10.8% (excellent out-of-sample performance)
+- **Performance Gap**: 10.8% (indicating good generalization)
+- **Generalization Gap**: 10.8% (reasonable out-of-sample performance)
 - **Temporal Split**: 92.7% training (101 weeks) / 7.3% holdout (8 weeks)
 
-**Attribution Breakdown** (with 40% media prior regularization):
+**Attribution Breakdown** (with example data and 40% media contribution for prior regularization):
 - **Media**: 38.6% (close to 40% target)
 - **Baseline**: 35.4%
 - **Seasonality**: 25.7%
@@ -519,13 +518,11 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Success Stories
 
-> "Achieved 84% holdout R² with 10.8% performance gap - strong generalization on real-world data with 190 regions!"
+> "Achieved 84% holdout R² with 10.8% performance gap - good generalization on anonymized real-world data with 190 regions!"
 
-> "Attribution priors with dynamic loss scaling solved the attribution explosion problem - media now at realistic 38.6%"
+> "Attribution priors with dynamic loss scaling solved the attribution explosion problem - media close to realistic contribution ~= 38.6% vs. 40%"
 
 > "Data-driven Hill initialization enables channel-specific saturation curves"
-
-> "The comprehensive dashboard with 14+ interactive visualizations including response curves provides insights we never had before"
 
 > "DMA-level contributions and DAG learning revealed true causal relationships between our marketing channels"
 
