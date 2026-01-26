@@ -153,8 +153,8 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 
 In an applied real-world marketing analytics use case, DeepCausalMMM achieved the following results on anonymized data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
 
-- **Training R²**: 0.956, **Holdout R²**: 0.839
-- **Train–holdout gap**: 0.117 (12.2% relative to training R², indicating reasonable generalization)
+- **Training R²**: 0.950, **Holdout R²**: 0.842
+- **Train–holdout gap**: 0.108 (10.8% relative to training R², indicating reasonable generalization)
 
 **Attribution Quality**:
 - Components sum to 100% with perfect additivity through linear scaling architecture
@@ -167,7 +167,7 @@ These results illustrate practical viability rather than serving as a controlled
 
 # Research Impact Statement
 
-DeepCausalMMM demonstrates strong empirical performance through deployment on 190 geographic regions over 109 weeks with 13 marketing channels, achieving holdout R² of 0.839 with a train–holdout delta of 0.117 (12.2% relative to training R²). The package provides a fully reproducible benchmark workflow with included dataset and executable scripts.
+DeepCausalMMM demonstrates strong empirical performance through deployment on 190 geographic regions over 109 weeks with 13 marketing channels, achieving holdout R² of 0.842 with a train–holdout delta of 0.108 (10.8% relative to training R²). The package provides a fully reproducible benchmark workflow with included dataset and executable scripts.
 
 The software offers comprehensive documentation, extensive tests, stable APIs, and interactive visualizations for stakeholder communication. Distributed via PyPI with worked multi-region examples, it integrates GRU-based temporal modeling, DAG-based dependency learning, and Hill saturation in a single framework. By emphasizing interpretability and deployment, DeepCausalMMM is suited for marketing teams seeking transparent, operationally-usable MMM beyond linear models.
 

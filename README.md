@@ -478,8 +478,8 @@ See `examples/example_budget_optimization.py` for complete workflow and tips.
 
 **Real-World Validation** (190 regions, 109 weeks, 13 channels, 7 controls):
 
-- **Training R²**: 0.956 | **Holdout R²**: 0.839
-- **Performance Gap**: 12.2% (indicating strong generalization)
+- **Training R²**: 0.950 | **Holdout R²**: 0.842
+- **Performance Gap**: 10.8% (indicating strong generalization)
 - **Generalization Gap**: 10.8% (excellent out-of-sample performance)
 - **Temporal Split**: 92.7% training (101 weeks) / 7.3% holdout (8 weeks)
 

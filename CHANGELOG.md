@@ -48,7 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Configuration**: Added `media_contribution_prior`, `attribution_reg_weight`, `seasonal_prior`, `seasonal_reg_weight`
 
 ### Performance
-- **Holdout R²**: 0.839 (target 0.8 achieved with moderate regularization)
+- **Training R²**: 0.950 (target 0.93 achieved)
+- **Holdout R²**: 0.842 (target 0.8 achieved with moderate regularization)
+- **Performance Gap**: 10.8% (strong generalization on temporal holdout)
 - **Attribution Accuracy**: Media 38.7%, Baseline 40.3%, Seasonal 25.6%, Controls 0.9%
 - **Additivity Error**: <0.1% (components sum exactly to 100%)
 - **Training Stability**: Improved with dynamic loss scaling and balanced regularization
