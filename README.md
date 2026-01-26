@@ -46,9 +46,10 @@
 pip install deepcausalmmm
 ```
 
-#### From GitHub (Development Version)
+#### From GitHub (Development Version - v1.0.19)
 ```bash
-pip install git+https://github.com/adityapt/deepcausalmmm.git
+# Install the latest development version with all fixes
+pip install git+https://github.com/adityapt/deepcausalmmm.git@feature/remove-log-scaling
 ```
 
 #### Manual Installation
@@ -63,6 +64,8 @@ pip install -e .
 ```bash
 pip install torch pandas numpy plotly networkx statsmodels scikit-learn tqdm
 ```
+
+> **Note:** The code examples below are for **version 1.0.19+** (currently in development on the `feature/remove-log-scaling` branch). If you're using the PyPI version (1.0.18), please clone the repository to access the latest examples, or wait for the v1.0.19 release.
 
 ### Basic Usage
 
