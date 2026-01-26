@@ -81,13 +81,13 @@ n_weeks = 104         # 2 years of weekly data
 n_media = 13          # Number of media channels
 n_control = 3         # Number of control variables
 
-generator = ConfigurableDataGenerator(
+generator = ConfigurableDataGenerator()
+X_media, X_control, y = generator.generate_mmm_dataset(
     n_regions=n_regions,
-    n_timesteps=n_weeks,
-    n_media=n_media,
-    n_control=n_control
+    n_weeks=n_weeks,
+    n_media_channels=n_media,
+    n_control_channels=n_control
 )
-X_media, X_control, y = generator.generate()
 
 # Expected data format:
 # X_media: [n_regions, n_weeks, n_media_channels] - Media inputs
@@ -352,31 +352,35 @@ import numpy as np
 from deepcausalmmm.postprocess import ResponseCurveFit
 
 # After training your model, prepare channel data for response curve fitting
-# Assuming you have model outputs with media contributions
+# The data should have 'week_monday', 'spend', 'impressions', and 'predicted' columns
 
 # Example: Create channel data from your model results
 # Replace this with actual data extraction from your trained model
 n_weeks = 104
 channel_data = pd.DataFrame({
-    'week': pd.date_range('2024-01-01', periods=n_weeks, freq='W'),
+    'week_monday': pd.date_range('2024-01-01', periods=n_weeks, freq='W'),
+    'spend': np.random.uniform(10000, 50000, n_weeks),       # Replace with actual spend
     'impressions': np.random.uniform(100000, 500000, n_weeks),  # Replace with actual impressions
-    'contributions': np.random.uniform(1000, 5000, n_weeks)     # Replace with model contributions
+    'predicted': np.random.uniform(1000, 5000, n_weeks)      # Replace with model predictions
 })
 
 # Fit response curves to channel data
 fitter = ResponseCurveFit(
     data=channel_data,
-    x_col='impressions',
-    y_col='contributions',
-    model_level='national',
-    date_col='week'
+    model_level='Overall',
+    date_col='week_monday'
 )
 
-# Get fitted parameters
-slope, saturation = fitter.fit_curve()
-r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
+# Fit the curve and generate visualization
+fitter.fit(
+    x_label='Impressions',
+    y_label='Predicted KPI Units',
+    title='Channel Response Curve',
+    save_figure=True,
+    output_path='response_curve.html'
+)
 
-print(f"Slope: {slope:.3f}, Saturation: {saturation:.3f}, R²: {r2_score:.3f}")
+print(f"Slope: {fitter.slope:.3f}, Saturation: {fitter.saturation:.0f}, R²: {fitter.r_2:.3f}")
 ```
 
 ### Budget Optimization
