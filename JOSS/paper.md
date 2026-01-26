@@ -149,7 +149,7 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 
 # Performance
 
-**Note on Benchmarks:** The following performance metrics are derived from real-world anonymized marketing data (190 geographic regions, 109 weeks, 13 channels) using the complete production workflow in `examples/dashboard_rmse_optimized.py`, not from the example code above. The example code demonstrates API usage with synthetic data for pedagogical purposes, while these benchmarks validate the software's effectiveness on substantial real-world marketing analytics scenarios.
+**Note on Benchmarks:** The performance metrics reported below were generated using the end-to-end workflow in `examples/dashboard_rmse_optimized.py` and an anonymized dataset included in the repository at `examples/data/MMM Data.csv`. This ensures reviewers can reproduce the reported numbers and figures using the public code and data artifacts provided.
 
 In an applied real-world marketing analytics use case, DeepCausalMMM achieved the following results on anonymized data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
 
@@ -167,13 +167,23 @@ These results illustrate practical viability rather than serving as a controlled
 
 # Research Impact Statement
 
-DeepCausalMMM demonstrates strong empirical performance through deployment on 190 geographic regions over 109 weeks with 13 marketing channels, achieving holdout R² of 0.839 with a train–holdout delta of 0.117 (12.2% relative to training R²). The package provides reproducible benchmarks with public code and configurations on anonymized real-world data.
+DeepCausalMMM demonstrates strong empirical performance through deployment on 190 geographic regions over 109 weeks with 13 marketing channels, achieving holdout R² of 0.839 with a train–holdout delta of 0.117 (12.2% relative to training R²). The package provides a fully reproducible benchmark workflow using an anonymized real-world dataset and executable scripts included in the repository.
 
 The software offers comprehensive documentation, extensive tests, stable APIs, and interactive visualizations for stakeholder communication. Distributed via PyPI with worked multi-region examples, it integrates GRU-based temporal modeling, DAG-based dependency learning, and Hill saturation in a single framework. By emphasizing interpretability and deployment, DeepCausalMMM is suited for marketing teams seeking transparent, operationally-usable MMM beyond linear models.
 
 # Reproducibility
 
-DeepCausalMMM ensures reproducible results through deterministic training with configurable random seeds, comprehensive test suite, example notebooks, detailed documentation of hyperparameters, and version-controlled releases with semantic versioning.
+DeepCausalMMM supports reproducible training and evaluation via deterministic random seeds, versioned configurations, and a unit/integration test suite.
+
+To enable third-party reproduction of the reported results, the repository includes (i) the anonymized benchmark dataset in `examples/data/MMM Data.csv` and (ii) a complete executable workflow (`examples/dashboard_rmse_optimized.py`) that trains the model using a temporal train/holdout split and regenerates the primary artifacts (performance metrics, learned DAG visualization, and response curve analysis).
+
+To reproduce the benchmark results reported in this paper, run:
+
+```bash
+python examples/dashboard_rmse_optimized.py
+```
+
+The script uses the default configuration from `deepcausalmmm/core/config.py` and outputs results to `dashboard_outputs/`.
 
 # Research and Practical Applications
 
