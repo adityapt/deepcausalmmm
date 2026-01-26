@@ -152,7 +152,6 @@ deepcausalmmm/                      # Project root
 ├── CITATION.cff                    # Citation metadata for Zenodo/GitHub
 ├── Makefile                        # Build and development tasks
 ├── MANIFEST.in                     # Package manifest for distribution
-├── test_release_v1_0_19.py         # Comprehensive release test script
 │
 ├── deepcausalmmm/                  # Main package directory
 │   ├── __init__.py                 # Package initialization and exports
