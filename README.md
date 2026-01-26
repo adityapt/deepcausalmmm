@@ -72,11 +72,27 @@ from deepcausalmmm import get_device
 from deepcausalmmm.core import get_default_config
 from deepcausalmmm.core.trainer import ModelTrainer
 from deepcausalmmm.core.data import UnifiedDataPipeline
+from deepcausalmmm.utils.data_generator import ConfigurableDataGenerator
 
-# Prepare your data (example with numpy arrays)
-# X_media: [n_regions, n_weeks, n_media_channels]
-# X_control: [n_regions, n_weeks, n_control_variables]
-# y: [n_regions, n_weeks]
+# Generate synthetic data for testing
+# You can replace this with your own data in the same format
+n_regions = 50        # Number of DMAs/regions
+n_weeks = 104         # 2 years of weekly data
+n_media = 13          # Number of media channels
+n_control = 3         # Number of control variables
+
+generator = ConfigurableDataGenerator(
+    n_regions=n_regions,
+    n_timesteps=n_weeks,
+    n_media=n_media,
+    n_control=n_control
+)
+X_media, X_control, y = generator.generate()
+
+# Expected data format:
+# X_media: [n_regions, n_weeks, n_media_channels] - Media inputs
+# X_control: [n_regions, n_weeks, n_control_variables] - Control variables
+# y: [n_regions, n_weeks] - Target variable (KPI units)
 
 # Get configuration
 config = get_default_config()
