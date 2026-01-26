@@ -66,8 +66,13 @@ For the complete analysis with dashboard generation:
 
 .. code-block:: bash
 
-    # Run from the project root directory
-    python dashboard_rmse_optimized.py
+    # Clone the repository first (examples not included in pip install)
+    git clone https://github.com/adityapt/deepcausalmmm.git
+    cd deepcausalmmm
+    pip install -e .
+    
+    # Run the comprehensive dashboard
+    python examples/dashboard_rmse_optimized.py
 
 This will:
 

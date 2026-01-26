@@ -258,54 +258,58 @@ Analyze saturation and diminishing returns for each channel:
     results_curves = []
     
     for channel_idx in range(X_media.shape[2]):
-        # Aggregate data for this channel
-        channel_spend = X_media[:, :, channel_idx].sum(axis=0)  # Sum across regions
-        channel_contrib = media_contrib[:, :, channel_idx].sum(axis=0)  # Sum across regions
+        # Aggregate data for this channel across regions
+        channel_spend = X_media[:, :, channel_idx].sum(axis=0)  # [weeks]
+        channel_contrib = media_contrib[:, :, channel_idx].sum(axis=0)  # [weeks]
         
-        # Create DataFrame
+        # ResponseCurveFit expects specific column names
         df = pd.DataFrame({
-            'week': range(len(channel_spend)),
+            'week_monday': pd.date_range('2023-01-01', periods=len(channel_spend), freq='W-MON'),
             'spend': channel_spend,
-            'contribution': channel_contrib
+            'impressions': channel_spend,  # Use spend as impressions if not separate
+            'predicted': channel_contrib
         })
         
         # Fit response curve
         fitter = ResponseCurveFit(
             data=df,
-            x_col='spend',
-            y_col='contribution',
-            model_level='national',
-            date_col='week'
+            bottom_param=False,  # Assume zero response at zero spend
+            model_level='Overall',  # 'Overall' for aggregated, 'DMA' for region-level
+            date_col='week_monday'
         )
         
         try:
-            # Get Hill parameters
-            slope, saturation = fitter.fit_curve()
+            # Fit the curve
+            fitted_df = fitter.fit()
             
-            # Calculate R²
-            r2 = fitter.calculate_r2_and_plot(
-                save_path=f'response_curve_channel_{channel_idx+1}.html'
-            )
-            
-            results_curves.append({
-                'channel': f'Channel_{channel_idx+1}',
-                'slope_a': slope,
-                'saturation_g': saturation,
-                'r2': r2
-            })
-            
-            print(f"\nChannel {channel_idx+1}:")
-            print(f"  Slope (a): {slope:.2f}")
-            print(f"  Half-saturation (g): {saturation:,.0f}")
-            print(f"  Fit quality (R²): {r2:.3f}")
+            if fitted_df is not None and hasattr(fitter, 'slope'):
+                results_curves.append({
+                    'channel': f'Channel_{channel_idx+1}',
+                    'slope_a': fitter.slope,
+                    'half_saturation_g': fitter.saturation,
+                    'top': fitter.top
+                })
+                
+                print(f"\nChannel {channel_idx+1}:")
+                print(f"  Slope (a): {fitter.slope:.2f}")
+                print(f"  Half-saturation (g): {fitter.saturation:,.0f}")
+                print(f"  Top (max response): {fitter.top:,.0f}")
+            else:
+                print(f"Channel {channel_idx+1}: Curve fitting failed - insufficient data variation")
             
         except Exception as e:
             print(f"Channel {channel_idx+1}: Curve fitting failed - {e}")
     
     # Create summary DataFrame
-    curves_df = pd.DataFrame(results_curves)
-    print("\nResponse Curve Summary:")
-    print(curves_df.to_string(index=False))
+    if len(results_curves) > 0:
+        curves_df = pd.DataFrame(results_curves)
+        print("\nResponse Curve Summary:")
+        print(curves_df.to_string(index=False))
+    else:
+        print("\nWarning: No response curves could be fitted. This may occur with:")
+        print("  - Insufficient training epochs (try 1500-2500)")
+        print("  - Random synthetic data without consistent patterns")
+        print("  - Low channel spend variation")
 
 Interpreting Response Curves
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
