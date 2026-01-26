@@ -257,10 +257,15 @@ Analyze saturation and diminishing returns for each channel:
     # Prepare data for response curve fitting
     results_curves = []
     
-    for channel_idx in range(X_media.shape[2]):
+    # Important: Use train_data (not X_media) to match contrib dimensions
+    # And remove padding from contributions
+    burn_in_weeks = config.get('burn_in_weeks', 6)
+    media_contrib_no_padding = media_contrib[:, burn_in_weeks:, :]  # Remove padding
+    
+    for channel_idx in range(train_data['X_media'].shape[2]):
         # Aggregate data for this channel across regions
-        channel_spend = X_media[:, :, channel_idx].sum(axis=0)  # [weeks]
-        channel_contrib = media_contrib[:, :, channel_idx].sum(axis=0)  # [weeks]
+        channel_spend = train_data['X_media'][:, :, channel_idx].sum(axis=0)  # [weeks]
+        channel_contrib = media_contrib_no_padding[:, :, channel_idx].sum(axis=0)  # [weeks]
         
         # ResponseCurveFit expects specific column names
         df = pd.DataFrame({
