@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use DeepCausalMMM in your research, please cite it using the metadata below."
 title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
-version: "1.0.18"
+version: "1.0.19"
 doi: 10.5281/zenodo.16934842
 authors:
   - family-names: Puttaparthi Tirumala
@@ -49,7 +49,7 @@ preferred-citation:
     - family-names: Puttaparthi Tirumala
       given-names: Aditya
       orcid: https://orcid.org/0009-0008-9495-3932
-  version: "1.0.18"
+  version: "1.0.19"
   doi: 10.5281/zenodo.16934842
   url: https://github.com/adityapt/deepcausalmmm
   year: 2025
