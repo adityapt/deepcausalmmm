@@ -67,7 +67,7 @@ pip install torch pandas numpy plotly networkx statsmodels scikit-learn tqdm
 
 ---
 
-## ⚠️ **IMPORTANT: Version Compatibility**
+## IMPORTANT: Version Compatibility
 
 **The code examples in this README are for version 1.0.19+ (unreleased)**
 
@@ -89,11 +89,11 @@ pip install -e .
 ```
 
 ### API Changes in v1.0.19:
-- ✅ **New**: `pipeline` parameter in `ModelTrainer.train()`
-- ✅ **Fixed**: Proper data scaling without leakage
-- ✅ **Fixed**: Correct attribution calculation
-- ✅ **New**: `ConfigurableDataGenerator.generate_mmm_dataset()` method
-- ❌ **Removed**: `y_full_for_baseline` parameter (data leakage fix)
+- **New**: `pipeline` parameter in `ModelTrainer.train()`
+- **Fixed**: Proper data scaling without leakage
+- **Fixed**: Correct attribution calculation
+- **New**: `ConfigurableDataGenerator.generate_mmm_dataset()` method
+- **Removed**: `y_full_for_baseline` parameter (data leakage fix)
 
 ---
 
