@@ -62,7 +62,7 @@ DeepCausalMMM's architecture reflects several key design decisions driven by the
 
 **Robustness**: Huber loss addresses marketing data outliers (promotional spikes, data quality issues) while maintaining differentiability. Gradient clipping and L1/L2 regularization ensure stable training.
 
-**Linear Scaling**: y/y_mean scaling is applied per region to the dependent variable, enabling components to sum exactly to 100% in original scale, prioritizing interpretability for marketing stakeholders.
+**Linear Scaling**: We normalize the dependent variable by its region-specific mean ($y / \bar{y}_r$), analogous to index-number normalization commonly used in econometric decomposition models. This transformation preserves relative marginal effects while enforcing scale invariance across regions, allowing model components to form an exactly additive decomposition that sums to 100% when rescaled to original units.
 
 **Attribution Prior Regularization**: Configurable priors with dynamic loss scaling prevent unrealistic distributions (e.g., >90% media), addressing neural MMM's tendency toward business-illogical attributions.
 
@@ -161,7 +161,7 @@ In an applied real-world marketing analytics use case, DeepCausalMMM achieved th
 - Configurable attribution priors enable business-aligned allocations (e.g., media target: 40%)
 - Dynamic loss scaling ensures regularization has meaningful impact during training
 
-These results illustrate practical viability rather than serving as a controlled benchmark comparison. They demonstrate the model's ability to capture complex marketing dynamics while maintaining strong out-of-sample predictive accuracy and realistic attribution through configurable prior-based regularization.
+These results illustrate practical viability rather than serving as a controlled benchmark comparison. They demonstrate the model's ability to capture complex marketing dynamics while maintaining reasonable out-of-sample predictive accuracy and realistic attribution through configurable prior-based regularization.
 
 **Key Technical Innovations**: (1) Linear scaling (y/y_mean) for additive components, (2) Configurable attribution priors with dynamic loss scaling to prevent unrealistic allocations, (3) Data-driven Hill parameter initialization from channel-specific SOV percentiles, (4) Seasonal regularization to prevent suppression.
 
@@ -169,7 +169,7 @@ These results illustrate practical viability rather than serving as a controlled
 
 DeepCausalMMM demonstrates strong empirical performance through deployment on 190 geographic regions over 109 weeks with 13 marketing channels, achieving holdout R² of 0.842 with a train–holdout gap of 10.8 percentage points. The package provides a fully reproducible benchmark workflow with included dataset and executable scripts.
 
-The software offers comprehensive documentation, extensive tests, stable APIs, and interactive visualizations for stakeholder communication. Available via PyPI (v1.0.19 release concurrent with this publication) with worked multi-region examples, it integrates GRU-based temporal modeling, DAG-based dependency learning, and Hill saturation in a single framework. By emphasizing interpretability and deployment, DeepCausalMMM is suited for marketing teams seeking transparent, operationally-usable MMM beyond linear models.
+The software offers comprehensive documentation, extensive tests, stable APIs, and example codes. Available via PyPI (v1.0.19 release concurrent with this publication) with worked multi-region examples, it integrates GRU-based temporal modeling, DAG-based dependency learning, and Hill saturation in a single framework. By emphasizing interpretability and deployment, DeepCausalMMM is suited for marketing teams seeking transparent, operationally-usable MMM beyond linear models.
 
 # Reproducibility
 
