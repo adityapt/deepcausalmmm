@@ -6,21 +6,16 @@ Step-by-step tutorials for using DeepCausalMMM.
 .. toctree::
    :maxdepth: 2
 
-   basic_usage
-   advanced_features
-   custom_config
+   basic_mmm_workflow
 
-Basic Usage
+Available Tutorials
+-------------------
+
+* :doc:`basic_mmm_workflow`: Complete end-to-end MMM workflow with synthetic data
+
+Coming Soon
 -----------
 
-Coming soon: A comprehensive tutorial on basic MMM analysis with DeepCausalMMM.
-
-Advanced Features
------------------
-
-Coming soon: Advanced features including DAG learning, custom transformations, and performance optimization.
-
-Custom Configuration
---------------------
-
-Coming soon: How to customize the model configuration for different use cases and datasets.
+* **Advanced Features**: DAG learning, custom transformations, and performance optimization
+* **Custom Configuration**: How to customize the model configuration for different use cases
+* **Real-World Examples**: Industry-specific use cases and best practices
