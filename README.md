@@ -136,11 +136,24 @@ print(f"Training R²: {results['final_train_r2']:.3f}")
 print(f"Holdout R²: {results['final_holdout_r2']:.3f}")
 ```
 
-### One-Command Analysis
+### Running Examples (Requires Cloning Repository)
+
+The `examples/` folder is only available if you clone the repository (not included in pip install):
 
 ```bash
-# Run from the project root directory
-python dashboard_rmse_optimized.py
+# Clone the repository first
+git clone https://github.com/adityapt/deepcausalmmm.git
+cd deepcausalmmm
+
+# Install the package
+pip install -e .
+
+# Run the comprehensive dashboard (uses real-world anonymized data)
+python examples/dashboard_rmse_optimized.py
+
+# Or run other examples
+python examples/example_budget_optimization.py
+python examples/example_response_curves.py
 ```
 
 ### Package Import Test
