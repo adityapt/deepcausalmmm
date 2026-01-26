@@ -488,12 +488,10 @@ See `examples/example_budget_optimization.py` for complete workflow and tips.
 - **Baseline**: 35.4%
 - **Seasonality**: 25.7%
 - **Controls**: 0.2%
-- **Trend**: 0% (frozen as requested)
 
 **Key Achievements**:
 - Components sum to 100% with perfect additivity (0.000% error)
 - Realistic attribution through prior-based regularization
-- No data leakage (all metrics calculated with strict train/holdout separation)
 - Data-driven Hill parameters prevent similar attribution across channels
 
 ## Development
@@ -525,7 +523,7 @@ MIT License - see [LICENSE](LICENSE) file.
 
 > "Attribution priors with dynamic loss scaling solved the attribution explosion problem - media now at realistic 38.6%"
 
-> "Zero hardcoding approach with data-driven Hill initialization works perfectly across different datasets"
+> "Data-driven Hill initialization enables channel-specific saturation curves"
 
 > "The comprehensive dashboard with 14+ interactive visualizations including response curves provides insights we never had before"
 
