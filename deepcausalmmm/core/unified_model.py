@@ -425,7 +425,7 @@ class DeepCausalMMM(nn.Module):
             # Skip padding weeks
             Xm_no_padding = Xm[:, self.burn_in_weeks:] if T > self.burn_in_weeks else Xm
             
-            logger.info(f"\n📊 Initializing Hill g parameters from SOV data:")
+            logger.info(f"\nInitializing Hill g parameters from SOV data:")
             
             for i in range(n_media):
                 # Get all SOV values for this channel
@@ -459,7 +459,7 @@ class DeepCausalMMM(nn.Module):
                     # Not enough data, keep default
                     logger.info(f"   Channel {i+1:2d}: Insufficient data, keeping default g")
             
-            logger.info(f"\n✅ Hill g initialization complete")
+            logger.info(f"\nHill g initialization complete")
             g_after_softplus = torch.nn.functional.softplus(self.hill_g)
             logger.info(f"   Range after softplus: [{g_after_softplus.min():.4f}, {g_after_softplus.max():.4f}]")
 
@@ -934,9 +934,9 @@ class DeepCausalMMM(nn.Module):
         media_diff = torch.abs(media_contrib_sum - media_term).mean().item()
         
         if diff > 1e-5:
-            print(f"⚠️  WARNING: Components don't sum to raw_prediction! Diff: {diff:.6f}")
+            print(f"WARNING: Components don't sum to raw_prediction! Diff: {diff:.6f}")
         if media_diff > 1e-5:
-            print(f"⚠️  WARNING: media_contrib.sum() != media_term! Diff: {media_diff:.6f}")
+            print(f"WARNING: media_contrib.sum() != media_term! Diff: {media_diff:.6f}")
         
         # ======================================================================
         # ATTRIBUTION REGULARIZATION: Media contribution should match prior
