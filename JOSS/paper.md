@@ -3,7 +3,7 @@ title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with
 tags:
   - Python
   - marketing mix modeling
-  - causal inference
+  - causal structure learning
   - deep learning
   - time series
   - saturation response curves
@@ -32,7 +32,7 @@ Key features include: (1) a data-driven design where hyperparameters and transfo
 
 Marketing organizations invest billions annually in advertising across channels (TV, digital, social, search), yet measuring ROI remains challenging due to: (1) temporal complexity with delayed and persistent effects [@Hanssens2005], (2) channel interdependencies [@Gong2024CausalMMM], (3) non-linear saturation with diminishing returns [@Li2024Survey], (4) regional heterogeneity, and (5) multicollinearity between campaigns.
 
-**DeepCausalMMM** addresses these challenges by combining GRU-based temporal modeling, DAG-based structure learning, Hill equation response curves, multi-region modeling, production-ready performance (83.9% holdout R², 10.8% train-test gap), realistic attribution through configurable prior regularization, and data-driven hyperparameter learning for generalizability.
+**DeepCausalMMM** addresses these challenges by combining GRU-based temporal modeling, DAG-based structure learning, Hill equation response curves, multi-region modeling, production-oriented performance characteristics including strong temporal generalization (83.9% holdout R², 10.8% train-test gap), realistic attribution through configurable prior regularization, and data-driven hyperparameter learning for generalizability.
 
 # State of the Field
 
@@ -58,7 +58,7 @@ DeepCausalMMM's architecture reflects several key design decisions driven by the
 
 **Saturation Function**: Hill equation with constraints ($a \geq 2.0$) reflects marketing science domain knowledge of S-curve diminishing returns, improving generalization and interpretability.
 
-**Multi-Region Modeling**: Shared temporal dynamics (GRU weights) with region-specific baselines balance the bias-variance trade-off, similar to hierarchical models. 
+**Multi-Region Modeling**: Shared temporal dynamics (GRU weights) with region-specific baselines balance the bias-variance trade-off. This design is conceptually analogous to hierarchical Bayesian MMMs commonly used in practice. 
 
 **Robustness**: Huber loss addresses marketing data outliers (promotional spikes, data quality issues) while maintaining differentiability. Gradient clipping and L1/L2 regularization ensure stable training.
 
@@ -83,7 +83,7 @@ These design decisions enable interpretable, tractable real-world marketing appl
 
 ## Visualizations
 
-Figure 1 shows an example of the learned DAG structure between marketing channels. The directed edges reveal statistical dependencies and potential causal relationships such as TV advertising's association with search behavior, demonstrating the model's ability to discover channel interdependencies from data.
+Figure 1 shows an example of the learned DAG structure between marketing channels. The directed edges reveal statistical dependencies consistent with plausible causal pathways, such as TV advertising's association with search behavior, demonstrating the model's ability to discover channel interdependencies from data.
 
 ![Causal network (DAG) showing relationships between marketing channels.](figure_dag_professional.png)
 
@@ -153,7 +153,7 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 DeepCausalMMM has demonstrated strong performance on anonymized real-world marketing data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
 
 - **Training R²**: 0.956, **Holdout R²**: 0.839
-- **Performance Gap**: 12.2% (indicating strong generalization)
+- **Performance Gap**: 12.2% (indicating reasonable generalization under a strict temporal holdout)
 
 **Attribution Quality**:
 - Components sum to 100% with perfect additivity through linear scaling architecture
@@ -178,7 +178,7 @@ DeepCausalMMM ensures reproducible results through deterministic training with c
 
 **Industry Applications**: Budget optimization across marketing channels, ROI measurement and attribution, strategic planning and forecasting, channel effectiveness analysis, regional marketing strategy development.
 
-**Research Applications**: Causal inference in marketing, temporal dynamics in advertising, multi-region heterogeneity, saturation modeling, and channel interdependencies.
+**Research Applications**: Causal reasoning and structure discovery in marketing, temporal dynamics in advertising, multi-region heterogeneity, saturation modeling, and channel interdependencies.
 
 The data-driven hyperparameter learning and comprehensive documentation make it accessible to practitioners while rigorous statistical foundations support academic research.
 
