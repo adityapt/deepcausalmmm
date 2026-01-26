@@ -25,6 +25,7 @@ First, let's import necessary libraries and generate synthetic MMM data:
 
     import numpy as np
     import pandas as pd
+    import torch
     from deepcausalmmm import get_device
     from deepcausalmmm.core import get_default_config
     from deepcausalmmm.core.trainer import ModelTrainer
@@ -175,14 +176,16 @@ Training the Model
     print(f"  Training RMSE: {results['final_train_rmse']:,.0f}")
     print(f"  Holdout RMSE: {results['final_holdout_rmse']:,.0f}")
 
-Expected Performance
-~~~~~~~~~~~~~~~~~~~~
+Understanding the Results
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-For this synthetic dataset, you should see:
+Performance on synthetic data varies depending on:
 
-- **Training R²**: 0.85-0.95 (excellent fit)
-- **Holdout R²**: 0.75-0.90 (strong generalization)
-- **Gap**: <15 percentage points (good stability)
+- **Number of epochs**: More epochs (1500-2500) improve convergence
+- **Data complexity**: Random synthetic data is harder to fit than real data with consistent patterns
+- **Regularization**: Attribution priors may constrain fit quality initially
+
+For real-world MMM data with consistent marketing patterns, expect significantly better performance (see benchmark results in README.md)
 
 Step 5: Analyze Attribution
 ----------------------------
@@ -192,25 +195,26 @@ Extract and analyze channel contributions:
 .. code-block:: python
 
     # Get model predictions and contributions
+    # Note: model.forward() returns a tuple: (y_pred, media_coeffs, media_contrib, outputs_dict)
     with torch.no_grad():
-        outputs = model(
+        y_pred, media_coeffs, media_contrib_direct, outputs = model(
             train_tensors['X_media'],
             train_tensors['X_control'],
             train_tensors['R']
         )
     
-    # Extract contributions (already in original scale)
-    media_contrib = outputs['media_contribution'].cpu().numpy()
+    # Extract contributions from outputs dictionary (already in original scale)
+    media_contrib = outputs['contributions'].cpu().numpy()  # [regions, weeks, channels]
     baseline_contrib = outputs['baseline'].cpu().numpy()
-    seasonal_contrib = outputs['seasonal'].cpu().numpy()
-    control_contrib = outputs['control_contribution'].cpu().numpy()
+    seasonal_contrib = outputs['seasonal_contribution'].cpu().numpy()
+    control_contrib = outputs['control_contributions'].cpu().numpy()
     
     # Calculate total contributions
     total_media = media_contrib.sum()
     total_baseline = baseline_contrib.sum()
     total_seasonal = seasonal_contrib.sum()
     total_control = control_contrib.sum()
-    total_predicted = outputs['y_pred'].sum().cpu().numpy()
+    total_predicted = y_pred.sum().cpu().numpy()  # Use y_pred from tuple return
     
     # Calculate percentages
     print("\nAttribution Breakdown:")
@@ -342,6 +346,7 @@ Use fitted response curves to optimize budget allocation:
     total_budget = 1_000_000
     
     # Set channel-specific constraints (optional)
+    # Note: Underscores in numbers (e.g., 100_000) are for readability (Python 3.6+)
     constraints = {
         'Channel_1': {'lower': 100_000, 'upper': 400_000},
         'Channel_2': {'lower': 150_000, 'upper': 500_000},
@@ -381,8 +386,6 @@ Save your model and results for future use:
 
 .. code-block:: python
 
-    import torch
-    
     # Save trained model
     torch.save({
         'model_state': model.state_dict(),
