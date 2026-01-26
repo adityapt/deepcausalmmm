@@ -35,19 +35,15 @@ First, let's import necessary libraries and generate synthetic MMM data:
     np.random.seed(42)
     
     # Initialize synthetic data generator
-    generator = ConfigurableDataGenerator(
-        base_sales=50000,
-        n_media_channels=5,
-        n_control_vars=3,
-        trend_strength=0.0,
-        seasonality_strength=0.3
-    )
+    generator = ConfigurableDataGenerator()
     
     # Generate MMM dataset
     # Returns: X_media [regions, weeks, channels], X_control, y [regions, weeks]
     X_media, X_control, y = generator.generate_mmm_dataset(
         n_regions=10,
-        n_weeks=104
+        n_weeks=104,
+        n_media_channels=5,
+        n_control_channels=3
     )
     
     print(f"Generated data shapes:")
