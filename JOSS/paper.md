@@ -180,7 +180,7 @@ To enable third-party reproduction of the reported results, the repository inclu
 To reproduce the benchmark results reported in this paper:
 
 ```bash
-git clone https://github.com/puttaparthy-aditya/deepcausalmmm.git
+git clone https://github.com/adityapt/deepcausalmmm.git
 cd deepcausalmmm
 pip install -e .
 python examples/dashboard_rmse_optimized.py
