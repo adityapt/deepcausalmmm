@@ -46,7 +46,7 @@ Several open-source MMM frameworks exist, each with distinct approaches:
 
 **CausalMMM** [@Gong2024CausalMMM] introduces neural networks and graph learning to MMM, demonstrating the value of discovering channel interdependencies. However, it does not provide multi-region modeling or comprehensive response curve analysis.
 
-**DeepCausalMMM** advances the field by integrating: (1) GRU-based temporal modeling, (2) DAG-based structure learning using upper triangular constraints [@Zheng2018NOTEARS], (3) Hill equation response curves, (4) multi-region modeling, (5) robust statistical methods.
+**DeepCausalMMM** advances the field by integrating: (1) GRU-based temporal modeling, (2) DAG-based structure learning using upper triangular constraints [@Zheng2018NOTEARS], (3) Hill equation response curves, (4) multi-region modeling, (5) robust statistical methods. DeepCausalMMM is complementary to Bayesian MMM frameworks, prioritizing scalability, automated structure discovery, and production deployment over full posterior inference.
 
 # Software Design
 
@@ -80,6 +80,7 @@ These design decisions enable interpretable, tractable real-world marketing appl
 - **Installation**: `pip install deepcausalmmm`
 - **Documentation**: [https://deepcausalmmm.readthedocs.io](https://deepcausalmmm.readthedocs.io)
 - **Tests**: Comprehensive unit and integration test suite in `tests/` directory
+- **Versioning**: The package follows semantic versioning and maintains backward compatibility guarantees.
 
 ## Visualizations
 
@@ -150,7 +151,7 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 
 **Note on Benchmarks:** The following performance metrics are derived from real-world anonymized marketing data (190 geographic regions, 109 weeks, 13 channels) using the complete production workflow in `examples/dashboard_rmse_optimized.py`, not from the example code above. The example code demonstrates API usage with synthetic data for pedagogical purposes, while these benchmarks validate the software's effectiveness on substantial real-world marketing analytics scenarios.
 
-DeepCausalMMM has demonstrated strong performance on anonymized real-world marketing data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
+In an applied real-world marketing analytics use case, DeepCausalMMM achieved the following results on anonymized data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
 
 - **Training R²**: 0.956, **Holdout R²**: 0.839
 - **Performance Gap**: 12.2% (indicating reasonable generalization under a strict temporal holdout)
@@ -160,7 +161,7 @@ DeepCausalMMM has demonstrated strong performance on anonymized real-world marke
 - Configurable attribution priors enable business-aligned allocations (e.g., media target: 40%)
 - Dynamic loss scaling ensures regularization has meaningful impact during training
 
-These results demonstrate the model's ability to capture complex marketing dynamics while maintaining strong out-of-sample predictive accuracy and realistic attribution through configurable prior-based regularization.
+These results illustrate practical viability rather than serving as a controlled benchmark comparison. They demonstrate the model's ability to capture complex marketing dynamics while maintaining strong out-of-sample predictive accuracy and realistic attribution through configurable prior-based regularization.
 
 **Key Technical Innovations**: (1) Linear scaling (y/y_mean) for additive components, (2) Configurable attribution priors with dynamic loss scaling to prevent unrealistic allocations, (3) Data-driven Hill parameter initialization from channel-specific SOV percentiles, (4) Seasonal regularization to prevent suppression.
 
