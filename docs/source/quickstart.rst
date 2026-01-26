@@ -151,27 +151,26 @@ Customize the model for your specific use case:
 Model Inference
 ---------------
 
-Use your trained model for predictions and analysis:
+Use your trained model for predictions:
 
 .. code-block:: python
 
-    from deepcausalmmm.core.inference import InferenceManager
+    import torch
 
-    # Initialize inference manager
-    inference = InferenceManager(model, pipeline)
-
-    # Make predictions on new data
-    predictions = inference.predict(new_media_data, new_control_data)
-
-    # Get channel contributions
-    contributions = inference.analyze_contributions(
-        media_data, control_data, regions
-    )
-
-    # Access detailed outputs
-    media_contributions = contributions['media_contributions']
-    control_contributions = contributions['control_contributions']
-
+    # Make predictions directly with the model
+    with torch.no_grad():
+        y_pred, media_coeffs, _, outputs = model(
+            train_tensors['X_media'],
+            train_tensors['X_control'],
+            train_tensors['R']
+        )
+    
+    # Access predictions and contributions
+    predictions = y_pred.cpu().numpy()
+    media_contributions = outputs['contributions'].cpu().numpy()
+    control_contributions = outputs['control_contributions'].cpu().numpy()
+    
+    print(f"Predictions shape: {predictions.shape}")
     print(f"Total media impact: {media_contributions.sum():.0f}")
 
 Response Curves Analysis
@@ -183,30 +182,47 @@ Analyze non-linear saturation effects for each channel:
 
     from deepcausalmmm.postprocess import ResponseCurveFit
     import pandas as pd
+    import torch
 
-    # Prepare channel data (impressions and contributions)
+    # Get contributions from model
+    with torch.no_grad():
+        y_pred, _, _, outputs = model(
+            train_tensors['X_media'],
+            train_tensors['X_control'],
+            train_tensors['R']
+        )
+    
+    media_contrib = outputs['contributions'].cpu().numpy()
+    
+    # Prepare channel data for first channel (example)
+    # ResponseCurveFit expects specific columns: 'week_monday', 'spend', 'impressions', 'predicted'
+    channel_spend = X_media[:, :, 0].flatten()
+    channel_contrib = media_contrib[:, :, 0].flatten()
+    
     channel_data = pd.DataFrame({
-        'week': week_ids,
-        'impressions': channel_impressions,
-        'contributions': channel_contributions
+        'week_monday': pd.date_range('2023-01-01', periods=len(channel_spend), freq='W-MON'),
+        'spend': channel_spend,
+        'impressions': channel_spend,  # Use same as spend if no separate impression data
+        'predicted': channel_contrib
     })
 
     # Fit response curve
     fitter = ResponseCurveFit(
         data=channel_data,
-        x_col='impressions',
-        y_col='contributions',
-        model_level='national',
-        date_col='week'
+        bottom_param=False,  # Assume zero response at zero spend
+        model_level='Overall',  # 'Overall' or 'DMA'
+        date_col='week_monday'
     )
 
-    # Get saturation parameters
-    slope, saturation = fitter.fit_curve()
-    r2 = fitter.calculate_r2_and_plot(save_path='response_curve.html')
-
-    print(f"Slope: {slope:.3f}")
-    print(f"Half-Saturation Point: {saturation:,.0f} impressions")
-    print(f"Fit Quality (R²): {r2:.3f}")
+    # Fit the curve and get parameters
+    fitted_df = fitter.fit()  # Returns DataFrame with fitted parameters
+    
+    if fitted_df is not None:
+        print(f"Slope: {fitter.slope:.3f}")
+        print(f"Half-Saturation Point: {fitter.saturation:,.0f}")
+        print(f"Top (Max Response): {fitter.top:,.0f}")
+    else:
+        print("Curve fitting failed - check data quality")
 
 Response curves help you:
 
@@ -224,15 +240,23 @@ Generate comprehensive visualizations:
 
     from deepcausalmmm.postprocess import ComprehensiveAnalyzer
 
-    # Initialize analyzer
-    analyzer = ComprehensiveAnalyzer(config)
+    # Define channel names
+    media_cols = [f'Channel_{i+1}' for i in range(5)]
+    control_cols = [f'Control_{i+1}' for i in range(3)]
+
+    # Initialize analyzer with required parameters
+    analyzer = ComprehensiveAnalyzer(
+        model=model,
+        media_cols=media_cols,
+        control_cols=control_cols,
+        output_dir='mmm_results',
+        pipeline=pipeline,
+        config=config
+    )
 
     # Create full dashboard
-    analyzer.analyze_comprehensive(
-        model=model,
-        processed_data=processed_data,
-        results=results
-    )
+    # Note: analyzer.analyze_comprehensive() requires specific data format
+    # For complete dashboard, use examples/dashboard_rmse_optimized.py as template
 
 This creates 14+ interactive visualizations including:
 
