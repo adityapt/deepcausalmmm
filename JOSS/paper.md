@@ -177,9 +177,12 @@ DeepCausalMMM supports reproducible training and evaluation via deterministic ra
 
 To enable third-party reproduction of the reported results, the repository includes (i) the anonymized benchmark dataset in `examples/data/MMM Data.csv` and (ii) a complete executable workflow (`examples/dashboard_rmse_optimized.py`) that trains the model using a temporal train/holdout split and regenerates the primary artifacts (performance metrics, learned DAG visualization, and response curve analysis).
 
-To reproduce the benchmark results reported in this paper, run:
+To reproduce the benchmark results reported in this paper:
 
 ```bash
+git clone https://github.com/puttaparthy-aditya/deepcausalmmm.git
+cd deepcausalmmm
+pip install -e .
 python examples/dashboard_rmse_optimized.py
 ```
 
