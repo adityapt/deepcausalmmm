@@ -32,7 +32,7 @@ Key features include: (1) a data-driven design where hyperparameters and transfo
 
 Marketing organizations invest billions annually in advertising across channels (TV, digital, social, search), yet measuring ROI remains challenging due to: (1) temporal complexity with delayed and persistent effects [@Hanssens2005], (2) channel interdependencies [@Gong2024CausalMMM], (3) non-linear saturation with diminishing returns [@Li2024Survey], (4) regional heterogeneity, and (5) multicollinearity between campaigns.
 
-**DeepCausalMMM** addresses these challenges by combining GRU-based temporal modeling, DAG-based structure learning, Hill equation response curves, multi-region modeling, production-oriented performance characteristics including strong temporal generalization (83.9% holdout R², 10.8% train-test gap), realistic attribution through configurable prior regularization, and data-driven hyperparameter learning for generalizability.
+**DeepCausalMMM** addresses these challenges by combining GRU-based temporal modeling, DAG-based structure learning, Hill equation response curves, multi-region modeling, production-oriented performance characteristics under strict temporal holdout evaluation, realistic attribution through configurable prior regularization, and data-driven hyperparameter learning for generalizability.
 
 # State of the Field
 
@@ -154,7 +154,7 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 In an applied real-world marketing analytics use case, DeepCausalMMM achieved the following results on anonymized data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
 
 - **Training R²**: 0.956, **Holdout R²**: 0.839
-- **Performance Gap**: 12.2% (indicating reasonable generalization under a strict temporal holdout)
+- **Train–holdout gap**: 0.117 (12.2% relative to training R², indicating reasonable generalization under strict temporal holdout)
 
 **Attribution Quality**:
 - Components sum to 100% with perfect additivity through linear scaling architecture
@@ -167,7 +167,7 @@ These results illustrate practical viability rather than serving as a controlled
 
 # Research Impact Statement
 
-DeepCausalMMM demonstrates strong empirical performance through deployment on 190 geographic regions over 109 weeks with 13 marketing channels, achieving holdout R² of 0.839 (10.8% train-test gap). The package provides reproducible benchmarks with public code and configurations on anonymized real-world data.
+DeepCausalMMM demonstrates strong empirical performance through deployment on 190 geographic regions over 109 weeks with 13 marketing channels, achieving holdout R² of 0.839 with a train–holdout delta of 0.117 (12.2% relative to training R²). The package provides reproducible benchmarks with public code and configurations on anonymized real-world data.
 
 The software offers comprehensive documentation, extensive tests, stable APIs, and interactive visualizations for stakeholder communication. Distributed via PyPI with worked multi-region examples, it integrates GRU-based temporal modeling, DAG-based dependency learning, and Hill saturation in a single framework. By emphasizing interpretability and deployment, DeepCausalMMM is suited for marketing teams seeking transparent, operationally-usable MMM beyond linear models.
 
@@ -187,9 +187,11 @@ The data-driven hyperparameter learning and comprehensive documentation make it 
 
 We acknowledge the contributions of the open-source community, particularly the developers of PyTorch, pandas, and scikit-learn, which form the foundation of this package. We also thank the MMM research community for establishing the theoretical foundations that informed this work.
 
+This work received no specific external funding, and no sponsor had any role in the design, implementation, or reporting of this software.
+
 # AI-Assisted Research Disclosure
 
-In accordance with JOSS editorial policy on AI-assisted research, the author discloses that AI tools (ChatGPT, Claude, and GPT-4) were used during the development of this software package. These tools assisted with code generation, documentation writing, debugging, and manuscript drafting. All AI-generated content was reviewed, verified, and modified by the author to ensure accuracy, correctness, and alignment with research goals. The author takes full responsibility for all claims, implementations, and content in this work.
+The author used AI-assisted tools (including ChatGPT and Claude) during development for limited assistance with code drafting, debugging support, documentation editing, and manuscript drafting. All AI-assisted outputs were reviewed, verified, and substantially edited by the author. The author takes full responsibility for the software, analyses, and all claims in this manuscript.
 
 # Conflict of Interest
 
