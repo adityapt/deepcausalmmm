@@ -42,9 +42,9 @@ DeepCausalMMM v1.0.19 represents a major architectural improvement focusing on *
 
 ### Production Performance (1500 epochs)
 - **Training R²**: 0.956
-- **Holdout R²**: 0.839 (target 0.8 achieved!)
-- **Train-Test Gap**: 11.7% (excellent generalization)
-- **Attribution**: Media 38.7%, Baseline 34.3%, Seasonal 25.6%, Controls 0.9%
+- **Holdout R²**: 0.839
+- **Train-Test Gap**: 11.7%
+- **Contribution**: Media 38.7%, Baseline 34.3%, Seasonal 25.6%, Controls 0.9%
 - **Additivity Error**: <0.1% (components sum to 100%)
 
 ### Improvements from v1.0.18
@@ -60,7 +60,6 @@ DeepCausalMMM v1.0.19 represents a major architectural improvement focusing on *
 - Data format and API remain unchanged
 
 ### 2. Terminology Updates
-- **Changed**: "visits" → "KPI units" throughout documentation
 - **Reason**: More general and applicable to any KPI (sales, revenue, conversions, etc.)
 
 ## What's New
@@ -294,7 +293,7 @@ Special thanks to all contributors and users who provided feedback that led to t
 
 ---
 
-**Built with ❤️ for MMM practitioners**
+**Built for MMM practitioners**
 
 ---
 
