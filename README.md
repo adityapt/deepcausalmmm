@@ -25,7 +25,7 @@
 
 ### Robust Statistical Methods
 - **Huber Loss**: Robust to outliers and extreme values
-- **Multiple Metrics**: RMSE, R², MAE, Trimmed RMSE, Log-space metrics
+- **Multiple Metrics**: RMSE, R², MAE, Trimmed RMSE
 - **Advanced Regularization**: L1/L2, sparsity, coefficient-specific penalties
 - **Gradient Clipping**: Parameter-specific clipping for stability
 
