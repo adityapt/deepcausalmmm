@@ -455,6 +455,12 @@ MIT License - see [LICENSE](LICENSE) file.
 - **Tutorials**: [Step-by-step Guides](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/)
 - **Examples**: [Practical Use Cases](https://deepcausalmmm.readthedocs.io/en/latest/examples/)
 
+## Roadmap
+
+### Version 1.0.20 (Q2 2025)
+- **NOTEARS DAG Learning**: Full implementation of the NOTEARS (DAGs with NO TEARS) continuous optimization method for discovering arbitrary DAG structures
+- **Enhanced Causal Discovery**: Move beyond upper triangular constraints to learn more flexible causal relationships between marketing channels
+
 ## Citation
 
 If you use DeepCausalMMM in your research, please cite:
