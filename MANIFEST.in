@@ -13,10 +13,11 @@ recursive-include deepcausalmmm *.yaml
 recursive-include deepcausalmmm *.yml
 recursive-include deepcausalmmm *.json
 
-# Include examples
+# Include examples and data
 recursive-include examples *.py
 recursive-include examples *.md
 recursive-include examples *.ipynb
+recursive-include examples *.csv
 
 # Include tests
 recursive-include tests *.py
