@@ -1453,13 +1453,13 @@ def create_beautiful_dashboard():
     fig_total_timeseries.write_html(total_timeseries_path)
     plots_created.append(("Total Time Series", total_timeseries_path))
     
-    # Plot 3b: Actual vs Predicted in Scaled Space (Log1p)
+    # Plot 3b: Actual vs Predicted in Scaled Space (y/y_mean)
     print(f"    Creating scaled data time series...")
     
     # Get scaled data from the pipeline
     full_data = {'X_media': X_media, 'X_control': X_control, 'y': y}
     full_tensors = pipeline.fit_and_transform_training(full_data)
-    y_scaled = full_tensors['y'].cpu().numpy()  # Log1p scaled data
+    y_scaled = full_tensors['y'].cpu().numpy()  # Linear scaled data (y/y_mean)
     
     # Get scaled predictions from the model
     with torch.no_grad():
@@ -1493,10 +1493,10 @@ def create_beautiful_dashboard():
             x=weeks_range_scaled,
             y=total_actual_scaled,
             mode='lines+markers',
-            name='Total Actual (Log1p)',
+            name='Total Actual (Scaled)',
             line=dict(color='blue', width=3),
             marker=dict(size=6),
-            hovertemplate='<b>Actual (Log Scale)</b><br>Week: %{x}<br>Log1p Value: %{y:.3f}<extra></extra>'
+            hovertemplate='<b>Actual (Scaled)</b><br>Week: %{x}<br>Scaled Value: %{y:.3f}<extra></extra>'
         )
     )
     
@@ -1505,10 +1505,10 @@ def create_beautiful_dashboard():
             x=weeks_range_scaled,
             y=total_predicted_scaled,
             mode='lines+markers',
-            name='Total Predicted (Log1p)',
+            name='Total Predicted (Scaled)',
             line=dict(color='red', width=3, dash='dash'),
             marker=dict(size=6),
-            hovertemplate='<b>Predicted (Log Scale)</b><br>Week: %{x}<br>Log1p Value: %{y:.3f}<extra></extra>'
+            hovertemplate='<b>Predicted (Scaled)</b><br>Week: %{x}<br>Scaled Value: %{y:.3f}<extra></extra>'
         )
     )
     
@@ -1525,12 +1525,12 @@ def create_beautiful_dashboard():
         )
     )
     
-    # Calculate RMSE in log space for subtitle
-    log_rmse = np.sqrt(np.mean((total_actual_scaled - total_predicted_scaled)**2))
-    log_mae = np.mean(np.abs(total_actual_scaled - total_predicted_scaled))
+    # Calculate RMSE in scaled space for subtitle
+    scaled_rmse = np.sqrt(np.mean((total_actual_scaled - total_predicted_scaled)**2))
+    scaled_mae = np.mean(np.abs(total_actual_scaled - total_predicted_scaled))
     
     fig_scaled_timeseries.update_layout(
-        title=f'Scaled Data: Actual vs Predicted Over Time (y/y_mean Space)<br>RMSE: {log_rmse:.4f} | MAE: {log_mae:.4f} | Aggregated Across All {n_regions} Regions',
+        title=f'Scaled Data: Actual vs Predicted Over Time (y/y_mean Space)<br>RMSE: {scaled_rmse:.4f} | MAE: {scaled_mae:.4f} | Aggregated Across All {n_regions} Regions',
         xaxis_title='Week',
         yaxis_title='y/y_mean (Scaled Space)',
         height=600,

@@ -17,8 +17,8 @@ class SimpleScalingParams:
     control_mean: torch.Tensor
     control_std: torch.Tensor
     
-    # Target scaling (log transformation)
-    log_transform: bool = True
+    # Target scaling (linear: y/y_mean)
+    # No additional params needed - y_mean_per_region stored in scaling_constants
     
     # Media scaling (share-of-voice) - Optional, defaults to None
     total_impressions: Optional[torch.Tensor] = None  # For inverse transformation (not needed for per-timestep scaling)
@@ -26,12 +26,12 @@ class SimpleScalingParams:
 
 class SimpleGlobalScaler:
     """
-    Ultra-optimized scaling approach for achieving <10% RMSE.
+    Linear scaling approach (y/y_mean) for additive attribution.
     
-    Advanced features for ultra-low RMSE:
+    Scaling features:
     - Media: Share-of-voice scaling with outlier smoothing
     - Control: Robust standardization with adaptive clipping
-    - Target: Multi-scale log transformation with precision enhancement
+    - Target: Linear scaling by region mean (y/y_mean) for additive decomposition
     - Adaptive normalization with distribution-aware clipping
     - Advanced outlier handling for extreme value stability
     """
@@ -103,8 +103,7 @@ class SimpleGlobalScaler:
         self.params = SimpleScalingParams(
             total_impressions=None,  # Not needed for per-timestep share-of-voice
             control_mean=control_mean,
-            control_std=control_std,
-            log_transform=True
+            control_std=control_std
         )
         
         self.fitted = True

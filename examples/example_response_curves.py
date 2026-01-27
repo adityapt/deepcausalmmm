@@ -356,9 +356,9 @@ def train_model_and_get_predictions():
     # Extract predictions in original scale
     predictions_orig = postprocess_results['predictions']  # Already in original scale
     
-    # Extract ALL components from model (in log-space)
-    media_contributions_log = postprocess_results['media_contributions']  # [n_regions, n_weeks, n_channels]
-    control_contributions_log = postprocess_results['control_contributions']  # [n_regions, n_weeks, n_controls]
+    # Extract ALL components from model (in scaled space: y/y_mean)
+    media_contributions_scaled = postprocess_results['media_contributions']  # [n_regions, n_weeks, n_channels]
+    control_contributions_scaled = postprocess_results['control_contributions']  # [n_regions, n_weeks, n_controls]
     
     # Get model outputs which include baseline and seasonality
     print("    Getting baseline and seasonality from model...")
@@ -369,55 +369,56 @@ def train_model_and_get_predictions():
     
     model.eval()
     with torch.no_grad():
-        predictions_log, media_contrib_log, control_contrib_log, outputs = model(
+        predictions_scaled, media_contrib_scaled, control_contrib_scaled, outputs = model(
             full_tensors['X_media'], 
             full_tensors['X_control'], 
             full_tensors['R']
         )
     
     # Extract baseline and seasonality from outputs
-    baseline_log = outputs.get('baseline', torch.zeros_like(predictions_log))
-    seasonal_log = outputs.get('seasonal_contributions', torch.zeros_like(predictions_log))
+    baseline_scaled = outputs.get('baseline', torch.zeros_like(predictions_scaled))
+    seasonal_scaled = outputs.get('seasonal_contributions', torch.zeros_like(predictions_scaled))
     
     # Remove burn-in from all components
     burn_in = pipeline.padding_weeks
     if burn_in > 0:
-        media_contrib_log = media_contrib_log[:, burn_in:, :]
-        control_contrib_log = control_contrib_log[:, burn_in:, :]
-        baseline_log = baseline_log[:, burn_in:]
-        seasonal_log = seasonal_log[:, burn_in:]
-        predictions_log = predictions_log[:, burn_in:]
+        media_contrib_scaled = media_contrib_scaled[:, burn_in:, :]
+        control_contrib_scaled = control_contrib_scaled[:, burn_in:, :]
+        baseline_scaled = baseline_scaled[:, burn_in:]
+        seasonal_scaled = seasonal_scaled[:, burn_in:]
+        predictions_scaled = predictions_scaled[:, burn_in:]
     
     print(f"    Extracted all components (after burn-in removal):")
-    print(f"      Media: {media_contrib_log.shape}")
-    print(f"      Control: {control_contrib_log.shape}")
-    print(f"      Baseline: {baseline_log.shape}")
-    print(f"      Seasonal: {seasonal_log.shape}")
-    print(f"      Predictions (log): {predictions_log.shape}")
+    print(f"      Media: {media_contrib_scaled.shape}")
+    print(f"      Control: {control_contrib_scaled.shape}")
+    print(f"      Baseline: {baseline_scaled.shape}")
+    print(f"      Seasonal: {seasonal_scaled.shape}")
+    print(f"      Predictions (scaled): {predictions_scaled.shape}")
     
-    # Convert predictions to original scale using the same method as dashboard
-    predictions_orig_tensor = torch.expm1(torch.clamp(predictions_log, max=20.0))
+    # Convert predictions to original scale using linear scaling inverse
+    scaler = pipeline.get_scaler()
+    predictions_orig_tensor = scaler.inverse_transform_target(predictions_scaled)
     
     # USE PROPORTIONAL ALLOCATION METHOD (same as dashboard)
     print("\n    Using proportional allocation method to get contributions in original scale...")
     
-    # Get the scaler from pipeline
-    scaler = pipeline.get_scaler()
+    # Get prediction_scale from model outputs (needed for inverse transform)
+    pred_scale = outputs.get('prediction_scale', torch.ones(1))
     
     # Use the package's inverse_transform_contributions method
     contrib_results = scaler.inverse_transform_contributions(
-        media_contributions=media_contrib_log,
-        y_pred_orig=predictions_orig_tensor,
-        baseline=baseline_log,
-        control_contributions=control_contrib_log,
-        seasonal_contributions=seasonal_log
+        media_contributions=media_contrib_scaled,
+        baseline=baseline_scaled,
+        control_contributions=control_contrib_scaled,
+        seasonal_contributions=seasonal_scaled,
+        prediction_scale=pred_scale
     )
     
     # Extract proportionally allocated media contributions
     media_contributions_orig = contrib_results['media']  # [n_regions, n_weeks, n_channels] in original scale
     
     print(f"    Proportionally allocated contributions computed:")
-    print(f"      Media contrib (log): [{media_contrib_log.min():.4f}, {media_contrib_log.max():.4f}]")
+    print(f"      Media contrib (scaled): [{media_contrib_scaled.min():.4f}, {media_contrib_scaled.max():.4f}]")
     print(f"      Media contrib (orig): [{media_contributions_orig.min():.0f}, {media_contributions_orig.max():.0f}]")
     print()
     print("    Per-channel contribution ranges (original scale):")

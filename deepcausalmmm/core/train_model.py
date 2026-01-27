@@ -142,7 +142,7 @@ def train_model_with_config(
             X_media_padded, X_control_padded, R
         )
         
-        # Calculate loss (MSE in log space)
+        # Calculate loss (MSE in scaled space: y/y_mean)
         mse_loss = torch.nn.functional.mse_loss(y_pred_full, y_padded)
         
         # Add DAG and sparsity losses (CRITICAL FIX)
@@ -167,10 +167,10 @@ def train_model_with_config(
         
         # Calculate metrics
         with torch.no_grad():
-            # Calculate RMSE in log space (consistent with loss)
+            # Calculate RMSE in scaled space (y/y_mean, consistent with loss)
             train_rmse = torch.sqrt(mse_loss).item()
             
-            # Calculate R² (also in log space for consistency)
+            # Calculate R² (also in scaled space for consistency)
             y_eval = y_padded[:, config['burn_in_weeks']:].contiguous()
             pred_eval = y_pred_full[:, config['burn_in_weeks']:].contiguous()
             train_r2 = r2_score(y_eval.numpy().flatten(), pred_eval.numpy().flatten())
@@ -221,10 +221,10 @@ def train_model_with_config(
                             if holdout_rmse > 1e8:  # Cap at 100 million
                                 holdout_rmse = 1e8
                             
-                            # Calculate holdout loss in log space (consistent with training loss)
-                            holdout_pred_log = holdout_pred_full[:, config['burn_in_weeks']:].detach()
-                            holdout_true_log = holdout_data['y'][:, config['burn_in_weeks']:]
-                            holdout_loss = torch.nn.functional.mse_loss(holdout_pred_log, holdout_true_log).item()
+                            # Calculate holdout loss in scaled space (y/y_mean, consistent with training loss)
+                            holdout_pred_scaled = holdout_pred_full[:, config['burn_in_weeks']:].detach()
+                            holdout_true_scaled = holdout_data['y'][:, config['burn_in_weeks']:]
+                            holdout_loss = torch.nn.functional.mse_loss(holdout_pred_scaled, holdout_true_scaled).item()
                             
                             # Store holdout metrics for progress bar
                             last_holdout_rmse = holdout_rmse
@@ -502,10 +502,10 @@ def _train_with_unified_pipeline(
                 holdout_pred_orig.numpy().flatten()
             )
             
-            # Calculate holdout loss in log space (consistent with training)
-            holdout_pred_log = holdout_pred_full[:, config['burn_in_weeks']:]
-            holdout_true_log = holdout_tensors['y'][:, config['burn_in_weeks']:]
-            holdout_loss = torch.nn.functional.mse_loss(holdout_pred_log, holdout_true_log).item()
+            # Calculate holdout loss in scaled space (y/y_mean, consistent with training)
+            holdout_pred_scaled = holdout_pred_full[:, config['burn_in_weeks']:]
+            holdout_true_scaled = holdout_tensors['y'][:, config['burn_in_weeks']:]
+            holdout_loss = torch.nn.functional.mse_loss(holdout_pred_scaled, holdout_true_scaled).item()
             
             if verbose:
                 logger.info(f"    HOLDOUT RESULTS:")
@@ -698,7 +698,7 @@ def _train_simple(
             logger.info(f"      RMSE: {final_rmse:,.0f}")
             logger.info(f"      Relative RMSE: {relative_rmse:.1f}%")
             logger.info(f"      R²: {final_r2:.3f}")
-            logger.info(f"      Training Best RMSE: {best_rmse:.4f} (log space)")
+            logger.info(f"      Training Best RMSE: {best_rmse:.4f} (scaled space y/y_mean)")
     
     # 7. Prepare results
     results = {

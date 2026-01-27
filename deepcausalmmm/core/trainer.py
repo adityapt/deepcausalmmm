@@ -386,7 +386,7 @@ class ModelTrainer:
         
         self.optimizer.step()
         
-        # Calculate metrics IN LOG SPACE for training stability
+        # Calculate metrics IN SCALED SPACE (y/y_mean) for training stability
         # Original-space conversion should ONLY be done for final reporting
         with torch.no_grad():
             y_np = y.detach().cpu().numpy().flatten()
@@ -448,7 +448,7 @@ class ModelTrainer:
                          self.config.get('dag_weight', 0.005) * dag_loss +      # Minimal DAG regularization
                          self.config.get('sparsity_weight', 0.001) * sparsity_loss)  # Minimal sparsity regularization
             
-            # Calculate metrics IN LOG SPACE for training stability
+            # Calculate metrics IN SCALED SPACE (y/y_mean) for training stability
             # Original-space conversion should ONLY be done for final reporting
             y_np = y.detach().cpu().numpy().flatten()
             pred_np = predictions.detach().cpu().numpy().flatten()
@@ -686,7 +686,7 @@ class ModelTrainer:
                 else:
                     holdout_trimmed_rmse = final_holdout_rmse_orig
                 
-                # 3. Log-space R² (should be excellent!)
+                # 3. Scaled-space R² (y/y_mean)
                 holdout_r2_scaled = r2_score(y_true_scaled_np, y_pred_scaled_np)
                 
                 # 4. Scaled-space RMSE 
