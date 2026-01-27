@@ -26,13 +26,13 @@ Marketing Mix Modeling (MMM) estimates the impact of marketing activities on bus
 
 **DeepCausalMMM** addresses these limitations by combining deep learning, causal inference, and marketing science. It uses Gated Recurrent Units (GRUs) to learn temporal patterns (adstock, lag) while learning statistical dependencies between channels through Directed Acyclic Graph (DAG) structure with upper triangular constraints [@Zheng2018NOTEARS; @Gong2024CausalMMM]. It implements Hill equation saturation curves for diminishing returns and budget optimization.
 
-Key features: (1) data-driven hyperparameters learned from data with defaults, (2) linear scaling enabling additive attribution (components sum to 100%), (3) configurable attribution priors with dynamic loss scaling, (4) multi-region modeling with shared and region-specific parameters, (5) robust methods including Huber loss, (6) response curve analysis.
+Key features: (1) data-driven hyperparameters learned from data with defaults, (2) linear mean scaling of the dependent variable, (3) configurable attribution priors with dynamic loss scaling, (4) multi-region modeling with shared and region-specific parameters, (5) robust methods including Huber loss, (6) response curve analysis.
 
 # Statement of Need
 
 Marketing organizations invest billions annually in advertising across channels (TV, digital, social, search), yet measuring ROI remains challenging due to: (1) temporal complexity with delayed and persistent effects [@Hanssens2005], (2) channel interdependencies [@Gong2024CausalMMM], (3) non-linear saturation with diminishing returns [@Li2024Survey], (4) regional heterogeneity, and (5) multicollinearity between channels.
 
-**DeepCausalMMM** addresses these challenges by combining GRU-based temporal modeling on adstocked data, DAG-based structure learning, Hill equation response curves, multi-region modeling,  performance measured under temporal holdout evaluation, attribution through configurable prior regularization, and data-driven hyperparameter learning for generalizability.
+**DeepCausalMMM** addresses these challenges by combining GRU-based temporal modeling on adstocked data, DAG-based structure learning, Hill equation response curves, multi-region modeling, performance measured under temporal holdout evaluation, attribution through configurable prior regularization, and data-driven hyperparameter learning for generalizability.
 
 # State of the Field
 
@@ -201,7 +201,7 @@ The author acknowledges the contributions of the open-source community, particul
 
 This work received no specific external funding, and no sponsor had any role in the design, implementation, or reporting of this software.
 
-# AI-Assisted Research Disclosure
+# AI Usage Disclosure
 
 The author used AI-assisted tools (including ChatGPT and Claude) during development for limited assistance with code drafting, debugging support, documentation editing, and manuscript drafting. All AI-assisted outputs were reviewed, verified, and substantially edited by the author. The author takes full responsibility for the software, analyses, and all claims in this manuscript.
 
