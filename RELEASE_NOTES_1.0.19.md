@@ -214,9 +214,6 @@ ALL TESTS PASSED - READY FOR PRODUCTION
 - `docs/source/quickstart.rst` - Already current (verified)
 - `docs/source/index.rst` - Already current (verified)
 
-### Testing (1 file)
-- `test_release_v1_0_19.py` - Comprehensive release test suite
-
 ## Installation
 
 ### PyPI (After Release)
@@ -243,9 +240,6 @@ pip install -e .
 ```python
 import deepcausalmmm
 print(f"Version: {deepcausalmmm.__version__}")  # Should print "1.0.19"
-
-# Run comprehensive test suite
-python test_release_v1_0_19.py
 ```
 
 ### Full Dashboard Test
@@ -257,7 +251,6 @@ python examples/dashboard_rmse_optimized.py
 ## Next Steps
 
 ### For v1.0.20 (Minor Fixes)
-- Remove remaining emojis from logging
 - Fix seasonal regularization broadcasting warning
 - Add validation split option
 - Improve documentation for attribution priors
