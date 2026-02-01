@@ -40,7 +40,7 @@ DeepCausalMMM v1.0.19 represents a major architectural improvement focusing on *
 
 ## Performance Metrics
 
-### Production Performance (1500 epochs)
+### Performance (1500 epochs)
 - **Training R²**: 0.950
 - **Holdout R²**: 0.842
 - **Train-Test Gap**: 10.8%
@@ -169,7 +169,6 @@ config['visualization'] = {
 ✓ Attribution Additivity (<5% error)
 ✓ Example Scripts
 
-ALL TESTS PASSED - READY FOR PRODUCTION
 ```
 
 ### Manual Testing
