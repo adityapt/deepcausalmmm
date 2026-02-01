@@ -16,7 +16,7 @@
 
 ## Key Features
 
-### Advanced Architecture
+### Architecture
 - **Config-Driven**: Every setting configurable via `config.py`
 - **GRU-Based Temporal Modeling**: Captures complex time-varying effects
 - **DAG Learning**: Discovers causal relationships between channels
@@ -298,9 +298,7 @@ deepcausalmmm/                      # Project root
     └── figure_response_curve_simple.png # Response curve figure
 ```
 
-## Dashboard Features
-
-The comprehensive dashboard includes:
+## Examples Folder Dashboard Has
 
 1. **Performance Metrics**: Training vs Holdout comparison
 2. **Actual vs Predicted**: Time series visualization
@@ -309,13 +307,11 @@ The comprehensive dashboard includes:
 5. **Contribution Breakdown**: Donut chart with percentages
 6. **Waterfall Analysis**: Decomposed contribution flow
 7. **Channel Effectiveness**: Coefficient distributions
-8. **DAG Network**: Interactive causal relationships
 9. **DAG Heatmap**: Adjacency matrix visualization
 10. **Stacked Contributions**: Time-based channel impact
 11. **Individual Channels**: Detailed channel analysis
 12. **Scaled Data**: Normalized time series
-13. **Control Variables**: External factor analysis
-14. **Response Curves**: Non-linear response curves (diminishing returns analysis) with Hill equations
+13. **Response Curves**: Non-linear response curves (diminishing returns analysis) with Hill equations
 
 ## Configuration
 
@@ -343,7 +339,7 @@ Key configuration parameters:
 }
 ```
 
-## Advanced Features
+## More Details
 
 ### Learnable Parameters
 - **Media Coefficient Bounds**: `F.softplus(coeff_max_raw) * torch.sigmoid(media_coeffs_raw)`
@@ -353,12 +349,11 @@ Key configuration parameters:
 - **Seasonal Coefficient**: Learnable seasonal contribution
 
 ### Data Processing
-- **Linear Scaling**: Target scaled by regional mean (y/y_mean) for balanced training
+- **Linear Scaling**: Dependent variable scaled by regional mean (y/y_mean) for balanced training
 - **SOV Scaling**: Share-of-voice normalization for media channels
 - **Z-Score Normalization**: For control variables (weather, events, etc.)
 - **Min-Max Seasonality**: Regional seasonal scaling (0-1) using `seasonal_decompose`
-- **Consistent Transforms**: Same scaling applied to train/holdout splits
-- **DMA-Level Processing**: True economic contributions calculated per region
+- **DMA-Level Processing**: Contributions calculated per region
 - **Attribution Priors**: Media contribution regularization with dynamic loss scaling
 - **Data-Driven Hill Initialization**: Hill parameters initialized from channel-specific SOV percentiles
 
@@ -472,25 +467,14 @@ Detailed Metrics:
 
 See `examples/example_budget_optimization.py` for complete workflow and tips.
 
-## Performance Benchmarks
+## Benchmarks
 
-**Real-World Validation** (190 regions, 109 weeks, 13 channels, 7 controls):
+**Example Validation** (190 regions, 109 weeks, 13 channels, 7 controls):
 
 - **Training R²**: 0.950 | **Holdout R²**: 0.842
 - **Performance Gap**: 10.8% (indicating good generalization)
 - **Generalization Gap**: 10.8% (reasonable out-of-sample performance)
 - **Temporal Split**: 92.7% training (101 weeks) / 7.3% holdout (8 weeks)
-
-**Attribution Breakdown** (with example data and 40% media contribution for prior regularization):
-- **Media**: 38.6% (close to 40% target)
-- **Baseline**: 35.4%
-- **Seasonality**: 25.7%
-- **Controls**: 0.2%
-
-**Key Achievements**:
-- Components sum to 100% with perfect additivity (0.000% error)
-- Realistic attribution through prior-based regularization
-- Data-driven Hill parameters prevent similar attribution across channels
 
 ## Development
 
@@ -515,22 +499,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
 MIT License - see [LICENSE](LICENSE) file.
 
-## Success Stories
-
-> "Achieved 84% holdout R² with 10.8% performance gap - good generalization on anonymized real-world data with 190 regions!"
-
-> "Attribution priors with dynamic loss scaling solved the attribution explosion problem - media close to realistic contribution ~= 38.6% vs. 40%"
-
-> "Data-driven Hill initialization enables channel-specific saturation curves"
-
-> "DMA-level contributions and DAG learning revealed true causal relationships between our marketing channels"
-
 ## Support
 
-- **Documentation**: Comprehensive README with examples
+- **Documentation**: Includes a comprehensive README with examples
 - **Issues**: Use GitHub issues for bug reports and feature requests
-- **Performance**: All configurations battle-tested and production-ready
-- **Zero Hardcoding**: Fully generalizable across different datasets and industries
 
 ## Documentation
 
@@ -548,7 +520,7 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Citation
 
-If you use DeepCausalMMM in your research, please cite:
+If you use DeepCausalMMM in your work, please cite:
 
 ```bibtex
 @article{tirumala2025deepcausalmmm,
