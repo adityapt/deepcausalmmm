@@ -29,13 +29,12 @@
 - **Advanced Regularization**: L1/L2, sparsity, coefficient-specific penalties
 - **Gradient Clipping**: Parameter-specific clipping for stability
 
-### Comprehensive Analysis
-- **14+ Interactive Visualizations**: Complete dashboard with insights
+### Comprehensive Analysis in Examples Folder
+- **Interactive Visualizations**: Example html dashboard with some plots and insights
 - **Response Curves**: Non-linear saturation analysis with Hill equations
 - **Budget Optimization**: Constrained optimization for optimal channel allocation
-- **DMA-Level Contributions**: True economic impact calculation
+- **DMA-Level Contributions**: True economic impact calculation at DMA level
 - **Channel Effectiveness**: Detailed performance analysis
-- **DAG Visualization**: Interactive causal network graphs
 
 ## Quick Start
 
