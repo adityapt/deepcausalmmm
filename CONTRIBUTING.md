@@ -102,7 +102,8 @@ deepcausalmmm/                      # Project root
 │       └── data_generator.py      # Synthetic data generation (ConfigurableDataGenerator)
 │
 ├── examples/                       # Example scripts and notebooks
-│   ├── quickstart.ipynb           # Interactive Jupyter notebook for Google Colab
+│   ├── quickstart.ipynb           # Short Colab-friendly API intro
+│   ├── mmm_three_way_benchmark.ipynb  # Multi-model MMM benchmark (optional)
 │   ├── dashboard_rmse_optimized.py # Comprehensive dashboard with 14+ visualizations
 │   ├── example_response_curves.py  # Response curve fitting examples
 │   └── example_budget_optimization.py  # Budget optimization workflow
