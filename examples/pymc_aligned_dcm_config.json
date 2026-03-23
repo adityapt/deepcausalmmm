@@ -1,0 +1,15 @@
+{
+  "holdout_ratio": 0.12,
+  "use_holdout": true,
+  "min_train_weeks": 40,
+  "burn_in_weeks": 6,
+  "data_week_anchor": "2020-01-06",
+  "scaling_constants": {
+    "iqr_to_std_factor": 1.349,
+    "zero_threshold": 1e-8,
+    "outlier_percentile": 0.97,
+    "extreme_clip_threshold": 2.0,
+    "standard_clip_range": 5.0,
+    "aggressive_clip_range": 3.5
+  }
+}

@@ -87,6 +87,10 @@ target/
 .ipynb_checkpoints
 *.ipynb
 !examples/quickstart.ipynb
+!examples/mmm_three_way_benchmark.ipynb
+!examples/robyn_mmm_example.ipynb
+!examples/meridian_mmm_example.ipynb
+!examples/pymc_marketing_mmm_pooled_dma.ipynb
 
 # IPython
 profile_default/
@@ -115,6 +119,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv_pymc/
 env/
 venv/
 ENV/
@@ -147,6 +152,7 @@ mlartifacts/
 *.csv
 *.parquet
 *.json
+!examples/pymc_aligned_dcm_config.json
 *.pkl
 *.pickle
 
