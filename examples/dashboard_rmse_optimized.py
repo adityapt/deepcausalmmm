@@ -118,7 +118,9 @@ def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
             df_complete[col] = df_complete[col].fillna(0)  # No impressions = 0
 
         for col in value_cols + [target_col]:
-            df_complete[col] = df_complete.groupby(region_col)[col].fillna(method='ffill').fillna(method='bfill')
+            df_complete[col] = df_complete.groupby(region_col)[col].transform(
+                lambda series: series.ffill().bfill()
+            )
             if df_complete[col].isna().any():
                 df_complete[col] = df_complete[col].fillna(df_complete[col].mean())
 
