@@ -105,16 +105,17 @@ class InferenceManager:
         # Make predictions
         with torch.no_grad():
             if return_contributions:
-                predictions, media_contributions, control_contributions = self.model(
+                predictions, _, media_contributions, outputs = self.model(
                     X_media_processed, X_control_processed, R
                 )
+                control_contributions = outputs['control_contributions']
             else:
-                predictions = self.model(X_media_processed, X_control_processed, R)
+                predictions, _, _, _ = self.model(X_media_processed, X_control_processed, R)
                 media_contributions = None
                 control_contributions = None
                 
         # Convert to numpy and move to CPU
-            results = {
+        results = {
             'predictions': predictions.cpu().numpy()
         }
         

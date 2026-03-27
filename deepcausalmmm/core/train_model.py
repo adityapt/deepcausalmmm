@@ -138,7 +138,7 @@ def train_model_with_config(
         optimizer.zero_grad()
         
         # Forward pass
-        y_pred_full, media_contrib_full, control_contrib_full, outputs = model(
+        y_pred_full, _, _, _ = model(
             X_media_padded, X_control_padded, R
         )
         
@@ -471,17 +471,19 @@ def _train_with_unified_pipeline(
     model.eval()
     with torch.no_grad():
         # Training evaluation
-        train_pred_full, train_media_contrib, train_control_contrib, _ = model(
+        train_pred_full, _, train_media_contrib, train_outputs = model(
             train_tensors['X_media'], train_tensors['X_control'], train_tensors['R']
         )
+        train_control_contrib = train_outputs['control_contributions']
         
         # Holdout evaluation (if holdout data exists after removing padding)
         total_holdout_weeks = holdout_tensors['X_media'].shape[1]
         actual_holdout_weeks = total_holdout_weeks - config['burn_in_weeks']
         if actual_holdout_weeks > 0:
-            holdout_pred_full, holdout_media_contrib, holdout_control_contrib, _ = model(
+            holdout_pred_full, _, holdout_media_contrib, holdout_outputs = model(
                 holdout_tensors['X_media'], holdout_tensors['X_control'], holdout_tensors['R']
             )
+            holdout_control_contrib = holdout_outputs['control_contributions']
             
             # Convert to original scale using pipeline
             # CRITICAL FIX: Data already has padding removed, so don't remove it again!
@@ -675,9 +677,10 @@ def _train_simple(
     
     model.eval()
     with torch.no_grad():
-        predictions_full, media_contrib_full, control_contrib_full, outputs = model(
+        predictions_full, _, media_contrib_full, outputs = model(
             X_media_padded, X_control_padded, R
         )
+        control_contrib_full = outputs['control_contributions']
         
         # Remove padding for evaluation
         predictions = predictions_full[:, padding_weeks:]
