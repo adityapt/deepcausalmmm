@@ -155,7 +155,7 @@ Results use `examples/data/MMM Data.csv` (190 DMAs × 109 weeks, 13 channels, 7 
 
 | Method | Scope | Train R² | Holdout R² | Holdout RMSE | Execution time (s) |
 |--------|-------|----------|------------|--------------|---------------------|
-| National weekly Ridge (Robyn-style inputs) | National, weekly | 0.856 | −12.43 | 1.7 × 10⁷ | — |
+| National weekly Ridge (Robyn-style inputs) | National, weekly | 0.856 | −12.43 | 1.7 × 10⁷ | <1 |
 | DeepCausalMMM (dashboard training path) | Panel, geo×week | 0.949 | 0.843 | 5.3 × 10⁵ | 489 |
 | PyMC-Marketing MMM | Panel, geo×week | 0.994 | 0.903 | 4.8 × 10⁵ | 5995 |
 | Meridian | Panel, geo×week | 0.997 | −10.05 | 5.1 × 10⁶ | 479 |
