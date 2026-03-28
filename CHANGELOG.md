@@ -5,6 +5,12 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Documentation
+- **JOSS (`paper.md`)**: Comparative **Table 1** on `examples/data/MMM Data.csv` (same split as `pymc_aligned_dcm_config.json`) versus PyMC-Marketing, Meridian, and a national weekly Ridge baseline (Robyn-style inputs; not Meta’s full Robyn unless `robynpy` is used); corrected train/holdout week description (~96 / ~13 observed weeks at 12% holdout); **Research Impact Statement** reframed (niche, reproducible comparison, near-term significance, honest limits on early uptake); **Reproducibility** references `examples/mmm_three_way_benchmark.ipynb` for Table 1.
+- **README.md**: **Development history** note—substantial design/prototyping predates the public GitHub history; bursty commits reflect integration, docs, tests, and packaging.
+
 ## [1.0.19] - 2026-01-25
 
 ### Linear Scaling & Attribution Architecture
