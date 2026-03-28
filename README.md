@@ -14,6 +14,10 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+## Development history
+
+A substantial part of the design and prototyping was done **locally before this repository was published on GitHub**. The public commit history therefore reflects **integration, hardening, documentation, tests, and packaging** of that prior work more than a day-by-day log of initial exploration. You may see **bursts** of commits (e.g. around releases or doc pushes) and quieter periods in between; that pattern is typical when integrating a working prototype into an open-source layout rather than indicating only the span of weeks visible on GitHub.
+
 ## Key Features
 
 ### Architecture
