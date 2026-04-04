@@ -178,16 +178,17 @@ def test_model_inference_basic(synthetic_mmm_data):
     # Test inference
     model.eval()
     with torch.no_grad():
-        y_pred, media_contrib, control_contrib, outputs = model(X_media, X_control, R)
+        y_pred, media_coeffs, media_contrib, outputs = model(X_media, X_control, R)
+        control_contrib = outputs['control_contributions']
     
     # Check output shapes
     assert y_pred.shape == target.shape
+    assert media_coeffs.shape == X_media.shape
     assert media_contrib.shape == X_media.shape
-    # Control contribution may have different shape due to model architecture
-    assert control_contrib.shape[0] == X_control.shape[0]  # Same batch size
-    assert control_contrib.shape[1] == X_control.shape[1]  # Same time steps
+    assert control_contrib.shape == X_control.shape
     
     # Check that outputs are reasonable
     assert torch.all(torch.isfinite(y_pred)), "Predictions should be finite"
+    assert torch.all(torch.isfinite(media_coeffs)), "Media coefficients should be finite"
     assert torch.all(torch.isfinite(media_contrib)), "Media contributions should be finite"
     assert torch.all(torch.isfinite(control_contrib)), "Control contributions should be finite"

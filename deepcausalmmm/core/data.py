@@ -782,9 +782,10 @@ class UnifiedDataPipeline:
             # Get model predictions and contributions
             model.eval()
             with torch.no_grad():
-                y_pred_scaled, media_contributions, control_contributions, outputs = model(
+                y_pred_scaled, _, media_contributions, outputs = model(
                     X_media_padded, X_control_padded, R
                 )
+                control_contributions = outputs['control_contributions']
             
             # Remove padding from predictions and contributions
             y_pred_eval = y_pred_scaled[:, self.padding_weeks:]

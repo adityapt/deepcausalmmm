@@ -54,19 +54,22 @@ def test_model_forward_pass(sample_config, sample_data):
     )
     
     # Forward pass
-    y_pred, media_contrib, control_contrib, outputs = model(X_media, X_control, R)
+    y_pred, media_coeffs, media_contrib, outputs = model(X_media, X_control, R)
+    control_contrib = outputs['control_contributions']
     
     # Check output shapes
     assert y_pred.shape == y.shape
+    assert media_coeffs.shape == X_media.shape
     assert media_contrib.shape == X_media.shape
-    # Control contribution may have different shape due to model architecture
-    assert control_contrib.shape[0] == X_control.shape[0]  # Same batch size
-    assert control_contrib.shape[1] == X_control.shape[1]  # Same time steps
+    assert control_contrib.shape == X_control.shape
     
     # Check outputs are tensors
     assert isinstance(y_pred, torch.Tensor)
+    assert isinstance(media_coeffs, torch.Tensor)
     assert isinstance(media_contrib, torch.Tensor)
     assert isinstance(control_contrib, torch.Tensor)
+    assert torch.allclose(media_coeffs, outputs['coefficients'])
+    assert torch.allclose(media_contrib, outputs['contributions'])
 
 
 def test_model_training_mode(sample_config, sample_data):

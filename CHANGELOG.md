@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **`examples/dashboard_rmse_optimized.py`**: Region-wise missing-value fill uses `groupby(...).transform(lambda series: series.ffill().bfill())` instead of deprecated / removed grouped `fillna(method='ffill'|'bfill')`, compatible with pandas 2.2+ and 3.x (including environments where `SeriesGroupBy.fillna` is unavailable).
+- **`DeepCausalMMM.forward()` contract vs callers**: **`InferenceManager.predict()`**, **`UnifiedDataPipeline.predict_and_postprocess`**, and **`train_model`** paths now unpack **`(predictions, media_coeffs, media_contributions, outputs)`** and take **control contributions** from **`outputs['control_contributions']`**, matching the current model implementation (fixes wrong media/control tensors when `n_media ≠ n_control`, broken 3-value unpack, and **`return_contributions=False`** returning a tuple instead of predictions).
 
 ### Added
 - **`tests/integration/test_dashboard_rmse_optimized.py`**: Regression test that loads `load_real_mmm_data()` on `examples/data/MMM Data.csv` so the dashboard data path stays covered in CI.
+- **`tests/unit/test_inference.py`**: Regression coverage for **`InferenceManager.predict()`** with **`return_contributions`** true/false; integration/unit forward-pass tests assert coefficient vs contribution shapes and **`outputs`** consistency.
 
 ### Documentation
 - **JOSS (`paper.md`)**: Comparative **Table 1** on `examples/data/MMM Data.csv` (same split as `pymc_aligned_dcm_config.json`) versus PyMC-Marketing, Meridian, and a national weekly Ridge baseline (Robyn-style inputs; not Meta’s full Robyn unless `robynpy` is used); corrected train/holdout week description (~96 / ~13 observed weeks at 12% holdout); **Research Impact Statement** reframed (niche, reproducible comparison, near-term significance, honest limits on early uptake); **Reproducibility** references `examples/mmm_three_way_benchmark.ipynb` for Table 1.
