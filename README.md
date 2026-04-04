@@ -64,8 +64,19 @@ pip install -e .
 ```
 
 #### Dependencies Only
+Same lower/upper bounds as `pyproject.toml` `[project] dependencies` (install libraries without the `deepcausalmmm` package):
+
 ```bash
-pip install torch pandas numpy plotly networkx statsmodels scikit-learn tqdm
+pip install \
+  "torch>=2.0" \
+  "pandas>=1.5" \
+  "numpy>=1.21,<2.0" \
+  "plotly>=5.0" \
+  "networkx>=2.6" \
+  "scikit-learn>=1.0" \
+  "scipy>=1.7" \
+  "statsmodels>=0.13" \
+  "tqdm>=4.60"
 ```
 
 ---
@@ -479,18 +490,21 @@ See `examples/example_budget_optimization.py` for complete workflow and tips.
 - **Training R²**: 0.950 | **Holdout R²**: 0.842
 - **Performance Gap**: 10.8% (indicating good generalization)
 - **Generalization Gap**: 10.8% (reasonable out-of-sample performance)
-- **Temporal Split**: 92.7% training (101 weeks) / 7.3% holdout (8 weeks)
+- **Temporal Split**: Default **`holdout_ratio = 0.12`** in config—about **96** training weeks and **13** holdout weeks on **109** observed weeks (burn-in padding in the pipeline may change logged lengths slightly)
 
 ## Development
 
 ### Requirements
-- Python 3.8+
-- PyTorch 1.13+
+- Python 3.9+
+- PyTorch 2.0+
 - pandas 1.5+
-- numpy 1.21+
-- plotly 5.11+
+- numpy 1.21+ (package metadata caps below 2.0)
+- scipy 1.7+
+- plotly 5.0+
+- NetworkX 2.6+
 - statsmodels 0.13+
-- scikit-learn 1.1+
+- scikit-learn 1.0+
+- tqdm 4.60+
 
 ### Testing
 ```bash

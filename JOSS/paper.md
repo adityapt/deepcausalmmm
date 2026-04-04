@@ -80,7 +80,7 @@ These design decisions enable interpretable, tractable real-world marketing appl
 - **Installation**: `pip install deepcausalmmm`
 - **Documentation**: [https://deepcausalmmm.readthedocs.io](https://deepcausalmmm.readthedocs.io)
 - **Tests**: Comprehensive unit and integration test suite in `tests/` directory
-- **Versioning**: The package follows [semantic versioning](https://semver.org/). **Breaking changes** are recorded in the changelog—**v1.0.19** introduced a revised linear scaling and attribution stack relative to **v1.0.18 and earlier** (see README and CHANGELOG for migration notes). Within a major line, minor and patch releases aim for stability, but upgrades across documented milestones should follow release notes rather than assuming drop-in API compatibility.
+- **Versioning**: The package follows [semantic versioning](https://semver.org/). **Breaking changes** are recorded in the changelog—**v1.0.19** introduced a revised linear scaling and attribution stack relative to **v1.0.18 and earlier** (see README and CHANGELOG for migration notes).
 
 ## Visualizations
 

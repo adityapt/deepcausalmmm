@@ -24,7 +24,8 @@ Development Setup
 
 .. code-block:: bash
 
-    pip install -e .[dev]
+    pip install -e .
+    pip install -e .[test]
 
 4. **Run tests to verify setup**:
 

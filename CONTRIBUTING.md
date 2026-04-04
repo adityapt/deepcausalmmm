@@ -41,8 +41,8 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 3. **Install in development mode**
 ```bash
 pip install -e .
-# Or install with development dependencies
-pip install -e .[dev]
+# Optional: pytest / coverage (see pyproject.toml [project.optional-dependencies] test)
+pip install -e .[test]
 ```
 
 4. **Verify installation**
