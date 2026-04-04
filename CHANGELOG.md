@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`examples/dashboard_rmse_optimized.py`**: Region-wise missing-value fill uses `groupby(...).transform(lambda series: series.ffill().bfill())` instead of deprecated / removed grouped `fillna(method='ffill'|'bfill')`, compatible with pandas 2.2+ and 3.x (including environments where `SeriesGroupBy.fillna` is unavailable).
+
+### Added
+- **`tests/integration/test_dashboard_rmse_optimized.py`**: Regression test that loads `load_real_mmm_data()` on `examples/data/MMM Data.csv` so the dashboard data path stays covered in CI.
+
 ### Documentation
 - **JOSS (`paper.md`)**: Comparative **Table 1** on `examples/data/MMM Data.csv` (same split as `pymc_aligned_dcm_config.json`) versus PyMC-Marketing, Meridian, and a national weekly Ridge baseline (Robyn-style inputs; not Meta’s full Robyn unless `robynpy` is used); corrected train/holdout week description (~96 / ~13 observed weeks at 12% holdout); **Research Impact Statement** reframed (niche, reproducible comparison, near-term significance, honest limits on early uptake); **Reproducibility** references `examples/mmm_three_way_benchmark.ipynb` for Table 1.
 - **README.md**: **Development history** note—substantial design/prototyping predates the public GitHub history; bursty commits reflect integration, docs, tests, and packaging.
