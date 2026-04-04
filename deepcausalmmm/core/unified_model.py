@@ -106,12 +106,12 @@ class DeepCausalMMM(nn.Module):
     >>> regions = torch.arange(2).unsqueeze(1).repeat(1, 104)
     >>> 
     >>> # Forward pass
-    >>> predictions, baseline, seasonality, outputs = model(
+    >>> predictions, media_coeffs, media_contributions, outputs = model(
     ...     media_data, control_data, regions
     ... )
     >>> 
     >>> print(f"Predictions shape: {predictions.shape}")
-    >>> print(f"Media contributions: {outputs['media_contributions'].shape}")
+    >>> print(f"Media contributions: {outputs['contributions'].shape}")
     """
     
     def __init__(
@@ -760,8 +760,8 @@ class DeepCausalMMM(nn.Module):
         Forward pass through the DeepCausalMMM model.
         
         Processes media and control variables through the neural network to generate
-        predictions, baseline contributions, seasonal effects, and detailed outputs
-        including channel-specific contributions and DAG interactions.
+        predictions, time-varying coefficients, per-channel media contributions, and
+        a detailed ``outputs`` dict (baseline, seasonality, control contributions, DAG, etc.).
         
         Parameters
         ----------
@@ -778,24 +778,23 @@ class DeepCausalMMM(nn.Module):
         Returns
         -------
         predictions : torch.Tensor
-            Model predictions of shape [batch_size, time_steps, 1]
-            Final KPI predictions combining all effects
-        baseline : torch.Tensor
-            Baseline contributions of shape [batch_size, time_steps, 1]
-            Region-specific baseline effects including global bias
-        seasonality : torch.Tensor
-            Seasonal contributions of shape [batch_size, time_steps, 1]
-            Learned seasonal patterns applied to data
+            Model predictions (scaled KPI), shape typically ``[batch_size, time_steps]``
+            (broadcast with components before ``prediction_scale``).
+        media_coefficients : torch.Tensor
+            Time-varying media coefficients, shape ``[batch_size, time_steps, n_media]``.
+        media_contributions : torch.Tensor
+            Per-channel media contributions ``X_processed * media_coefficients``,
+            shape ``[batch_size, time_steps, n_media]``.
         outputs : Dict[str, Any]
-            Dictionary containing detailed model outputs:
-            - 'media_contributions': Media channel contributions [batch, time, n_media]
-            - 'control_contributions': Control variable contributions [batch, time, ctrl_dim]
-            - 'media_coefficients': Time-varying media coefficients [batch, time, n_media]
-            - 'control_coefficients': Control coefficients [batch, time, ctrl_dim]
-            - 'dag_matrix': Current DAG adjacency matrix [n_media, n_media]
-            - 'adstocked_media': Adstock-transformed media [batch, time, n_media]
-            - 'saturated_media': Saturation-transformed media [batch, time, n_media]
-            - 'interacted_media': DAG-interacted media [batch, time, n_media]
+            Detailed tensors, including:
+            - ``contributions``: same as ``media_contributions`` (media channel breakdown)
+            - ``coefficients``: same as returned ``media_coefficients``
+            - ``control_contributions``: control variable contributions ``[batch, time, ctrl_dim]``
+            - ``control_coefficients``: control coefficients ``[batch, time, ctrl_dim]``
+            - ``baseline``: baseline without seasonality (for waterfall-style splits)
+            - ``seasonal_contribution``: seasonal term ``[batch, time]``
+            - ``dag_matrix`` (when DAG enabled): adjacency ``[n_media, n_media]``
+            - ``adstocked_media``, ``media_hill``, ``media_dag`` (when applicable): media pipeline stages
             
         Examples
         --------
@@ -808,12 +807,12 @@ class DeepCausalMMM(nn.Module):
         >>> regions = torch.tensor([[0]*52, [1]*52])  # Region indicators
         >>> 
         >>> # Forward pass
-        >>> pred, baseline, seasonal, outputs = model(media, control, regions)
+        >>> pred, media_coeffs, media_contrib, outputs = model(media, control, regions)
         >>> 
         >>> # Access detailed outputs
-        >>> media_contrib = outputs['media_contributions']
-        >>> dag_matrix = outputs['dag_matrix']
-        >>> print(f"DAG sparsity: {(dag_matrix == 0).float().mean():.2f}")
+        >>> media_contrib_out = outputs['contributions']
+        >>> ctrl_contrib = outputs['control_contributions']
+        >>> dag_matrix = outputs.get('dag_matrix')
         
         Notes
         -----

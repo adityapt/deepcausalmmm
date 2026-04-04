@@ -106,6 +106,15 @@ class ModelTrainer:
         self.train_losses = []
         self.train_rmses = []
         self.train_r2s = []
+
+    @staticmethod
+    def _trim_burn_in_time(tensor: torch.Tensor, burn_in_weeks: int) -> torch.Tensor:
+        """Drop leading burn-in timesteps from ``[batch, time, ...]`` tensors."""
+        if tensor is None or burn_in_weeks <= 0:
+            return tensor
+        if tensor.dim() < 2 or tensor.shape[1] <= burn_in_weeks:
+            return tensor
+        return tensor[:, burn_in_weeks:]
         
     def create_model(self, n_media: int, n_control: int, n_regions: int) -> DeepCausalMMM:
         """
@@ -633,16 +642,22 @@ class ModelTrainer:
                     
                 pbar.set_postfix(progress_dict)
                 
-        # Final evaluation: Convert ONLY final results to original scale for reporting
-        # Keep all training metrics in scaled space for stability
+        # Final evaluation: original-scale reporting on post-burn-in timesteps only.
+        # Trim padded burn-in before inverse transform and scoring so RMSE/R² match
+        # operational weeks (aligned with pipeline padding / GRU stabilization).
         self.model.eval()
         with torch.no_grad():
-            # Final training evaluation in original scale
             train_pred_scaled, _, _, _ = self.model(X_media_train, X_control_train, R_train)
             scaler = self.pipeline.get_scaler()
-            train_pred_orig = scaler.inverse_transform_target(train_pred_scaled)
-            train_true_orig = scaler.inverse_transform_target(y_train)
-            
+            burn_in_weeks = int(
+                self.config.get('burn_in_weeks', getattr(self.pipeline, 'padding_weeks', 0))
+            )
+
+            train_pred_eval = ModelTrainer._trim_burn_in_time(train_pred_scaled, burn_in_weeks)
+            train_true_eval = ModelTrainer._trim_burn_in_time(y_train, burn_in_weeks)
+            train_pred_orig = scaler.inverse_transform_target(train_pred_eval)
+            train_true_orig = scaler.inverse_transform_target(train_true_eval)
+
             final_train_rmse_orig = np.sqrt(mean_squared_error(
                 train_true_orig.detach().cpu().numpy().flatten(),
                 train_pred_orig.detach().cpu().numpy().flatten()
@@ -655,14 +670,16 @@ class ModelTrainer:
             # Final holdout evaluation in original scale (if available)
             if X_media_holdout is not None and y_holdout is not None:
                 holdout_pred_scaled, _, _, _ = self.model(X_media_holdout, X_control_holdout, R_holdout)
-                holdout_pred_orig = scaler.inverse_transform_target(holdout_pred_scaled)
-                holdout_true_orig = scaler.inverse_transform_target(y_holdout)
+                holdout_pred_eval = ModelTrainer._trim_burn_in_time(holdout_pred_scaled, burn_in_weeks)
+                holdout_true_eval = ModelTrainer._trim_burn_in_time(y_holdout, burn_in_weeks)
+                holdout_pred_orig = scaler.inverse_transform_target(holdout_pred_eval)
+                holdout_true_orig = scaler.inverse_transform_target(holdout_true_eval)
                 
                 # Convert to numpy for robust metrics
                 y_true_np = holdout_true_orig.detach().cpu().numpy().flatten()
                 y_pred_np = holdout_pred_orig.detach().cpu().numpy().flatten()
-                y_true_scaled_np = y_holdout.detach().cpu().numpy().flatten()
-                y_pred_scaled_np = holdout_pred_scaled.detach().cpu().numpy().flatten()
+                y_true_scaled_np = holdout_true_eval.detach().cpu().numpy().flatten()
+                y_pred_scaled_np = holdout_pred_eval.detach().cpu().numpy().flatten()
                 
                 # Standard metrics (original scale)
                 final_holdout_rmse_orig = np.sqrt(mean_squared_error(y_true_np, y_pred_np))

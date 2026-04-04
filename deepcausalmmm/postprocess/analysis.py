@@ -118,33 +118,48 @@ class ModelAnalyzer:
         Args:
             X_m: Media variables [n_regions, n_weeks, n_channels]
             X_c: Control variables [n_regions, n_weeks, n_controls]
-            R: Region indices [n_regions]
+            R: Region indices [n_regions] (reserved; ``InferenceManager`` currently
+                builds region indices internally)
             y_true: Optional ground truth values
             generate_plots: Whether to generate and save plots
             
         Returns:
             Dictionary containing analysis results and metrics
         """
-        # Convert inputs to tensors
-        X_m_tensor = torch.tensor(X_m, dtype=torch.float32)
-        X_c_tensor = torch.tensor(X_c, dtype=torch.float32)
-        R_tensor = torch.tensor(R, dtype=torch.long)
-        y_true_tensor = torch.tensor(y_true, dtype=torch.float32) if y_true is not None else None
-        
-        # Get predictions and contributions
-        results = self.inference.predict(X_m_tensor, X_c_tensor, R_tensor, y_true_tensor)
-        
+        if self.inference is None:
+            raise ValueError("InferenceManager (or legacy ModelInference) is required for analyze_predictions")
+
+        _ = R  # API compatibility; not yet passed through to InferenceManager.predict
+
+        results = self.inference.predict(
+            np.asarray(X_m, dtype=np.float32),
+            np.asarray(X_c, dtype=np.float32),
+            return_contributions=True,
+            remove_padding=True,
+            return_media_coefficients=True,
+        )
+        if y_true is not None:
+            results['actual_revenue'] = np.asarray(y_true, dtype=np.float32)
+
         # Generate plots if requested
         if generate_plots:
             self._generate_plots(results)
-        
+
         return results
     
     def _generate_plots(self, results: Dict[str, Any]) -> None:
         """Generate all visualization plots."""
+        burn_in_weeks = int(getattr(self.inference.model, 'burn_in_weeks', 0))
+
+        media_coefficients = results.get('media_coefficients') or results.get('coefficients')
+        if media_coefficients is None:
+            raise ValueError(
+                "Expected 'media_coefficients' in results; ensure predict(..., return_media_coefficients=True)"
+            )
+
         # 1. Coefficients over time
         coeff_fig = self.plot_coefficients_over_time(
-            results['coefficients'],
+            media_coefficients,
             self.inference.channel_names
         )
         
@@ -152,12 +167,12 @@ class ModelAnalyzer:
         comparison_fig = self.plot_contribution_comparison(
             results['predictions'],
             results.get('actual_revenue'),  # May be None
-            self.inference.burn_in_weeks
+            burn_in_weeks
         )
         
         # 3. Waterfall chart
         waterfall_fig = self.plot_waterfall_chart(
-            results['contributions'],
+            results['media_contributions'],
             results.get('control_contributions'),
             results.get('baseline'),
             self.inference.channel_names,
@@ -166,7 +181,7 @@ class ModelAnalyzer:
         
         # 4. Contribution donut
         donut_fig = self.plot_contribution_donut(
-            results['contributions'],
+            results['media_contributions'],
             results.get('control_contributions'),
             results.get('baseline')
         )

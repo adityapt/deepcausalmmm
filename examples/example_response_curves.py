@@ -369,15 +369,16 @@ def train_model_and_get_predictions():
     
     model.eval()
     with torch.no_grad():
-        predictions_scaled, media_contrib_scaled, control_contrib_scaled, outputs = model(
+        predictions_scaled, _media_coeffs_scaled, media_contrib_scaled, outputs = model(
             full_tensors['X_media'], 
             full_tensors['X_control'], 
             full_tensors['R']
         )
+        control_contrib_scaled = outputs['control_contributions']
     
     # Extract baseline and seasonality from outputs
     baseline_scaled = outputs.get('baseline', torch.zeros_like(predictions_scaled))
-    seasonal_scaled = outputs.get('seasonal_contributions', torch.zeros_like(predictions_scaled))
+    seasonal_scaled = outputs.get('seasonal_contribution', torch.zeros_like(predictions_scaled))
     
     # Remove burn-in from all components
     burn_in = pipeline.padding_weeks
