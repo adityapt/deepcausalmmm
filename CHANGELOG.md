@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`tests/unit/test_inference.py`**: Regression coverage for **`InferenceManager.predict()`** with **`return_contributions`** true/false; integration/unit forward-pass tests assert coefficient vs contribution shapes and **`outputs`** consistency.
 
 ### Documentation
+- **JOSS (`paper.md`)**: **Software Design → Implementation Details**: versioning bullet now states **semantic versioning** and **documented breaking changes** (notably **v1.0.19** vs **v1.0.18 and earlier**), with pointers to README/CHANGELOG—replacing a blanket “backward compatibility guarantees” phrase that conflicted with published release notes.
 - **JOSS (`paper.md`)**: Comparative **Table 1** on `examples/data/MMM Data.csv` (same split as `pymc_aligned_dcm_config.json`) versus PyMC-Marketing, Meridian, and a national weekly Ridge baseline (Robyn-style inputs; not Meta’s full Robyn unless `robynpy` is used); corrected train/holdout week description (~96 / ~13 observed weeks at 12% holdout); **Research Impact Statement** reframed (niche, reproducible comparison, near-term significance, honest limits on early uptake); **Reproducibility** references `examples/mmm_three_way_benchmark.ipynb` for Table 1.
 - **README.md**: **Development history** note—substantial design/prototyping predates the public GitHub history; bursty commits reflect integration, docs, tests, and packaging.
 
