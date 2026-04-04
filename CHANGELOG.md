@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`postprocess/analysis.py`**: **`ModelAnalyzer.analyze_predictions`** now calls **`InferenceManager.predict`** with the correct signature (NumPy inputs, optional **`return_media_coefficients=True`** for plots); **`_generate_plots`** uses **`media_contributions`**, **`burn_in_weeks`** from the underlying model, and no longer mis-passes region tensors as keyword arguments.
 - **`examples/example_response_curves.py`**: Forward unpack matches **`(predictions, media_coeffs, media_contributions, outputs)`** with **control** from **`outputs['control_contributions']`**; seasonal slice uses **`outputs['seasonal_contribution']`** (singular key).
 - **`examples/dashboard_rmse_optimized.py`**: Holdout **`model(...)`** unpack uses accurate names / discards for unused middle returns (behavior unchanged; clarity only).
+- **`ModelTrainer` final metrics**: Train/holdout reporting trims **`burn_in_weeks`** (aligned with config / pipeline padding) in **scaled** space before **`inverse_transform_target`** and RMSE/R², so scores exclude padded stabilization weeks; holdout scaled-space metrics use the same trim. **`examples/dashboard_rmse_optimized.py`**: holdout scatter matches that evaluation; printed holdout MAE uses **`holdout_mae_orig`**.
 
 ### Added
 - **`tests/integration/test_dashboard_rmse_optimized.py`**: Regression test that loads `load_real_mmm_data()` on `examples/data/MMM Data.csv` so the dashboard data path stays covered in CI.

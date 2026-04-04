@@ -793,7 +793,7 @@ def create_beautiful_dashboard():
         target_mean = y_train_for_mean.mean()
         print(f"    Holdout RMSE: {results['final_holdout_rmse']:,.0f} visits ({(results['final_holdout_rmse'] / target_mean) * 100:.1f}%)")
         print(f"    Holdout R²: {results['final_holdout_r2']:.3f}")
-        print(f"    Holdout MAE: {results.get('final_holdout_mae', 0):,.0f} visits")
+        print(f"    Holdout MAE: {results.get('holdout_mae_orig', 0):,.0f} visits")
     else:
         # Fallback: use processed holdout tensors from UnifiedDataPipeline
         if holdout_tensors is not None:
@@ -1938,11 +1938,11 @@ def create_beautiful_dashboard():
     # Plot 12: Holdout Performance Scatter Plot
     print(f"    Creating holdout performance scatter plot...")
     
-    # Get holdout predictions - use the EXACT SAME method as ModelTrainer
+    # Get holdout predictions — match ModelTrainer post-burn-in evaluation
     if holdout_tensors is not None and 'y' in holdout_tensors:
-        # CRITICAL: Replicate ModelTrainer's exact holdout evaluation process
-        # This ensures scatter plot R² matches the reported R² from ModelTrainer
-        
+        # Replicate ModelTrainer: trim burn-in in scaled space, then inverse-transform and score.
+        padding_weeks = int(config.get('burn_in_weeks', 0))
+
         with torch.no_grad():
             model.eval()
             # Use the exact same holdout tensors that ModelTrainer used
@@ -1954,10 +1954,13 @@ def create_beautiful_dashboard():
             # Forward pass (same as ModelTrainer)
             holdout_pred_scaled, _, _, _ = model(X_media_holdout, X_control_holdout, R_holdout)
             
+            holdout_pred_eval_scaled = holdout_pred_scaled[:, padding_weeks:]
+            holdout_true_eval_scaled = y_holdout_scaled[:, padding_weeks:]
+
             # Convert to original scale using scaler (LINEAR SCALING: y * y_mean_per_region)
             scaler = pipeline.get_scaler()
-            holdout_pred_orig = scaler.inverse_transform_target(holdout_pred_scaled)
-            holdout_true_orig = scaler.inverse_transform_target(y_holdout_scaled)
+            holdout_pred_orig = scaler.inverse_transform_target(holdout_pred_eval_scaled)
+            holdout_true_orig = scaler.inverse_transform_target(holdout_true_eval_scaled)
             
             # Flatten for R² calculation (same as ModelTrainer)
             holdout_actual_flat = holdout_true_orig.detach().cpu().numpy().flatten()
