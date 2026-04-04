@@ -149,34 +149,30 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 
 # Performance
 
-**Note on Benchmarks:** The performance metrics reported below were generated using the end-to-end workflow in `examples/dashboard_rmse_optimized.py` and an anonymized dataset included in the repository at `examples/data/MMM Data.csv`. This ensures reviewers can reproduce the reported numbers and figures using the public code and data artifacts provided. The dataset contains no personally identifiable information (PII) and is distributed for reproducibility.
+Results use `examples/data/MMM Data.csv` (190 DMAs × 109 weeks, 13 channels, 7 controls; no PII) with `holdout_ratio = 0.12` in `examples/pymc_aligned_dcm_config.json`—about **96** train and **13** holdout weeks of observed time (burn-in padding may apply; see pipeline logs).
 
-In an applied real-world marketing analytics use case, DeepCausalMMM achieved the following results on anonymized data containing 190 geographic regions (DMAs), 109 weeks of observations, 13 marketing channels, and 7 control variables. The model uses a temporal train-holdout split with 101 training weeks (92.7%) and the most recent 8 weeks (7.3%) reserved for out-of-sample validation:
+**Table 1** comes from `examples/mmm_three_way_benchmark.ipynb`: same CSV and split, **sklearn** R²/RMSE (original scale, pooled), and execution time. **PyMC-Marketing** [@PyMCMarketing2024], **Meridian** [@Meridian2024], and **national weekly Ridge** on Robyn-style inputs [@Runge2024RobynPackaging] (not Meta’s full Robyn unless `robynpy` is enabled). Bayesian runs use modest MCMC budgets in the notebook.
 
-- **Training R²**: 0.950, **Holdout R²**: 0.842
-- **Train–holdout gap**: 10.8 percentage points (indicating reasonable generalization)
+| Method | Scope | Train R² | Holdout R² | Holdout RMSE | Execution time (s) |
+|--------|-------|----------|------------|--------------|---------------------|
+| National weekly Ridge (Robyn-style inputs) | National, weekly | 0.856 | −12.43 | 1.7 × 10⁷ | <1 |
+| DeepCausalMMM (dashboard training path) | Panel, geo×week | 0.949 | 0.843 | 5.3 × 10⁵ | 489 |
+| PyMC-Marketing MMM | Panel, geo×week | 0.994 | 0.903 | 4.8 × 10⁵ | 5995 |
+| Meridian | Panel, geo×week | 0.997 | −10.05 | 5.1 × 10⁶ | 479 |
 
-**Attribution Quality**:
-- Configurable attribution priors enable business-aligned allocations through regularization (e.g., media contribution target: 40%)
-- Dynamic loss scaling ensures regularization has meaningful impact during training
-
-These results illustrate practical viability rather than serving as a controlled benchmark comparison. They demonstrate the model's ability to capture complex marketing dynamics while maintaining reasonable out-of-sample predictive accuracy and realistic attribution through configurable prior-based regularization.
-
-**Key Technical Innovations**: (1) Linear scaling (y/y_mean) for dependent variable, (2) Configurable attribution priors with dynamic loss scaling to prevent unrealistic allocations, (3) Data-driven Hill parameter initialization from channel-specific SOV percentiles, (4) Seasonality based regularization.
+On this dataset, **Meridian** reaches the **highest train R²** in Table 1 but **very poor holdout** R² and RMSE—a **large train–holdout gap** under the notebook’s modest MCMC settings; that pattern signals weak out-of-sample fit **here**, not a universal statement about the library. **PyMC-Marketing** delivers the **strongest holdout** R²/RMSE among the panel rows, with the **longest** execution time. **DeepCausalMMM** is **much faster** than PyMC in this run while keeping **stable positive holdout** performance (~0.84 R²), so it occupies a different point on the **speed–accuracy** tradeoff for this panel; it does **not** beat PyMC on raw holdout in the table. The **national Ridge** row is not comparable to panel rows by R² alone. `examples/dashboard_rmse_optimized.py` gives **Training R² ≈ 0.95**, **Holdout R² ≈ 0.84**, ~**11** pp gap—aligned with Table 1.
 
 # Research Impact Statement
 
-DeepCausalMMM demonstrates reasonable empirical performance through deployment on 190 geographic regions over 109 weeks with 13 marketing channels, achieving holdout R² of 0.842 with a train–holdout gap of 10.8 percentage points. The package provides a reproducible benchmark workflow with included dataset and executable scripts.
-
-The software offers comprehensive documentation, extensive tests, stable APIs, and example codes. Available via PyPI (v1.0.19 release concurrent with this publication) with worked multi-region examples, it integrates GRU-based temporal modeling, DAG-based dependency learning, and Hill saturation in a single framework. By emphasizing interpretability and deployment, DeepCausalMMM is suited for marketing teams seeking transparent, and usable MMMs beyond linear models.
+DeepCausalMMM fills a **PyTorch-oriented** niche: installable **multi-region** MMM with **holdouts**, **Hill saturation**, and **upper-triangular** channel coupling, **alongside** mainstream Bayesian tools (PyMC-Marketing, Meridian). **Table 1** and the benchmark notebook provide a **shared reference** on one public panel (DeepCausalMMM ≈ **0.84** holdout R², ≈ **11** pp train–holdout gap). **Near-term significance**—with community evidence still **early**—comes from **PyPI**, **Zenodo** DOI (metadata), **Read the Docs**, and **CI** for Python **3.9–3.13**, which lower the barrier to **try, reproduce, and extend** the software; **citations and course adoption** remain limited, and **private industry results are not reported**. **Practitioners** on Python DL stacks and **researchers** needing a reproducible baseline benefit most.
 
 # Reproducibility
 
 DeepCausalMMM supports reproducible training and evaluation via deterministic random seeds, versioned configurations, and a unit/integration test suite.
 
-To enable third-party reproduction of the reported results, the repository includes (i) the anonymized benchmark dataset in `examples/data/MMM Data.csv` and (ii) a complete executable workflow (`examples/dashboard_rmse_optimized.py`) that trains the model using a temporal train/holdout split and regenerates the primary artifacts (performance metrics, learned DAG visualization, and response curve analysis).
+The repository ships `examples/data/MMM Data.csv`, `examples/dashboard_rmse_optimized.py` (metrics, DAG, response curves), and `examples/mmm_three_way_benchmark.ipynb` (**Table 1**; optional deps in the notebook).
 
-To reproduce the benchmark results reported in this paper:
+To reproduce the **DeepCausalMMM dashboard** metrics:
 
 ```bash
 git clone https://github.com/adityapt/deepcausalmmm.git
