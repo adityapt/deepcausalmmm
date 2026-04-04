@@ -276,10 +276,12 @@ deepcausalmmm/                      # Project root
 │   │   ├── test_config.py         # Configuration tests
 │   │   ├── test_model.py          # Model architecture tests
 │   │   ├── test_scaling.py        # Data scaling tests
-│   │   └── test_response_curves.py # Response curve fitting tests
+│   │   ├── test_response_curves.py # Response curve fitting tests
+│   │   └── test_inference.py      # InferenceManager.predict / forward contract
 │   └── integration/               # Integration tests
 │       ├── __init__.py
-│       └── test_end_to_end.py     # End-to-end integration tests
+│       ├── test_end_to_end.py     # End-to-end integration tests
+│       └── test_dashboard_rmse_optimized.py  # Dashboard script + real CSV data path
 │
 ├── docs/                           # Documentation
 │   ├── Makefile                   # Documentation build tasks
@@ -300,10 +302,14 @@ deepcausalmmm/                      # Project root
 │       │   ├── analysis.rst
 │       │   ├── response_curves.rst # Response curves API
 │       │   ├── optimization.rst    # Budget optimization API
+│       │   ├── cli.rst             # Command-line interface
+│       │   ├── visualization.rst   # core.visualization (VisualizationManager)
 │       │   ├── utils.rst
 │       │   └── exceptions.rst
 │       ├── examples/             # Example documentation
-│       │   └── index.rst
+│       │   ├── index.rst
+│       │   ├── retail_mmm.rst
+│       │   └── multi_region.rst
 │       └── tutorials/            # Tutorial documentation
 │           └── index.rst
 │
