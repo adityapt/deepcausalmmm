@@ -800,7 +800,7 @@ def create_beautiful_dashboard():
             # Use already processed holdout data - predict directly with model
             model.eval()
             with torch.no_grad():
-                y_holdout_pred_scaled, holdout_contributions, holdout_coefficients, holdout_outputs = model(
+                y_holdout_pred_scaled, _holdout_media_coeffs, _holdout_media_contrib, _holdout_outputs = model(
                     holdout_tensors['X_media'], holdout_tensors['X_control'], holdout_tensors['R']
                 )
             
@@ -870,7 +870,7 @@ def create_beautiful_dashboard():
                 # Use already processed holdout data - predict directly with model
                 model.eval()
                 with torch.no_grad():
-                    y_holdout_pred_scaled, holdout_contributions, holdout_coefficients, holdout_outputs = model(
+                    y_holdout_pred_scaled, _holdout_media_coeffs_fb, _holdout_media_contrib_fb, _holdout_outputs_fb = model(
                         holdout_tensors['X_media'], holdout_tensors['X_control'], holdout_tensors['R']
                     )
                 
