@@ -539,7 +539,7 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Roadmap
 
-### Version 1.0.20 (Q2 2026)
+### Version 1.0.22 (planned)
 - **NOTEARS DAG Learning**: Full implementation of the NOTEARS (DAGs with NO TEARS) continuous optimization method for discovering arbitrary DAG structures
 - **Enhanced Causal Discovery**: Move beyond upper triangular constraints to learn more flexible causal relationships between marketing channels
 

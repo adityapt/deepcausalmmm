@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use DeepCausalMMM in your research, please cite it using the metadata below."
-title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
-version: "1.0.19"
+title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"
+version: "1.0.20"
 doi: 10.5281/zenodo.16934842
 authors:
   - family-names: Puttaparthi Tirumala
@@ -10,7 +10,7 @@ authors:
     email: puttaparthy.aditya@gmail.com
     affiliation: Independent Researcher
 license: MIT
-date-released: 2025-10-22
+date-released: 2026-04-18
 type: software
 url: https://github.com/adityapt/deepcausalmmm
 repository-code: https://github.com/adityapt/deepcausalmmm
@@ -25,32 +25,35 @@ keywords:
   - response curves
   - saturation modeling
 abstract: |
-  DeepCausalMMM is a Python package for Marketing Mix Modeling (MMM) that combines 
-  deep learning with causal inference. It uses Gated Recurrent Units (GRUs) to 
-  automatically learn temporal patterns such as adstock and lag, while simultaneously 
-  discovering causal relationships between marketing channels through Directed Acyclic 
-  Graph (DAG) learning. The package implements Hill equation-based saturation curves 
-  to model diminishing returns and optimize budget allocation. Key features include 
-  data-driven design, multi-region modeling, robust statistical methods, 
-  comprehensive response curve analysis, and interactive visualizations.
+  DeepCausalMMM is a Python package for Marketing Mix Modeling (MMM) that
+  combines deep learning, causal inference, and marketing science. It uses
+  Gated Recurrent Units (GRUs) to learn temporal patterns such as adstock and
+  lag, while learning statistical dependencies between marketing channels
+  through a Directed Acyclic Graph (DAG) structure with upper triangular
+  constraints. It implements Hill equation saturation curves for diminishing
+  returns and budget optimization. Key features include data-driven
+  hyperparameters, linear mean scaling of the dependent variable, configurable
+  attribution priors with dynamic loss scaling, multi-region modeling with
+  shared and region-specific parameters, robust methods including Huber loss,
+  and response curve analysis.
 references:
   - type: article
-    title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
+    title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"
     authors:
       - family-names: Puttaparthi Tirumala
         given-names: Aditya
-    year: 2025
+    year: 2026
     journal: "Journal of Open Source Software"
     status: submitted
 preferred-citation:
   type: software
-  title: "DeepCausalMMM: Deep Learning and Causal Inference for Marketing Mix Modeling"
+  title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"
   authors:
     - family-names: Puttaparthi Tirumala
       given-names: Aditya
       orcid: https://orcid.org/0009-0008-9495-3932
-  version: "1.0.19"
+  version: "1.0.20"
   doi: 10.5281/zenodo.16934842
   url: https://github.com/adityapt/deepcausalmmm
-  year: 2025
-  month: 10
+  year: 2026
+  month: 4

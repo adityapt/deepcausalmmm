@@ -5,11 +5,12 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.20] - 2026-04-18
 
 ### Fixed
 - **`examples/dashboard_rmse_optimized.py`**: Region-wise missing-value fill uses `groupby(...).transform(lambda series: series.ffill().bfill())` instead of deprecated / removed grouped `fillna(method='ffill'|'bfill')`, compatible with pandas 2.2+ and 3.x (including environments where `SeriesGroupBy.fillna` is unavailable).
 - **`DeepCausalMMM.forward()` contract vs callers**: **`InferenceManager.predict()`**, **`UnifiedDataPipeline.predict_and_postprocess`**, and **`train_model`** paths now unpack **`(predictions, media_coeffs, media_contributions, outputs)`** and take **control contributions** from **`outputs['control_contributions']`**, matching the current model implementation (fixes wrong media/control tensors when `n_media ≠ n_control`, broken 3-value unpack, and **`return_contributions=False`** returning a tuple instead of predictions).
+- **`JOSS/paper.bib`**: Wrapped corporate author names in double braces (`{{...}}`) so BibTeX stops reordering them into initials-first form (`Meridian2024`, `PyMCMarketing2024`, `RobynGitHub`); also protected product names (`{Meridian}`, `{PyMC-Marketing}`, `{Robyn}`) in titles. Addresses JOSS review feedback on malformed citations.
 
 ### Added
 - **`tests/integration/test_dashboard_rmse_optimized.py`**: Regression test that loads `load_real_mmm_data()` on `examples/data/MMM Data.csv` so the dashboard data path stays covered in CI.
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **JOSS (`paper.md`)**: **Software Design → Implementation Details**: versioning bullet states **semantic versioning** and **documented breaking changes** (notably **v1.0.19** vs **v1.0.18 and earlier**), with pointers to README/CHANGELOG—replacing a blanket “backward compatibility guarantees” phrase that conflicted with published release notes; optional minor/patch milestone wording was removed for brevity.
 - **JOSS (`paper.md`)**: Comparative **Table 1** on `examples/data/MMM Data.csv` (same split as `pymc_aligned_dcm_config.json`) versus PyMC-Marketing, Meridian, and a national weekly Ridge baseline (Robyn-style inputs; not Meta’s full Robyn unless `robynpy` is used); corrected train/holdout week description (~96 / ~13 observed weeks at 12% holdout); **Research Impact Statement** reframed (niche, reproducible comparison, near-term significance, honest limits on early uptake); **Reproducibility** references `examples/mmm_three_way_benchmark.ipynb` for Table 1.
 - **README.md**: **Development history** note—substantial design/prototyping predates the public GitHub history; bursty commits reflect integration, docs, tests, and packaging.
+- **`CITATION.cff`**: Title aligned with the JOSS `paper.md` title (*"DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"*); version bumped to `1.0.20`; `date-released` updated.
 
 ## [1.0.19] - 2026-01-25
 
