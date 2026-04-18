@@ -5,6 +5,8 @@
 [![Documentation](https://readthedocs.org/projects/deepcausalmmm/badge/?version=latest)](https://deepcausalmmm.readthedocs.io/en/latest/?badge=latest)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/adityapt/deepcausalmmm/blob/main/examples/quickstart.ipynb)
 [![PyPI version](https://badge.fury.io/py/deepcausalmmm.svg)](https://badge.fury.io/py/deepcausalmmm)
+[![Downloads](https://static.pepy.tech/badge/deepcausalmmm)](https://pepy.tech/project/deepcausalmmm)
+[![Downloads/month](https://static.pepy.tech/badge/deepcausalmmm/month)](https://pepy.tech/project/deepcausalmmm)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16934842.svg)](https://doi.org/10.5281/zenodo.16934842)
 [![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
 [![Deep Learning](https://img.shields.io/badge/Deep-Learning-blue)](https://pytorch.org)
