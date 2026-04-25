@@ -155,10 +155,10 @@ Table 1 comes from `examples/mmm_three_way_benchmark.ipynb`: same CSV and split,
 
 | Method | Scope | Train R² | Holdout R² | Holdout RMSE | Time (s) |
 |---|---|---|---|---|---|
-| Ridge (Robyn-style) | National | 0.856 | −12.43 | 1.7 × 10⁷ | <1 |
-| DeepCausalMMM | Panel | 0.949 | 0.843 | 5.3 × 10⁵ | 489 |
-| PyMC-Marketing | Panel | 0.994 | 0.903 | 4.8 × 10⁵ | 5995 |
-| Meridian | Panel | 0.997 | −10.05 | 5.1 × 10⁶ | 479 |
+| Ridge (Robyn-style) | National | 0.856 | $-12.43$ | $1.7 \times 10^{7}$ | <1 |
+| DeepCausalMMM | Panel | 0.949 | 0.843 | $5.3 \times 10^{5}$ | 489 |
+| PyMC-Marketing | Panel | 0.994 | 0.903 | $4.8 \times 10^{5}$ | 5995 |
+| Meridian | Panel | 0.997 | $-10.05$ | $5.1 \times 10^{6}$ | 479 |
 
 Table: Three-way benchmark on `examples/data/MMM Data.csv` (190 DMAs × 109 weeks). National = single national weekly series; Panel = geo × week. Ridge row uses Robyn-style inputs (not Meta's full Robyn unless `robynpy` is enabled). Bayesian runs use modest MCMC budgets.
 
