@@ -9,7 +9,8 @@ tags:
   - saturation response curves
   - PyTorch
 authors:
-  - name: "Aditya Puttaparthi Tirumala"
+  - given-names: Aditya
+    surname: Puttaparthi Tirumala
     orcid: "0009-0008-9495-3932"
     affiliation: "1"
 affiliations:
