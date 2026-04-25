@@ -153,14 +153,14 @@ Results use `examples/data/MMM Data.csv` (190 DMAs × 109 weeks, 13 channels, 7 
 
 Table 1 comes from `examples/mmm_three_way_benchmark.ipynb`: same CSV and split, sklearn R²/RMSE (original scale, pooled), and execution time. PyMC-Marketing [@PyMCMarketing2024], Meridian [@Meridian2024], and national weekly Ridge on Robyn-style inputs [@Runge2024RobynPackaging] (not Meta’s full Robyn unless `robynpy` is enabled). Bayesian runs use modest MCMC budgets in the notebook.
 
-| Method | Scope | Train R² | Holdout R² | Holdout RMSE | Time (s) |
+| Method | Scope | Train R² | Holdout R² | Holdout RMSE (M) | Time (s) |
 |---|---|---|---|---|---|
-| Ridge (Robyn-style) | National | 0.856 | $-12.43$ | $1.7 \times 10^{7}$ | <1 |
-| DeepCausalMMM | Panel | 0.949 | 0.843 | $5.3 \times 10^{5}$ | 489 |
-| PyMC-Marketing | Panel | 0.994 | 0.903 | $4.8 \times 10^{5}$ | 5995 |
-| Meridian | Panel | 0.997 | $-10.05$ | $5.1 \times 10^{6}$ | 479 |
+| Ridge (Robyn-style) | National | 0.856 | −12.43 | 17 | <1 |
+| DeepCausalMMM | Panel | 0.949 | 0.843 | 0.53 | 489 |
+| PyMC-Marketing | Panel | 0.994 | 0.903 | 0.48 | 5995 |
+| Meridian | Panel | 0.997 | −10.05 | 5.1 | 479 |
 
-Table: Three-way benchmark on `examples/data/MMM Data.csv` (190 DMAs × 109 weeks). National = single national weekly series; Panel = geo × week. Ridge row uses Robyn-style inputs (not Meta's full Robyn unless `robynpy` is enabled). Bayesian runs use modest MCMC budgets.
+Table: Three-way benchmark on `examples/data/MMM Data.csv` (190 DMAs × 109 weeks). National = single national weekly series; Panel = geo × week. Holdout RMSE is reported in millions (M) of the dependent-variable units. Ridge row uses Robyn-style inputs (not Meta's full Robyn unless `robynpy` is enabled). Bayesian runs use modest MCMC budgets.
 
 On this dataset, Meridian reaches the highest train R² in Table 1 but very poor holdout R² and RMSE, a large train–holdout gap under the notebook’s modest MCMC settings; that pattern signals weak out-of-sample fit here, not a universal statement about the library. PyMC-Marketing delivers the strongest holdout R²/RMSE among the panel rows, with the longest execution time. DeepCausalMMM is much faster than PyMC in this run while keeping stable positive holdout performance (~0.84 R²), so it occupies a different point on the speed–accuracy tradeoff for this panel; it does not beat PyMC on raw holdout in the table. The national Ridge row is not comparable to panel rows by R² alone. `examples/dashboard_rmse_optimized.py` gives Training R² ≈ 0.95, Holdout R² ≈ 0.84, ~11 pp gap, aligned with Table 1.
 
