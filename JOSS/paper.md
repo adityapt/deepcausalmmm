@@ -32,7 +32,7 @@ Key features: (1) data-driven hyperparameters learned from data with defaults, (
 
 Marketing organizations invest billions annually in advertising across channels (TV, digital, social, search), yet measuring ROI remains challenging due to: (1) temporal complexity with delayed and persistent effects [@Hanssens2005], (2) channel interdependencies [@Gong2024CausalMMM], (3) non-linear saturation with diminishing returns [@Li2024Survey], (4) regional heterogeneity, and (5) multicollinearity between channels.
 
-**DeepCausalMMM** addresses these challenges by combining GRU-based temporal modeling on adstocked data, DAG-based structure learning, Hill equation response curves, multi-region modeling, performance measured under temporal holdout evaluation, attribution through configurable prior regularization, and data-driven hyperparameter learning for generalizability.
+DeepCausalMMM addresses these challenges by combining GRU-based temporal modeling on adstocked data, DAG-based structure learning, Hill equation response curves, multi-region modeling, performance measured under temporal holdout evaluation, attribution through configurable prior regularization, and data-driven hyperparameter learning for generalizability.
 
 # State of the Field
 
@@ -46,7 +46,7 @@ Several open-source MMM frameworks exist, each with distinct approaches:
 
 **CausalMMM** [@Gong2024CausalMMM] introduces neural networks and graph learning to MMM, demonstrating the value of discovering channel interdependencies. However, it does not provide multi-region modeling or comprehensive response curve analysis.
 
-**DeepCausalMMM** advances the field by integrating: (1) GRU-based temporal modeling, (2) DAG-based structure learning using upper triangular constraints [@Zheng2018NOTEARS], (3) Hill equation response curves, (4) multi-region modeling, (5) robust statistical methods. DeepCausalMMM is complementary to Bayesian MMM frameworks, prioritizing scalability, and automated structure discovery.
+DeepCausalMMM advances the field by integrating: (1) GRU-based temporal modeling, (2) DAG-based structure learning using upper triangular constraints [@Zheng2018NOTEARS], (3) Hill equation response curves, (4) multi-region modeling, (5) robust statistical methods. DeepCausalMMM is complementary to Bayesian MMM frameworks, prioritizing scalability, and automated structure discovery.
 
 # Software Design
 
@@ -80,7 +80,7 @@ These design decisions enable interpretable, tractable real-world marketing appl
 - **Installation**: `pip install deepcausalmmm`
 - **Documentation**: [https://deepcausalmmm.readthedocs.io](https://deepcausalmmm.readthedocs.io)
 - **Tests**: Comprehensive unit and integration test suite in `tests/` directory
-- **Versioning**: The package follows [semantic versioning](https://semver.org/). **Breaking changes** are recorded in the changelog, **v1.0.19** introduced a revised linear scaling and attribution stack relative to **v1.0.18 and earlier** (see README and CHANGELOG for migration notes).
+- **Versioning**: The package follows [semantic versioning](https://semver.org/). Breaking changes are recorded in the changelog; v1.0.19 introduced a revised linear scaling and attribution stack relative to v1.0.18 and earlier (see README and CHANGELOG for migration notes).
 
 ## Visualizations
 
@@ -149,30 +149,32 @@ print(f"Holdout RMSE original scale: {results['final_holdout_rmse']:.0f}")
 
 # Performance
 
-Results use `examples/data/MMM Data.csv` (190 DMAs × 109 weeks, 13 channels, 7 controls; no PII) with `holdout_ratio = 0.12` in `examples/pymc_aligned_dcm_config.json`—about **96** train and **13** holdout weeks of observed time (burn-in padding may apply; see pipeline logs).
+Results use `examples/data/MMM Data.csv` (190 DMAs × 109 weeks, 13 channels, 7 controls; no PII) with `holdout_ratio = 0.12` in `examples/pymc_aligned_dcm_config.json`—about 96 train and 13 holdout weeks of observed time (burn-in padding may apply; see pipeline logs).
 
-**Table 1** comes from `examples/mmm_three_way_benchmark.ipynb`: same CSV and split, **sklearn** R²/RMSE (original scale, pooled), and execution time. **PyMC-Marketing** [@PyMCMarketing2024], **Meridian** [@Meridian2024], and **national weekly Ridge** on Robyn-style inputs [@Runge2024RobynPackaging] (not Meta’s full Robyn unless `robynpy` is enabled). Bayesian runs use modest MCMC budgets in the notebook.
+Table 1 comes from `examples/mmm_three_way_benchmark.ipynb`: same CSV and split, sklearn R²/RMSE (original scale, pooled), and execution time. PyMC-Marketing [@PyMCMarketing2024], Meridian [@Meridian2024], and national weekly Ridge on Robyn-style inputs [@Runge2024RobynPackaging] (not Meta’s full Robyn unless `robynpy` is enabled). Bayesian runs use modest MCMC budgets in the notebook.
 
-| Method | Scope | Train R² | Holdout R² | Holdout RMSE | Execution time (s) |
-|--------|-------|----------|------------|--------------|---------------------|
-| National weekly Ridge (Robyn-style inputs) | National, weekly | 0.856 | −12.43 | 1.7 × 10⁷ | <1 |
-| DeepCausalMMM (dashboard training path) | Panel, geo×week | 0.949 | 0.843 | 5.3 × 10⁵ | 489 |
-| PyMC-Marketing MMM | Panel, geo×week | 0.994 | 0.903 | 4.8 × 10⁵ | 5995 |
-| Meridian | Panel, geo×week | 0.997 | −10.05 | 5.1 × 10⁶ | 479 |
+| Method | Scope | Train R² | Holdout R² | Holdout RMSE | Time (s) |
+|---|---|---|---|---|---|
+| Ridge (Robyn-style) | National | 0.856 | −12.43 | 1.7 × 10⁷ | <1 |
+| DeepCausalMMM | Panel | 0.949 | 0.843 | 5.3 × 10⁵ | 489 |
+| PyMC-Marketing | Panel | 0.994 | 0.903 | 4.8 × 10⁵ | 5995 |
+| Meridian | Panel | 0.997 | −10.05 | 5.1 × 10⁶ | 479 |
 
-On this dataset, **Meridian** reaches the **highest train R²** in Table 1 but **very poor holdout** R² and RMSE—a **large train–holdout gap** under the notebook’s modest MCMC settings; that pattern signals weak out-of-sample fit **here**, not a universal statement about the library. **PyMC-Marketing** delivers the **strongest holdout** R²/RMSE among the panel rows, with the **longest** execution time. **DeepCausalMMM** is **much faster** than PyMC in this run while keeping **stable positive holdout** performance (~0.84 R²), so it occupies a different point on the **speed–accuracy** tradeoff for this panel; it does **not** beat PyMC on raw holdout in the table. The **national Ridge** row is not comparable to panel rows by R² alone. `examples/dashboard_rmse_optimized.py` gives **Training R² ≈ 0.95**, **Holdout R² ≈ 0.84**, ~**11** pp gap—aligned with Table 1.
+Table: Three-way benchmark on `examples/data/MMM Data.csv` (190 DMAs × 109 weeks). National = single national weekly series; Panel = geo × week. Ridge row uses Robyn-style inputs (not Meta's full Robyn unless `robynpy` is enabled). Bayesian runs use modest MCMC budgets.
+
+On this dataset, Meridian reaches the highest train R² in Table 1 but very poor holdout R² and RMSE—a large train–holdout gap under the notebook’s modest MCMC settings; that pattern signals weak out-of-sample fit here, not a universal statement about the library. PyMC-Marketing delivers the strongest holdout R²/RMSE among the panel rows, with the longest execution time. DeepCausalMMM is much faster than PyMC in this run while keeping stable positive holdout performance (~0.84 R²), so it occupies a different point on the speed–accuracy tradeoff for this panel; it does not beat PyMC on raw holdout in the table. The national Ridge row is not comparable to panel rows by R² alone. `examples/dashboard_rmse_optimized.py` gives Training R² ≈ 0.95, Holdout R² ≈ 0.84, ~11 pp gap—aligned with Table 1.
 
 # Research Impact Statement
 
-DeepCausalMMM fills a **PyTorch-oriented** niche: installable **multi-region** MMM with **holdouts**, **Hill saturation**, and **upper-triangular** channel coupling, **alongside** mainstream Bayesian tools (PyMC-Marketing, Meridian). **Table 1** and the benchmark notebook provide a **shared reference** on one public panel (DeepCausalMMM ≈ **0.84** holdout R², ≈ **11** pp train–holdout gap). **Near-term significance**—with community evidence still **early**—comes from **PyPI**, **Zenodo** DOI (metadata), **Read the Docs**, and **CI** for Python **3.9–3.13**, which lower the barrier to **try, reproduce, and extend** the software; **citations and course adoption** remain limited, and **private industry results are not reported**. **Practitioners** on Python DL stacks and **researchers** needing a reproducible baseline benefit most.
+DeepCausalMMM fills a PyTorch-oriented niche: installable multi-region MMM with holdouts, Hill saturation, and upper-triangular channel coupling, alongside mainstream Bayesian tools (PyMC-Marketing, Meridian). Table 1 and the benchmark notebook provide a shared reference on one public panel (DeepCausalMMM ≈ 0.84 holdout R², ≈ 11 pp train–holdout gap). Near-term significance—with community evidence still early—comes from PyPI, Zenodo DOI (metadata), Read the Docs, and CI for Python 3.9–3.13, which lower the barrier to try, reproduce, and extend the software; citations and course adoption remain limited, and private industry results are not reported. Practitioners on Python DL stacks and researchers needing a reproducible baseline benefit most.
 
 # Reproducibility
 
 DeepCausalMMM supports reproducible training and evaluation via deterministic random seeds, versioned configurations, and a unit/integration test suite.
 
-The repository ships `examples/data/MMM Data.csv`, `examples/dashboard_rmse_optimized.py` (metrics, DAG, response curves), and `examples/mmm_three_way_benchmark.ipynb` (**Table 1**; optional deps in the notebook).
+The repository ships `examples/data/MMM Data.csv`, `examples/dashboard_rmse_optimized.py` (metrics, DAG, response curves), and `examples/mmm_three_way_benchmark.ipynb` (Table 1; optional deps in the notebook).
 
-To reproduce the **DeepCausalMMM dashboard** metrics:
+To reproduce the DeepCausalMMM dashboard metrics:
 
 ```bash
 git clone https://github.com/adityapt/deepcausalmmm.git
