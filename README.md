@@ -550,11 +550,20 @@ MIT License - see [LICENSE](LICENSE) file.
 If you use DeepCausalMMM in your work, please cite:
 
 ```bibtex
-@article{tirumala2025deepcausalmmm,
-  title={DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Inference},
-  author={Puttaparthi Tirumala, Aditya},
-  journal={arXiv preprint arXiv:2510.13087},
-  year={2025}
+@article{puttaparthitirumala2026deepcausalmmm,
+  title        = {DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning},
+  author       = {Puttaparthi Tirumala, Aditya},
+  journal      = {Journal of Open Source Software},
+  publisher    = {The Open Journal},
+  volume       = {11},
+  number       = {120},
+  pages        = {9914},
+  year         = {2026},
+  doi          = {10.21105/joss.09914},
+  url          = {https://doi.org/10.21105/joss.09914},
+  eprint       = {2510.13087},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG}
 }
 ```
 
@@ -572,4 +581,5 @@ Or click the **"Cite this repository"** button on GitHub for other citation form
 
 **DeepCausalMMM** - Where Deep Learning meets Causal Inference for Superior Marketing Mix Modeling
 
-**arXiv preprint** - https://www.arxiv.org/abs/2510.13087
+**arXiv** - https://www.arxiv.org/abs/2510.13087
+**JOSS Publication** - https://joss.theoj.org/papers/10.21105/joss.09914
