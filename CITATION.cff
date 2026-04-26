@@ -1,8 +1,8 @@
 cff-version: 1.2.0
-message: "If you use DeepCausalMMM in your research, please cite it using the metadata below."
+message: "If you use DeepCausalMMM in your research, please cite the JOSS paper below."
 title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"
 version: "1.0.20"
-doi: 10.5281/zenodo.16934842
+doi: 10.21105/joss.09914
 authors:
   - family-names: Puttaparthi Tirumala
     given-names: Aditya
@@ -14,6 +14,13 @@ date-released: 2026-04-18
 type: software
 url: https://github.com/adityapt/deepcausalmmm
 repository-code: https://github.com/adityapt/deepcausalmmm
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.16934842
+    description: "Zenodo archive of the software release (v1.0.20)"
+  - type: other
+    value: "arXiv:2510.13087"
+    description: "arXiv preprint of the JOSS paper"
 keywords:
   - marketing mix modeling
   - causal inference
@@ -36,24 +43,21 @@ abstract: |
   attribution priors with dynamic loss scaling, multi-region modeling with
   shared and region-specific parameters, robust methods including Huber loss,
   and response curve analysis.
-references:
-  - type: article
-    title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"
-    authors:
-      - family-names: Puttaparthi Tirumala
-        given-names: Aditya
-    year: 2026
-    journal: "Journal of Open Source Software"
-    status: submitted
 preferred-citation:
-  type: software
+  type: article
   title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"
   authors:
     - family-names: Puttaparthi Tirumala
       given-names: Aditya
       orcid: https://orcid.org/0009-0008-9495-3932
-  version: "1.0.20"
-  doi: 10.5281/zenodo.16934842
-  url: https://github.com/adityapt/deepcausalmmm
+      affiliation: Independent Researcher
+  journal: "Journal of Open Source Software"
+  publisher:
+    name: "The Open Journal"
+  volume: 11
+  issue: 120
+  start: 9914
   year: 2026
   month: 4
+  doi: 10.21105/joss.09914
+  url: https://doi.org/10.21105/joss.09914
