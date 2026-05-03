@@ -18,6 +18,8 @@ between channels through Directed Acyclic Graphs (DAGs).
 
 .. code-block:: bash
 
+   pip install deepcausalmmm
+   # or latest from GitHub:
    pip install git+https://github.com/adityapt/deepcausalmmm.git
 
 .. raw:: html

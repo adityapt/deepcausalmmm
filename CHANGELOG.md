@@ -5,7 +5,7 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.20] - 2026-04-18
 
 ### Fixed
 - **`examples/dashboard_rmse_optimized.py`**: Region-wise missing-value fill uses `groupby(...).transform(lambda series: series.ffill().bfill())` instead of deprecated / removed grouped `fillna(method='ffill'|'bfill')`, compatible with pandas 2.2+ and 3.x (including environments where `SeriesGroupBy.fillna` is unavailable).
@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`examples/example_response_curves.py`**: Forward unpack matches **`(predictions, media_coeffs, media_contributions, outputs)`** with **control** from **`outputs['control_contributions']`**; seasonal slice uses **`outputs['seasonal_contribution']`** (singular key).
 - **`examples/dashboard_rmse_optimized.py`**: Holdout **`model(...)`** unpack uses accurate names / discards for unused middle returns (behavior unchanged; clarity only).
 - **`ModelTrainer` final metrics**: Train/holdout reporting trims **`burn_in_weeks`** (aligned with config / pipeline padding) in **scaled** space before **`inverse_transform_target`** and RMSE/R², so scores exclude padded stabilization weeks; holdout scaled-space metrics use the same trim. **`examples/dashboard_rmse_optimized.py`**: holdout scatter matches that evaluation; printed holdout MAE uses **`holdout_mae_orig`**.
+- **`JOSS/paper.bib`**: Wrapped corporate author names in double braces (`{{...}}`) so BibTeX stops reordering them into initials-first form (`Meridian2024`, `PyMCMarketing2024`, `RobynGitHub`); also protected product names (`{Meridian}`, `{PyMC-Marketing}`, `{Robyn}`) in titles. Addresses JOSS review feedback on malformed citations.
 
 ### Added
 - **`tests/integration/test_dashboard_rmse_optimized.py`**: Regression test that loads `load_real_mmm_data()` on `examples/data/MMM Data.csv` so the dashboard data path stays covered in CI.
@@ -22,8 +23,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - **`deepcausalmmm.core.unified_model.DeepCausalMMM.forward`**: Docstring and examples updated to match the actual return tuple **`(predictions, media_coefficients, media_contributions, outputs)`** and real **`outputs`** keys (`contributions`, `control_contributions`, `seasonal_contribution`, etc.).
+- **`installation.rst`** / **`index.rst`**: Aligned install guidance with **`pyproject.toml`** and README (Python **3.9+**, full runtime dependency list including **scipy**, **networkx**, **tqdm**, note that **numpy** is capped below **2.0** in metadata); **PyPI** first, then GitHub; removed nonexistent **`[dev]`** / **`[visualization]`** / **`[docs]`** extras; documented real **`[test]`** extra and doc build requirements file.
+- **`contributing.rst`**: Replaced **`pip install -e .[dev]`** with **`pip install -e .`** and **`pip install -e .[test]`** to match optional dependencies.
+- **`README.md`** / **`CONTRIBUTING.md`**: Development requirements aligned with **`pyproject.toml`**; **“Dependencies only”** pip snippet uses the same **version specifiers** as **`[project] dependencies`**; **`CONTRIBUTING.md`** no longer references nonexistent **`[dev]`** extra; **Benchmarks** temporal split matches default **12%** holdout (~96 / ~13 weeks on 109 observed weeks).
+- **Sphinx**: Added missing **`docs/source/api/cli.rst`** and **`visualization.rst`** (``deepcausalmmm.cli``, ``deepcausalmmm.core.visualization``); added **`docs/source/examples/retail_mmm.rst`** and **`multi_region.rst`** so API and Examples toctrees resolve; **`docs/requirements.txt`** includes **scipy** for autodoc imports used by optimization/response-curve modules.
+- **JOSS (`paper.md`)**: **Software Design → Implementation Details**: versioning bullet states **semantic versioning** and **documented breaking changes** (notably **v1.0.19** vs **v1.0.18 and earlier**), with pointers to README/CHANGELOG—replacing a blanket “backward compatibility guarantees” phrase that conflicted with published release notes; optional minor/patch milestone wording was removed for brevity.
 - **JOSS (`paper.md`)**: Comparative **Table 1** on `examples/data/MMM Data.csv` (same split as `pymc_aligned_dcm_config.json`) versus PyMC-Marketing, Meridian, and a national weekly Ridge baseline (Robyn-style inputs; not Meta’s full Robyn unless `robynpy` is used); corrected train/holdout week description (~96 / ~13 observed weeks at 12% holdout); **Research Impact Statement** reframed (niche, reproducible comparison, near-term significance, honest limits on early uptake); **Reproducibility** references `examples/mmm_three_way_benchmark.ipynb` for Table 1.
 - **README.md**: **Development history** note—substantial design/prototyping predates the public GitHub history; bursty commits reflect integration, docs, tests, and packaging.
+- **`CITATION.cff`**: Title aligned with the JOSS `paper.md` title (*"DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"*); version bumped to `1.0.20`; `date-released` updated.
 
 ## [1.0.19] - 2026-01-25
 

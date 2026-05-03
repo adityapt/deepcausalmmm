@@ -4,7 +4,9 @@
 
 [![Documentation](https://readthedocs.org/projects/deepcausalmmm/badge/?version=latest)](https://deepcausalmmm.readthedocs.io/en/latest/?badge=latest)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/adityapt/deepcausalmmm/blob/main/examples/quickstart.ipynb)
-[![PyPI version](https://badge.fury.io/py/deepcausalmmm.svg)](https://badge.fury.io/py/deepcausalmmm)
+[![PyPI version](https://img.shields.io/pypi/v/deepcausalmmm.svg)](https://pypi.org/project/deepcausalmmm/)
+[![Downloads](https://static.pepy.tech/badge/deepcausalmmm)](https://pepy.tech/project/deepcausalmmm)
+[![Downloads/month](https://static.pepy.tech/badge/deepcausalmmm/month)](https://pepy.tech/project/deepcausalmmm)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16934842.svg)](https://doi.org/10.5281/zenodo.16934842)
 [![MMM](https://img.shields.io/badge/Marketing%20Mix-Modeling-brightgreen)](https://en.wikipedia.org/wiki/Marketing_mix_modeling)
 [![Deep Learning](https://img.shields.io/badge/Deep-Learning-blue)](https://pytorch.org)
@@ -64,8 +66,19 @@ pip install -e .
 ```
 
 #### Dependencies Only
+Same lower/upper bounds as `pyproject.toml` `[project] dependencies` (install libraries without the `deepcausalmmm` package):
+
 ```bash
-pip install torch pandas numpy plotly networkx statsmodels scikit-learn tqdm
+pip install \
+  "torch>=2.0" \
+  "pandas>=1.5" \
+  "numpy>=1.21,<2.0" \
+  "plotly>=5.0" \
+  "networkx>=2.6" \
+  "scikit-learn>=1.0" \
+  "scipy>=1.7" \
+  "statsmodels>=0.13" \
+  "tqdm>=4.60"
 ```
 
 ---
@@ -265,10 +278,12 @@ deepcausalmmm/                      # Project root
 │   │   ├── test_config.py         # Configuration tests
 │   │   ├── test_model.py          # Model architecture tests
 │   │   ├── test_scaling.py        # Data scaling tests
-│   │   └── test_response_curves.py # Response curve fitting tests
+│   │   ├── test_response_curves.py # Response curve fitting tests
+│   │   └── test_inference.py      # InferenceManager.predict / forward contract
 │   └── integration/               # Integration tests
 │       ├── __init__.py
-│       └── test_end_to_end.py     # End-to-end integration tests
+│       ├── test_end_to_end.py     # End-to-end integration tests
+│       └── test_dashboard_rmse_optimized.py  # Dashboard script + real CSV data path
 │
 ├── docs/                           # Documentation
 │   ├── Makefile                   # Documentation build tasks
@@ -289,10 +304,14 @@ deepcausalmmm/                      # Project root
 │       │   ├── analysis.rst
 │       │   ├── response_curves.rst # Response curves API
 │       │   ├── optimization.rst    # Budget optimization API
+│       │   ├── cli.rst             # Command-line interface
+│       │   ├── visualization.rst   # core.visualization (VisualizationManager)
 │       │   ├── utils.rst
 │       │   └── exceptions.rst
 │       ├── examples/             # Example documentation
-│       │   └── index.rst
+│       │   ├── index.rst
+│       │   ├── retail_mmm.rst
+│       │   └── multi_region.rst
 │       └── tutorials/            # Tutorial documentation
 │           └── index.rst
 │
@@ -479,18 +498,21 @@ See `examples/example_budget_optimization.py` for complete workflow and tips.
 - **Training R²**: 0.950 | **Holdout R²**: 0.842
 - **Performance Gap**: 10.8% (indicating good generalization)
 - **Generalization Gap**: 10.8% (reasonable out-of-sample performance)
-- **Temporal Split**: 92.7% training (101 weeks) / 7.3% holdout (8 weeks)
+- **Temporal Split**: Default **`holdout_ratio = 0.12`** in config—about **96** training weeks and **13** holdout weeks on **109** observed weeks (burn-in padding in the pipeline may change logged lengths slightly)
 
 ## Development
 
 ### Requirements
-- Python 3.8+
-- PyTorch 1.13+
+- Python 3.9+
+- PyTorch 2.0+
 - pandas 1.5+
-- numpy 1.21+
-- plotly 5.11+
+- numpy 1.21+ (package metadata caps below 2.0)
+- scipy 1.7+
+- plotly 5.0+
+- NetworkX 2.6+
 - statsmodels 0.13+
-- scikit-learn 1.1+
+- scikit-learn 1.0+
+- tqdm 4.60+
 
 ### Testing
 ```bash
@@ -519,7 +541,7 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Roadmap
 
-### Version 1.0.20 (Q2 2026)
+### Version 1.0.22 (planned)
 - **NOTEARS DAG Learning**: Full implementation of the NOTEARS (DAGs with NO TEARS) continuous optimization method for discovering arbitrary DAG structures
 - **Enhanced Causal Discovery**: Move beyond upper triangular constraints to learn more flexible causal relationships between marketing channels
 
@@ -528,11 +550,21 @@ MIT License - see [LICENSE](LICENSE) file.
 If you use DeepCausalMMM in your work, please cite:
 
 ```bibtex
-@article{tirumala2025deepcausalmmm,
-  title={DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Inference},
-  author={Puttaparthi Tirumala, Aditya},
-  journal={arXiv preprint arXiv:2510.13087},
-  year={2025}
+@article{puttaparthitirumala2026deepcausalmmm,
+  title         = {{DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning}},
+  author        = {Puttaparthi Tirumala, Aditya},
+  journal       = {Journal of Open Source Software},
+  publisher     = {The Open Journal},
+  volume        = {11},
+  number        = {120},
+  pages         = {9914},
+  month         = apr,
+  year          = {2026},
+  doi           = {10.21105/joss.09914},
+  url           = {https://doi.org/10.21105/joss.09914},
+  eprint        = {2510.13087},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
 }
 ```
 
@@ -550,4 +582,5 @@ Or click the **"Cite this repository"** button on GitHub for other citation form
 
 **DeepCausalMMM** - Where Deep Learning meets Causal Inference for Superior Marketing Mix Modeling
 
-**arXiv preprint** - https://www.arxiv.org/abs/2510.13087
+**arXiv** - https://www.arxiv.org/abs/2510.13087
+**JOSS Publication** - https://joss.theoj.org/papers/10.21105/joss.09914

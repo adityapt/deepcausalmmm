@@ -4,38 +4,47 @@ Installation
 Requirements
 ------------
 
-* Python 3.8+
-* PyTorch 2.0+
-* pandas 1.5+
-* numpy 1.21+
-* plotly 5.11+
-* statsmodels 0.13+
-* scikit-learn 1.1+
+These match ``pyproject.toml`` (``requires-python`` and runtime dependencies):
+
+* Python **3.9+**
+* PyTorch **2.0+**
+* pandas **1.5+**
+* numpy **1.21+** (currently pinned as **< 2.0** in the package metadata)
+* scipy **1.7+**
+* plotly **5.0+**
+* NetworkX **2.6+**
+* scikit-learn **1.0+**
+* statsmodels **0.13+**
+* tqdm **4.60+**
+
+Install from PyPI
+-----------------
+
+.. code-block:: bash
+
+    pip install deepcausalmmm
 
 Install from GitHub
 -------------------
 
-The recommended way to install DeepCausalMMM is directly from GitHub:
+For the latest commit on the default branch:
 
 .. code-block:: bash
 
     pip install git+https://github.com/adityapt/deepcausalmmm.git
 
-Install with Optional Dependencies
-----------------------------------
+Optional dependencies
+---------------------
 
-For development and visualization features:
+The package declares a **test** extra (pytest tooling) for contributors:
 
 .. code-block:: bash
 
-    # With visualization support
-    pip install git+https://github.com/adityapt/deepcausalmmm.git[visualization]
+    pip install deepcausalmmm[test]
+    # or, from a clone:
+    pip install -e .[test]
 
-    # With development tools
-    pip install git+https://github.com/adityapt/deepcausalmmm.git[dev]
-
-    # Install everything
-    pip install git+https://github.com/adityapt/deepcausalmmm.git[dev,visualization,docs]
+Documentation builds use ``docs/requirements.txt`` (Sphinx, theme, and doc import dependencies).
 
 Development Installation
 ------------------------
@@ -50,9 +59,9 @@ For contributors and developers:
     
     # Install in development mode
     pip install -e .
-    
-    # Or with development dependencies
-    pip install -e .[dev]
+
+    # With test dependencies (pytest, coverage)
+    pip install -e .[test]
 
 Verify Installation
 -------------------
