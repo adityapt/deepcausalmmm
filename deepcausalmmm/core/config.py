@@ -99,6 +99,19 @@ def get_default_config() -> Dict[str, Any]:
         # DAG learning parameters
         'min_temperature': 0.4,
         'max_grad_norm': 2.0,  # INCREASED for more aggressive learning
+
+        # NOTEARS DAG learning (Zheng et al., 2018, https://arxiv.org/abs/1803.01422).
+        # Default 'triangular' preserves prior behaviour (acyclicity by mask).
+        # Set 'notears' to learn the channel ordering from data via the smooth
+        # acyclicity penalty h(W) = tr(exp(W ⊙ W)) − d optimised under the
+        # augmented Lagrangian.
+        'dag_mode': 'triangular',          # 'triangular' (default) | 'notears'
+        'notears_lambda1': 0.01,           # L1 sparsity on full W (NOTEARS only)
+        'notears_rho_init': 1.0,           # Initial penalty parameter
+        'notears_alpha_init': 0.0,         # Initial dual variable
+        'notears_rho_max': 1e16,           # Numerical safety cap on rho
+        'notears_dual_update_every': 100,  # Outer-loop cadence (epochs)
+        'notears_threshold': 0.3,          # Final-pass pruning threshold
         
         # Optimizer settings
         'optimizer': {

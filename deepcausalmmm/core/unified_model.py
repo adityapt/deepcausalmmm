@@ -138,7 +138,13 @@ class DeepCausalMMM(nn.Module):
         coeff_gen_l2_weight: float = 0.05,
         # NEW: Config-driven parameters (no hardcoding!)
         gru_layers: int = 1,
-        ctrl_hidden_ratio: float = 0.5  # Control hidden size as ratio of main hidden size
+        ctrl_hidden_ratio: float = 0.5,  # Control hidden size as ratio of main hidden size
+        # NOTEARS DAG learning (Zheng et al., 2018). Default keeps prior behaviour.
+        dag_mode: str = "triangular",          # "triangular" | "notears"
+        notears_lambda1: float = 0.01,         # L1 sparsity weight on full W in NOTEARS mode
+        notears_rho_init: float = 1.0,         # Initial penalty parameter rho
+        notears_alpha_init: float = 0.0,       # Initial dual variable alpha
+        notears_rho_max: float = 1e16,         # Cap on rho for numerical safety
     ):
         super().__init__()
         
@@ -184,13 +190,39 @@ class DeepCausalMMM(nn.Module):
         
         # CAUSAL DAG components - discover meaningful relationships
         if enable_dag and enable_interactions:
-            # Initialize with slight sparse bias - let causal relationships emerge
-            self.adj_logits = nn.Parameter(torch.randn(n_media, n_media) * 0.3 - 0.1)  # Light negative bias
-            # Upper triangular mask for acyclicity
-            mask = torch.triu(torch.ones(n_media, n_media), diagonal=1)
-            self.register_buffer('tri_mask', mask)
-            # Interaction weight
+            if dag_mode not in ("triangular", "notears"):
+                raise ValueError(
+                    f"dag_mode must be 'triangular' or 'notears', got {dag_mode!r}"
+                )
+            self.dag_mode = dag_mode
+
+            if dag_mode == "triangular":
+                # Existing behaviour: acyclicity guaranteed by construction via
+                # an upper-triangular mask. Requires a fixed channel ordering.
+                self.adj_logits = nn.Parameter(torch.randn(n_media, n_media) * 0.3 - 0.1)
+                mask = torch.triu(torch.ones(n_media, n_media), diagonal=1)
+                self.register_buffer('tri_mask', mask)
+            else:
+                # NOTEARS mode: acyclicity enforced via a smooth scalar penalty
+                # h(W) = tr(exp(W ⊙ W)) − d. The mask only zeros the diagonal
+                # so the model can learn arbitrary DAG topology from data.
+                # Initialise close to zero so h(W) ≈ 0 at the start of training
+                # (large initial W makes the matrix exponential explode).
+                self.adj_logits = nn.Parameter(torch.randn(n_media, n_media) * 0.05 - 3.0)
+                mask = torch.ones(n_media, n_media) - torch.eye(n_media)  # zero diagonal only
+                self.register_buffer('tri_mask', mask)
+                # Augmented Lagrangian state. Buffers (not parameters) so they
+                # are not touched by the optimiser; updated in notears_update_duals().
+                self.register_buffer('notears_rho', torch.tensor(notears_rho_init))
+                self.register_buffer('notears_alpha', torch.tensor(notears_alpha_init))
+                self.notears_lambda1 = notears_lambda1
+                self.notears_rho_max = notears_rho_max
+                self._notears_h_prev = float('inf')
+            # Interaction weight (used by both modes)
             self.interaction_weight = nn.Parameter(torch.ones(1) * 0.1)
+        else:
+            # Sensible default so attribute always exists
+            self.dag_mode = dag_mode
         
         # FIXED control processing - use config-driven dimensions (NO HARDCODING!)
         self.ctrl_hidden = int(hidden * ctrl_hidden_ratio)  # Config-driven control hidden size
@@ -975,29 +1007,94 @@ class DeepCausalMMM(nn.Module):
         
         return y, media_coeffs, media_contrib, outputs  # Return direct contributions
     
+    def h_acyclicity(self, W: torch.Tensor) -> torch.Tensor:
+        """NOTEARS acyclicity scalar: h(W) = tr(exp(W ⊙ W)) − d.
+
+        Equals zero iff W is the adjacency of a DAG; smooth and differentiable
+        elsewhere. See Zheng et al., 2018 (https://arxiv.org/abs/1803.01422).
+
+        Args:
+            W: Square adjacency matrix (n_media × n_media).
+        Returns:
+            Scalar tensor; minimised toward 0 during training.
+        """
+        M = W * W
+        return torch.trace(torch.matrix_exp(M)) - W.shape[0]
+
     def get_dag_loss(self) -> torch.Tensor:
-        """Light DAG regularization - allows meaningful causal relationships while preventing over-connectivity."""
+        """DAG regularisation. Mode-aware: triangular uses sparsity/confidence
+        penalties only (acyclicity is structural); NOTEARS additionally adds the
+        augmented-Lagrangian acyclicity term 0.5·rho·h(W)² + alpha·h(W) and an
+        L1 penalty on the full adjacency."""
         if not (self.enable_dag and self.enable_interactions):
             return torch.tensor(0.0, device=self.global_bias.device)
-        
+
         adj_probs = torch.sigmoid(self.adj_logits)
         adj = adj_probs * self.tri_mask
-        
-        # 1. Light sparsity penalty - allow causal relationships to emerge
+
+        # Shared terms across modes
         sparsity_loss = torch.sum(adj)
-        
-        # 2. Very light confidence penalty - don't suppress learning
         confidence_loss = torch.sum(adj_probs * (1 - adj_probs))
-        
-        # 3. Minimal L1 penalty
         l1_penalty = torch.sum(torch.abs(self.adj_logits))
-        
-        # Light DAG loss - prioritize discovering causal relationships
+
         total_dag_loss = (0.01 * sparsity_loss +      # Light sparsity (allow relationships)
                          0.001 * confidence_loss +     # Very light confidence
                          0.0002 * l1_penalty)          # Minimal L1
-        
+
+        if getattr(self, 'dag_mode', 'triangular') == 'notears':
+            # h(W) is computed on the masked adjacency so the diagonal is zero
+            # by construction; lambda1 scales the explicit L1 on the same matrix.
+            h = self.h_acyclicity(adj)
+            notears_term = (0.5 * self.notears_rho * h.pow(2)
+                            + self.notears_alpha * h
+                            + self.notears_lambda1 * sparsity_loss)
+            total_dag_loss = total_dag_loss + notears_term
+
         return total_dag_loss
+
+    @torch.no_grad()
+    def notears_update_duals(self, factor: float = 10.0,
+                              progress: float = 0.25) -> Dict[str, float]:
+        """Augmented-Lagrangian dual update (NOTEARS outer loop).
+
+        Call once every K epochs from the trainer. Returns diagnostic dict
+        ({"h", "rho", "alpha"}) for logging; returns empty dict in triangular mode.
+
+        Args:
+            factor:   Multiplicative growth applied to rho when h(W) stalls.
+            progress: Required relative shrinkage of h between outer iterations.
+                      If h_new > progress * h_prev, rho is grown by `factor`.
+        """
+        if (not (self.enable_dag and self.enable_interactions)
+                or getattr(self, 'dag_mode', 'triangular') != 'notears'):
+            return {}
+
+        adj = torch.sigmoid(self.adj_logits) * self.tri_mask
+        h = self.h_acyclicity(adj).item()
+        if h > progress * self._notears_h_prev:
+            self.notears_rho.mul_(factor).clamp_(max=self.notears_rho_max)
+        # Standard augmented-Lagrangian dual ascent on the equality constraint h = 0
+        self.notears_alpha.add_(self.notears_rho * h)
+        self._notears_h_prev = h
+        return {
+            "h": float(h),
+            "rho": float(self.notears_rho.item()),
+            "alpha": float(self.notears_alpha.item()),
+        }
+
+    @torch.no_grad()
+    def threshold_dag(self, eps: float = 0.3) -> torch.Tensor:
+        """Post-training pruning: zero out adjacency entries with |w| < eps.
+
+        Returns the thresholded adjacency tensor. For NOTEARS mode this is the
+        recommended way to obtain a clean discrete DAG from the continuous W.
+        """
+        if not (self.enable_dag and self.enable_interactions):
+            return torch.zeros(self.n_media, self.n_media,
+                                device=self.global_bias.device)
+        W = (torch.sigmoid(self.adj_logits) * self.tri_mask).detach().clone()
+        W[W.abs() < eps] = 0.0
+        return W
 
     def get_sparsity_loss(self) -> torch.Tensor:
         """Sparsity loss to encourage sparse coefficients."""
