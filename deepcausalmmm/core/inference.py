@@ -69,7 +69,8 @@ class InferenceManager:
                 X_media: np.ndarray,
                 X_control: np.ndarray,
                 return_contributions: bool = True,
-                remove_padding: bool = True) -> Dict[str, np.ndarray]:
+                remove_padding: bool = True,
+                return_media_coefficients: bool = False) -> Dict[str, np.ndarray]:
         """
         Make predictions on new data.
         
@@ -78,6 +79,8 @@ class InferenceManager:
             X_control: Control data [n_regions, n_weeks, n_control_vars]
             return_contributions: Whether to return contribution breakdowns
             remove_padding: Whether to remove burn-in padding from results
+            return_media_coefficients: If True, include time-varying media coefficients
+                (second tensor from ``forward()``) as ``media_coefficients``.
             
         Returns:
             Dictionary containing predictions and optionally contributions
@@ -102,26 +105,22 @@ class InferenceManager:
         n_regions = X_media_processed.shape[0]
         R = torch.zeros(n_regions, dtype=torch.long).to(self.device)
         
-        # Make predictions
+        # Make predictions (single forward; unpack matches DeepCausalMMM.forward)
         with torch.no_grad():
-            if return_contributions:
-                predictions, _, media_contributions, outputs = self.model(
-                    X_media_processed, X_control_processed, R
-                )
-                control_contributions = outputs['control_contributions']
-            else:
-                predictions, _, _, _ = self.model(X_media_processed, X_control_processed, R)
-                media_contributions = None
-                control_contributions = None
-                
-        # Convert to numpy and move to CPU
-        results = {
+            predictions, media_coeffs, media_contributions, outputs = self.model(
+                X_media_processed, X_control_processed, R
+            )
+
+        results: Dict[str, np.ndarray] = {
             'predictions': predictions.cpu().numpy()
         }
-        
+
         if return_contributions:
             results['media_contributions'] = media_contributions.cpu().numpy()
-            results['control_contributions'] = control_contributions.cpu().numpy()
+            results['control_contributions'] = outputs['control_contributions'].cpu().numpy()
+
+        if return_media_coefficients:
+            results['media_coefficients'] = media_coeffs.cpu().numpy()
             
         # Remove padding if requested
         if remove_padding and hasattr(self.model, 'burn_in_weeks'):
