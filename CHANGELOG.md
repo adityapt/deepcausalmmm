@@ -5,6 +5,8 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [1.0.21] - 2026-05-23
 
 ### Added
@@ -15,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Column-group L1** (`notears_group_l1`): encourages each channel to depend on a focused parent set rather than uniform weak edges from all channels.
 - **Temperature-scaled DAG edges** (`dag_temperature < 1`): sharpens sigmoid adjacency toward near-{0,1} weights for clearer structure.
 - **Trainer logging**: `[NOTEARS]` messages for warmup start/end and periodic dual updates (h, ρ, α).
+- **`tests/unit/test_notears.py`**: NOTEARS smoke tests (forward/backward, acyclicity, dual updates, warmup gate).
+
+### Fixed
+- **`examples/dashboard_rmse_optimized.py`**: DAG network/CSV use **`model.threshold_dag(eps=notears_threshold)`**; heatmap uses masked temperature-scaled adjacency (aligned with forward pass, not raw `sigmoid(adj_logits)`).
+- **`get_viz_params()`** / heatmap viz defaults: **`correlation_threshold`** fallback **0.05** (was 0.65).
+- **`ModelTrainer`**: fallback defaults for **`notears_lambda1`** and **`notears_dual_factor`** match **`config.py`**.
 
 ### Changed
 - **`dag_interaction()`**: load-bearing parent blend per channel — `x_j ← (1 − mix_j)·x_j + mix_j·Σ_i adj[i,j]·x_i` with **per-channel** `mix_j` (replacing a single global scalar and additive `x + w·(x @ adj)`), so gradients target informative parents instead of a uniform adjacency floor.
@@ -25,9 +33,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Default DAG viz threshold**: `visualization.correlation_threshold` lowered to **0.05** (NOTEARS edge weights typically sit around 0.10–0.20); added **`visualization.dag_top_n_edges`**.
 
 ### Documentation
-- **`README.md`**: NOTEARS feature description, enablement example, and roadmap updated.
+- **`README.md`**: NOTEARS feature description, enablement example, roadmap, and v1.0.21 API notes.
 - **`docs/source/quickstart.rst`**: NOTEARS configuration subsection.
-- **`JOSS/paper.md`**: DAG design section documents opt-in NOTEARS alongside triangular default.
+- **`docs/source/tutorials/dag_notears.rst`**: full Sphinx guide (config keys, training, inspection).
+- **`docs/source/index.rst`**, **`tutorials/index.rst`**, **`api/core.rst`**: cross-links and NOTEARS coverage.
+- **`JOSS/paper.md`**: Summary, State of the Field, and Software Design aligned with opt-in NOTEARS.
+- **`RELEASE_NOTES_1.0.21.md`**: release summary for v1.0.21.
+- **`DeepCausalMMM`** / **`get_default_config()`** docstrings updated for autodoc.
 
 ## [1.0.20] - 2026-04-18
 

@@ -17,7 +17,7 @@ repository-code: https://github.com/adityapt/deepcausalmmm
 identifiers:
   - type: doi
     value: 10.5281/zenodo.16934842
-    description: "Zenodo archive of the software release (v1.0.20)"
+    description: "Zenodo archive of the software release (v1.0.21)"
   - type: other
     value: "arXiv:2510.13087"
     description: "arXiv preprint of the JOSS paper"

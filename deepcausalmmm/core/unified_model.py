@@ -26,7 +26,7 @@ class DeepCausalMMM(nn.Module):
     The model features:
     - GRU-based temporal modeling for time-varying coefficients
     - Learnable coefficient bounds for realistic attribution
-    - DAG learning for causal channel interactions
+    - DAG learning for causal channel interactions (triangular mask or opt-in NOTEARS)
     - Adstock and saturation transformations
     - Multi-region support with shared and region-specific parameters
     - Zero hardcoding philosophy - all parameters are learnable or configurable
@@ -73,6 +73,21 @@ class DeepCausalMMM(nn.Module):
         Number of GRU layers (configured, not hardcoded)
     ctrl_hidden_ratio : float, default=0.5
         Control hidden size as ratio of main hidden dimension
+    dag_mode : str, default="triangular"
+        DAG acyclicity mode: ``"triangular"`` (upper-triangular mask, default)
+        or ``"notears"`` (continuous NOTEARS penalty; Zheng et al., 2018)
+    notears_lambda1 : float, default=0.01
+        L1 sparsity on the full adjacency in NOTEARS mode
+    notears_rho_init : float, default=1.0
+        Initial augmented-Lagrangian penalty ``rho``
+    notears_alpha_init : float, default=0.0
+        Initial dual variable ``alpha`` for NOTEARS
+    notears_rho_max : float, default=1e16
+        Upper cap on ``rho`` for numerical safety
+    dag_temperature : float, default=1.0
+        Sigmoid temperature for DAG edge weights (``< 1`` sharpens toward {0, 1})
+    notears_group_l1 : float, default=0.0
+        Column-group L1 over adjacency columns (NOTEARS only)
         
     Attributes
     ----------
@@ -891,7 +906,8 @@ class DeepCausalMMM(nn.Module):
         5. Final prediction: Baseline + Seasonality + Media + Control contributions
         
         The model enforces several constraints:
-        - DAG acyclicity through upper triangular masking
+        - DAG acyclicity: upper-triangular mask (default) or NOTEARS penalty
+          when ``dag_mode='notears'``
         - Non-negative baseline and seasonal contributions
         - Learnable coefficient bounds to prevent explosion
         - Burn-in period stabilization for initial weeks

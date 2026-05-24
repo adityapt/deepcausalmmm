@@ -48,3 +48,7 @@ def test_config_types():
     assert isinstance(config['learning_rate'], float)
     assert isinstance(config['hidden_dim'], int)
     assert isinstance(config['use_huber_loss'], bool)
+    assert config['dag_mode'] in ('triangular', 'notears')
+    assert 'notears_threshold' in config
+    assert 'dag_temperature' in config
+    assert config['visualization']['dag_top_n_edges'] > 0

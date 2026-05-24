@@ -103,6 +103,11 @@ pip install --upgrade git+https://github.com/adityapt/deepcausalmmm.git
 pip install --upgrade --force-reinstall deepcausalmmm
 ```
 
+### API Changes in v1.0.21:
+- **New (opt-in)**: `config['dag_mode'] = 'notears'` — NOTEARS continuous DAG learning with warmup, dual updates, and `model.threshold_dag()`
+- **New config keys**: `notears_warmup_epochs`, `notears_lambda1`, `notears_dual_factor`, `dag_temperature`, `notears_group_l1`, `notears_threshold`, `visualization.dag_top_n_edges`
+- **Default unchanged**: `dag_mode='triangular'` preserves prior acyclicity behaviour
+
 ### API Changes in v1.0.19:
 - **New**: `pipeline` parameter in `ModelTrainer.train()`
 - **Fixed**: Proper data scaling without leakage
@@ -404,6 +409,8 @@ config['dag_mode'] = 'notears'
 ```
 
 Training logs `[NOTEARS]` lines for warmup and dual updates. After training, inspect **`model.threshold_dag()`** or the dashboard’s **`dag_adjacency.csv`** (when using `examples/dashboard_rmse_optimized.py`). Huber prediction loss is unchanged; NOTEARS adds terms to **`get_dag_loss()`** only.
+
+Full Sphinx guide: [DAG and NOTEARS structure learning](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/dag_notears.html) (also linked from the quickstart).
 
 ### Response Curves
 - **Hill Saturation Modeling**: Non-linear response curves with Hill equations

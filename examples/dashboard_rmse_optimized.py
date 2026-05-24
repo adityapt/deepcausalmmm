@@ -38,7 +38,7 @@ def get_viz_params(config):
         'line_opacity': viz_config.get('line_opacity', 0.6),
         'fill_opacity': viz_config.get('fill_opacity', 0.1),
         'marker_size': viz_config.get('marker_size', 8),
-        'correlation_threshold': viz_config.get('correlation_threshold', 0.65),
+        'correlation_threshold': viz_config.get('correlation_threshold', 0.05),
         'edge_width_multiplier': viz_config.get('edge_width_multiplier', 8),
         'subplot_vertical_spacing': viz_config.get('subplot_vertical_spacing', 0.08),
         'subplot_horizontal_spacing': viz_config.get('subplot_horizontal_spacing', 0.06),
@@ -310,30 +310,46 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
     
     return train_losses, train_rmses, train_r2s, best_rmse
 
+def _extract_dag_adjacency(model, config, threshold=False):
+    """Extract learned DAG weights aligned with ``DeepCausalMMM`` (mask + temperature).
+
+    When ``threshold=True``, uses ``model.threshold_dag(eps=notears_threshold)`` so
+    network plots and CSV match the documented inspection API.
+    """
+    n_media = getattr(model, 'n_media', None)
+    if not (hasattr(model, 'adj_logits') and hasattr(model, 'threshold_dag')):
+        n = n_media or 1
+        return np.eye(n) * (0.0 if threshold else 0.5)
+
+    try:
+        if threshold:
+            eps = float(config.get('notears_threshold', 0.3))
+            W = model.threshold_dag(eps=eps)
+        else:
+            T_dag = max(float(getattr(model, 'dag_temperature', 1.0)), 1e-3)
+            adj = torch.sigmoid(model.adj_logits / T_dag)
+            tri_mask = getattr(model, 'tri_mask', None)
+            if tri_mask is not None:
+                adj = adj * tri_mask
+            W = adj.detach()
+        matrix = W.cpu().numpy()
+        np.fill_diagonal(matrix, 0.0)
+        return matrix
+    except Exception as e:
+        print(f"    Could not extract DAG adjacency ({e})")
+        n = n_media or len(getattr(model, 'adj_logits', [])) or 1
+        return np.zeros((n, n))
+
 def create_dag_network_visualization(model, media_names, output_path, config):
     """Create DAG network visualization"""
     try:
         # Extract ACTUAL DAG structure from trained model
         n_media = len(media_names)
         viz_config = config.get('visualization', {})
-        
-        # Get actual DAG adjacency matrix from model
-        if hasattr(model, 'adj_logits'):
-            try:
-                # Extract the learned adjacency matrix from adj_logits
-                adj_probs = torch.sigmoid(model.adj_logits)
-                correlation_matrix = adj_probs.detach().cpu().numpy()
-                print(f"    Using ACTUAL DAG structure from model (adj_logits)")
-                print(f"    DAG adjacency range: [{correlation_matrix.min():.3f}, {correlation_matrix.max():.3f}]")
-            except Exception as e:
-                print(f"    Could not extract DAG from model.adj_logits ({e}), using identity structure")
-                correlation_matrix = np.eye(n_media) * 0.5
-        else:
-            print(f"    Model doesn't have adj_logits, using identity structure")
-            correlation_matrix = np.eye(n_media) * 0.5
-        
-        # Ensure diagonal is zero for visualization
-        np.fill_diagonal(correlation_matrix, 0)
+
+        correlation_matrix = _extract_dag_adjacency(model, config, threshold=True)
+        print(f"    Using threshold_dag (eps={config.get('notears_threshold', 0.3)})")
+        print(f"    DAG adjacency range: [{correlation_matrix.min():.3f}, {correlation_matrix.max():.3f}]")
         
         # Create network graph
         G = nx.DiGraph()
@@ -497,25 +513,10 @@ def create_dag_heatmap_visualization(model, media_names, output_path, config):
     try:
         n_media = len(media_names)
         viz_config = config.get('visualization', {})
-        correlation_threshold = viz_config.get('correlation_threshold', 0.65)
-        
-        # Extract ACTUAL DAG adjacency matrix from trained model
-        if hasattr(model, 'adj_logits'):
-            try:
-                # Extract the learned adjacency matrix from adj_logits
-                adj_probs = torch.sigmoid(model.adj_logits)
-                adj_matrix = adj_probs.detach().cpu().numpy()
-                print(f"    Using ACTUAL DAG adjacency matrix from model (adj_logits)")
-                print(f"    DAG adjacency range: [{adj_matrix.min():.3f}, {adj_matrix.max():.3f}]")
-            except Exception as e:
-                print(f"    Could not extract DAG adjacency from model.adj_logits ({e}), using zeros")
-                adj_matrix = np.zeros((n_media, n_media))
-        else:
-            print(f"    Model doesn't have adj_logits, using zeros")
-            adj_matrix = np.zeros((n_media, n_media))
-        
-        # Ensure diagonal is zero
-        np.fill_diagonal(adj_matrix, 0)
+
+        adj_matrix = _extract_dag_adjacency(model, config, threshold=False)
+        print(f"    Using masked adjacency (dag_temperature={getattr(model, 'dag_temperature', 1.0)})")
+        print(f"    DAG adjacency range: [{adj_matrix.min():.3f}, {adj_matrix.max():.3f}]")
         
         fig = go.Figure(data=go.Heatmap(
             z=adj_matrix,

@@ -25,7 +25,7 @@ archive_doi: 10.5281/zenodo.16934842
 
 Marketing Mix Modeling (MMM) estimates the impact of marketing activities on business outcomes such as sales or revenue. Traditional MMM approaches rely on linear regression or Bayesian hierarchical models that assume channel independence and struggle to capture temporal dynamics and non-linear saturation [@Chan2017; @Hanssens2005; @Ng2021Bayesian].
 
-**DeepCausalMMM** addresses these limitations by combining deep learning, causal inference, and marketing science. It uses Gated Recurrent Units (GRUs) to learn temporal patterns (adstock, lag) while learning statistical dependencies between channels through Directed Acyclic Graph (DAG) structure with upper triangular constraints [@Zheng2018NOTEARS; @Gong2024CausalMMM]. It implements Hill equation saturation curves for diminishing returns and budget optimization.
+**DeepCausalMMM** addresses these limitations by combining deep learning, causal inference, and marketing science. It uses Gated Recurrent Units (GRUs) to learn temporal patterns (adstock, lag) while learning statistical dependencies between channels through Directed Acyclic Graph (DAG) structure—by default via an upper-triangular acyclicity mask, with an opt-in NOTEARS continuous optimisation mode [@Zheng2018NOTEARS; @Gong2024CausalMMM]. It implements Hill equation saturation curves for diminishing returns and budget optimization.
 
 Key features: (1) data-driven hyperparameters learned from data with defaults, (2) linear mean scaling of the dependent variable, (3) configurable attribution priors with dynamic loss scaling, (4) multi-region modeling with shared and region-specific parameters, (5) robust methods including Huber loss, (6) response curve analysis.
 
@@ -47,7 +47,7 @@ Several open-source MMM frameworks exist, each with distinct approaches:
 
 **CausalMMM** [@Gong2024CausalMMM] introduces neural networks and graph learning to MMM, demonstrating the value of discovering channel interdependencies. However, it does not provide multi-region modeling or comprehensive response curve analysis.
 
-DeepCausalMMM advances the field by integrating: (1) GRU-based temporal modeling, (2) DAG-based structure learning using upper triangular constraints [@Zheng2018NOTEARS], (3) Hill equation response curves, (4) multi-region modeling, (5) robust statistical methods. DeepCausalMMM is complementary to Bayesian MMM frameworks, prioritizing scalability, and automated structure discovery.
+DeepCausalMMM advances the field by integrating: (1) GRU-based temporal modeling, (2) DAG-based structure learning (triangular default or opt-in NOTEARS [@Zheng2018NOTEARS]), (3) Hill equation response curves, (4) multi-region modeling, (5) robust statistical methods. DeepCausalMMM is complementary to Bayesian MMM frameworks, prioritizing scalability, and automated structure discovery.
 
 # Software Design
 

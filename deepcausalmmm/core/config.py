@@ -4,7 +4,14 @@ from typing import Dict, Any
 
 def get_default_config() -> Dict[str, Any]:
     """Get default configuration settings for the model.
-    
+
+    Includes DAG structure-learning keys under ``dag_mode``:
+
+    * ``'triangular'`` (default) — upper-triangular acyclicity mask
+    * ``'notears'`` — NOTEARS augmented-Lagrangian mode; see also
+      ``notears_warmup_epochs``, ``notears_lambda1``, ``notears_dual_*``,
+      ``dag_temperature``, and ``notears_group_l1``
+
     Returns:
         Dict containing all configuration parameters
     """

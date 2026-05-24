@@ -146,7 +146,7 @@ class ModelTrainer:
             coeff_gen_l2_weight=self.config.get('coeff_gen_l2_weight', 0.05),
             # NOTEARS DAG learning (default 'triangular' preserves prior behaviour)
             dag_mode=self.config.get('dag_mode', 'triangular'),
-            notears_lambda1=self.config.get('notears_lambda1', 0.01),
+            notears_lambda1=self.config.get('notears_lambda1', 0.005),
             notears_rho_init=self.config.get('notears_rho_init', 1.0),
             notears_alpha_init=self.config.get('notears_alpha_init', 0.0),
             notears_rho_max=self.config.get('notears_rho_max', 1e16),
@@ -576,7 +576,7 @@ class ModelTrainer:
         notears_update_every = self.config.get('notears_dual_update_every', 100)
         is_notears = (self.config.get('dag_mode', 'triangular') == 'notears')
         notears_warmup = int(self.config.get('notears_warmup_epochs', 0))
-        notears_factor = float(self.config.get('notears_dual_factor', 10.0))
+        notears_factor = float(self.config.get('notears_dual_factor', 3.0))
 
         # During warmup the NOTEARS penalty and dual updates are disabled so the
         # model can establish a Huber-only data fit. The model exposes a

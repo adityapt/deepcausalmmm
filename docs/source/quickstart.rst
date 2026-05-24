@@ -176,6 +176,9 @@ To learn channel ordering from data with the NOTEARS continuous penalty
 After training, inspect the learned adjacency with ``model.threshold_dag()``.
 Verbose training prints ``[NOTEARS]`` warmup and dual-update lines.
 
+For a full guide (config keys, training behaviour, inspection), see
+:doc:`tutorials/dag_notears`.
+
 Model Inference
 ---------------
 
