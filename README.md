@@ -25,7 +25,7 @@ A substantial part of the design and prototyping was done **locally before this 
 ### Architecture
 - **Config-Driven**: Every setting configurable via `config.py`
 - **GRU-Based Temporal Modeling**: Captures complex time-varying effects
-- **DAG Learning**: Discovers causal relationships between channels
+- **DAG Learning**: Discovers causal relationships between channels (upper-triangular mask by default, or **NOTEARS** continuous optimisation for data-driven topology)
 - **Learnable Coefficient Bounds**: Channel-specific, data-driven constraints
 - **Data-Driven Seasonality**: Automatic seasonal decomposition per region
 
@@ -384,8 +384,26 @@ Key configuration parameters:
 ### Regularization Strategy
 - **Coefficient L2**: Channel-specific regularization
 - **Sparsity Control**: GRU parameter sparsity
-- **DAG Regularization**: Acyclicity constraints
+- **DAG Regularization**: Acyclicity constraints (`triangular` mask by default, or **NOTEARS** augmented Lagrangian — see below)
 - **Gradient Clipping**: Parameter-specific clipping
+
+### NOTEARS causal structure learning (opt-in)
+
+By default, acyclicity is enforced with an **upper-triangular** adjacency mask (`dag_mode: 'triangular'`). To learn channel ordering from data using the [NOTEARS](https://arxiv.org/abs/1803.01422) smooth penalty **h(W) = tr(exp(W ⊙ W)) − d**, set:
+
+```python
+from deepcausalmmm.core import get_default_config
+
+config = get_default_config()
+config['dag_mode'] = 'notears'
+# Optional tuning (defaults in config.py):
+# config['notears_warmup_epochs'] = 500   # Huber-only, then enable penalty
+# config['notears_lambda1'] = 0.005       # L1 sparsity on adjacency
+# config['dag_temperature'] = 0.5       # Sharper {0,1} edges
+# config['notears_group_l1'] = 0.01       # Focused parents per channel
+```
+
+Training logs `[NOTEARS]` lines for warmup and dual updates. After training, inspect **`model.threshold_dag()`** or the dashboard’s **`dag_adjacency.csv`** (when using `examples/dashboard_rmse_optimized.py`). Huber prediction loss is unchanged; NOTEARS adds terms to **`get_dag_loss()`** only.
 
 ### Response Curves
 - **Hill Saturation Modeling**: Non-linear response curves with Hill equations
@@ -541,9 +559,11 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Roadmap
 
-### Version 1.0.22 (planned)
-- **NOTEARS DAG Learning**: Full implementation of the NOTEARS (DAGs with NO TEARS) continuous optimization method for discovering arbitrary DAG structures
-- **Enhanced Causal Discovery**: Move beyond upper triangular constraints to learn more flexible causal relationships between marketing channels
+### Version 1.0.21
+- **NOTEARS DAG learning**: `dag_mode='notears'` — augmented-Lagrangian acyclicity, warmup, per-channel parent blending, group L1, temperature-scaled edges (see `CHANGELOG.md`).
+
+### Future
+- **Further causal discovery**: stability selection, interventional validation, and richer DAG post-processing beyond NOTEARS pruning.
 
 ## Citation
 

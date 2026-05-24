@@ -145,9 +145,15 @@ class DeepCausalMMM(nn.Module):
         notears_rho_init: float = 1.0,         # Initial penalty parameter rho
         notears_alpha_init: float = 0.0,       # Initial dual variable alpha
         notears_rho_max: float = 1e16,         # Cap on rho for numerical safety
+        dag_temperature: float = 1.0,          # <1.0 sharpens sigmoid edges toward {0,1}
+        notears_group_l1: float = 0.0,         # L2,1 group L1 over adj columns (NOTEARS only)
     ):
         super().__init__()
         
+        # DAG-edge sigmoid temperature (used in dag_interaction()).
+        self.dag_temperature = float(dag_temperature)
+        self.notears_group_l1 = float(notears_group_l1)
+
         # Store dimensions and flags
         self.n_media = n_media
         self.ctrl_dim = ctrl_dim
@@ -206,9 +212,12 @@ class DeepCausalMMM(nn.Module):
                 # NOTEARS mode: acyclicity enforced via a smooth scalar penalty
                 # h(W) = tr(exp(W ⊙ W)) − d. The mask only zeros the diagonal
                 # so the model can learn arbitrary DAG topology from data.
-                # Initialise close to zero so h(W) ≈ 0 at the start of training
-                # (large initial W makes the matrix exponential explode).
-                self.adj_logits = nn.Parameter(torch.randn(n_media, n_media) * 0.05 - 3.0)
+                # Match the triangular-mode init scale so edges are active from
+                # epoch 0 and contribute to predictions immediately. The initial
+                # h(W) will be large but that is fine: warmup keeps the penalty
+                # off until Huber has established a fit, then the augmented
+                # Lagrangian outer loop drives h(W) → 0.
+                self.adj_logits = nn.Parameter(torch.randn(n_media, n_media) * 0.3 - 0.1)
                 mask = torch.ones(n_media, n_media) - torch.eye(n_media)  # zero diagonal only
                 self.register_buffer('tri_mask', mask)
                 # Augmented Lagrangian state. Buffers (not parameters) so they
@@ -218,8 +227,17 @@ class DeepCausalMMM(nn.Module):
                 self.notears_lambda1 = notears_lambda1
                 self.notears_rho_max = notears_rho_max
                 self._notears_h_prev = float('inf')
-            # Interaction weight (used by both modes)
-            self.interaction_weight = nn.Parameter(torch.ones(1) * 0.1)
+                # Warmup gate: when False, get_dag_loss() and notears_update_duals()
+                # behave as if NOTEARS were disabled. The trainer flips this to True
+                # after `notears_warmup_epochs` to let Huber loss establish a good
+                # data fit before the acyclicity penalty starts pulling weights around.
+                self.register_buffer('notears_active', torch.tensor(True))
+            # Per-channel DAG-strength: each target channel learns how much
+            # of its effective input comes from its causal parents vs itself.
+            # Initialised at sigmoid(-1.4) ≈ 0.2 so the DAG starts with a
+            # modest 20% blend, then the model can grow per-channel mixing
+            # where the parents help and shrink it where they don't.
+            self.interaction_weight = nn.Parameter(torch.ones(n_media) * -1.4)
         else:
             # Sensible default so attribute always exists
             self.dag_mode = dag_mode
@@ -686,29 +704,46 @@ class DeepCausalMMM(nn.Module):
         return torch.clamp(result, 0, 1)  # Ensure bounded output
 
     def dag_interaction(self, x: torch.Tensor) -> torch.Tensor:
-        """IMPROVED DAG interaction with proper adjacency weighting."""
+        """Load-bearing DAG-driven channel interactions.
+
+        Each target channel j's effective input becomes a learned blend of
+        itself and a DAG-driven aggregation of its causal parents:
+
+            parents_j = sum_i adj[i, j] * x_i        (column-j of adj * x)
+            x_j_new   = (1 - mix_j) * x_j + mix_j * parents_j
+
+        Two design choices make NOTEARS actually structure-learning here
+        rather than decorative:
+
+        * `mix` is a *per-channel* learnable scalar in (0, 1). The model can
+          turn the DAG up where it helps prediction (strong causal parents)
+          and down where it doesn't, so each adj column receives genuine
+          per-channel gradient signal rather than a globally-averaged one.
+        * adj uses a temperature-controlled sigmoid (``dag_temperature``),
+          so the model is encouraged toward {near-0, near-1} edges instead
+          of a soft cluster around 0.5 / sigmoid floor — this is the
+          standard trick for making sigmoid gates bi-modal.
+
+        With the previous additive form ``x + scalar * matmul(x, adj)`` the
+        loss was satisfied even with a uniform adjacency at the L1 floor,
+        which is why the learned graph collapsed to ~equal edges. The
+        blended form forces the model to either pick informative parents or
+        keep ``mix_j`` close to 0 (effectively ignoring the DAG for that
+        channel).
+        """
         if not (self.enable_dag and self.enable_interactions):
             return x
-        
-        # Get adjacency matrix with learned weights (not just binary)
-        adj_probs = torch.sigmoid(self.adj_logits)
-        adj = adj_probs * self.tri_mask  # Apply triangular mask
-        
-        # Use adjacency magnitude as edge strength (not just on/off)
-        B, T, C = x.shape
-        interactions = torch.zeros_like(x)
-        
-        for t in range(T):
-            x_t = x[:, t, :]  # [B, C]
-            # Use adjacency weights as interaction strength
-            # Each adj[i,j] represents how much channel i influences channel j
-            inter_t = torch.matmul(x_t, adj)  # [B, C] × [C, C] = [B, C] - FIXED!
-            interactions[:, t, :] = inter_t
-        
-        # Scale interactions by adjacency strength (not fixed weight)
-        # This allows gradients to flow back into adj_logits properly
-        interaction_scale = torch.mean(adj_probs)  # Use mean adjacency as scaling
-        return x + interaction_scale * interactions
+
+        T_dag = float(getattr(self, 'dag_temperature', 1.0))
+        # Lower temperature -> sharper {0,1} edges; T_dag=1.0 reproduces
+        # the standard sigmoid behaviour.
+        adj_probs = torch.sigmoid(self.adj_logits / max(T_dag, 1e-3))
+        adj = adj_probs * self.tri_mask
+        # [B,T,C] @ [C,C] -> [B,T,C]; column j of adj weights parents of j.
+        parents = torch.matmul(x, adj)
+        # Per-target mix: shape [n_channels], broadcast over batch and time.
+        mix = torch.sigmoid(self.interaction_weight)
+        return (1.0 - mix) * x + mix * parents
     
     def process_media(self, X: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         """Process media variables through transformations."""
@@ -1028,26 +1063,30 @@ class DeepCausalMMM(nn.Module):
         if not (self.enable_dag and self.enable_interactions):
             return torch.tensor(0.0, device=self.global_bias.device)
 
-        adj_probs = torch.sigmoid(self.adj_logits)
+        T_dag = float(getattr(self, 'dag_temperature', 1.0))
+        adj_probs = torch.sigmoid(self.adj_logits / max(T_dag, 1e-3))
         adj = adj_probs * self.tri_mask
 
-        # Shared terms across modes
         sparsity_loss = torch.sum(adj)
         confidence_loss = torch.sum(adj_probs * (1 - adj_probs))
         l1_penalty = torch.sum(torch.abs(self.adj_logits))
 
-        total_dag_loss = (0.01 * sparsity_loss +      # Light sparsity (allow relationships)
-                         0.001 * confidence_loss +     # Very light confidence
-                         0.0002 * l1_penalty)          # Minimal L1
-
-        if getattr(self, 'dag_mode', 'triangular') == 'notears':
-            # h(W) is computed on the masked adjacency so the diagonal is zero
-            # by construction; lambda1 scales the explicit L1 on the same matrix.
-            h = self.h_acyclicity(adj)
-            notears_term = (0.5 * self.notears_rho * h.pow(2)
-                            + self.notears_alpha * h
-                            + self.notears_lambda1 * sparsity_loss)
-            total_dag_loss = total_dag_loss + notears_term
+        if getattr(self, 'dag_mode', 'triangular') == 'triangular':
+            total_dag_loss = (0.01 * sparsity_loss
+                             + 0.001 * confidence_loss
+                             + 0.0002 * l1_penalty)
+        else:
+            total_dag_loss = 1e-4 * l1_penalty
+            if bool(getattr(self, 'notears_active', torch.tensor(True)).item()):
+                h = self.h_acyclicity(adj)
+                # Column-group L1: per-target column L2 norm — encourages each
+                # channel j to pick a focused parent set or none at all.
+                group_l1 = torch.sum(torch.sqrt(torch.sum(adj.pow(2), dim=0) + 1e-8))
+                notears_term = (0.5 * self.notears_rho * h.pow(2)
+                                + self.notears_alpha * h
+                                + self.notears_lambda1 * sparsity_loss
+                                + self.notears_group_l1 * group_l1)
+                total_dag_loss = total_dag_loss + notears_term
 
         return total_dag_loss
 
@@ -1065,10 +1104,12 @@ class DeepCausalMMM(nn.Module):
                       If h_new > progress * h_prev, rho is grown by `factor`.
         """
         if (not (self.enable_dag and self.enable_interactions)
-                or getattr(self, 'dag_mode', 'triangular') != 'notears'):
+                or getattr(self, 'dag_mode', 'triangular') != 'notears'
+                or not bool(getattr(self, 'notears_active', torch.tensor(True)).item())):
             return {}
 
-        adj = torch.sigmoid(self.adj_logits) * self.tri_mask
+        T_dag = max(float(getattr(self, 'dag_temperature', 1.0)), 1e-3)
+        adj = torch.sigmoid(self.adj_logits / T_dag) * self.tri_mask
         h = self.h_acyclicity(adj).item()
         if h > progress * self._notears_h_prev:
             self.notears_rho.mul_(factor).clamp_(max=self.notears_rho_max)
@@ -1091,7 +1132,8 @@ class DeepCausalMMM(nn.Module):
         if not (self.enable_dag and self.enable_interactions):
             return torch.zeros(self.n_media, self.n_media,
                                 device=self.global_bias.device)
-        W = (torch.sigmoid(self.adj_logits) * self.tri_mask).detach().clone()
+        T_dag = max(float(getattr(self, 'dag_temperature', 1.0)), 1e-3)
+        W = (torch.sigmoid(self.adj_logits / T_dag) * self.tri_mask).detach().clone()
         W[W.abs() < eps] = 0.0
         return W
 

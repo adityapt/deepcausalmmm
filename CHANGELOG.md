@@ -5,6 +5,30 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.21] - 2026-05-23
+
+### Added
+- **NOTEARS DAG learning** (Zheng et al., 2018): opt-in continuous structure learning via `config['dag_mode'] = 'notears'`. Replaces the fixed upper-triangular mask with the smooth acyclicity penalty **h(W) = tr(exp(W ⊙ W)) − d**, optimised under an augmented Lagrangian **0.5·ρ·h(W)² + α·h(W)** plus L1 sparsity on the adjacency. Default **`'dag_mode': 'triangular'`** is unchanged for existing workflows.
+- **`DeepCausalMMM.h_acyclicity()`**, **`notears_update_duals(factor=...)`**, and **`threshold_dag(eps)`** for training-time dual updates and post-training pruned adjacency inspection.
+- **NOTEARS config keys** in **`get_default_config()`**: `notears_lambda1`, `notears_rho_init`, `notears_alpha_init`, `notears_rho_max`, `notears_dual_update_every`, `notears_threshold`, `notears_warmup_epochs`, `notears_dual_factor`, `dag_temperature`, `notears_group_l1`.
+- **Huber-first warmup**: `notears_warmup_epochs` trains with prediction loss only, then enables the NOTEARS penalty via a `notears_active` gate so the fit stabilises before acyclicity pressure.
+- **Column-group L1** (`notears_group_l1`): encourages each channel to depend on a focused parent set rather than uniform weak edges from all channels.
+- **Temperature-scaled DAG edges** (`dag_temperature < 1`): sharpens sigmoid adjacency toward near-{0,1} weights for clearer structure.
+- **Trainer logging**: `[NOTEARS]` messages for warmup start/end and periodic dual updates (h, ρ, α).
+
+### Changed
+- **`dag_interaction()`**: load-bearing parent blend per channel — `x_j ← (1 − mix_j)·x_j + mix_j·Σ_i adj[i,j]·x_i` with **per-channel** `mix_j` (replacing a single global scalar and additive `x + w·(x @ adj)`), so gradients target informative parents instead of a uniform adjacency floor.
+- **`interaction_weight`**: one learnable mix scalar per media channel (initialised near 20% DAG blend).
+- **NOTEARS adjacency init**: aligned with triangular-mode scale so edges contribute to predictions from epoch 0; acyclicity is driven down during warmup + outer-loop updates rather than by near-zero initial W.
+- **`ModelTrainer`**: passes `dag_temperature` and `notears_group_l1` into the model; dual updates use configurable `notears_dual_factor` (default gentler than the initial implementation).
+- **`examples/dashboard_rmse_optimized.py` DAG network**: global top-N strongest edges (default 15), weight-normalised arrow sizing, edge strength labels, and optional **`dag_adjacency.csv`** export beside the plot.
+- **Default DAG viz threshold**: `visualization.correlation_threshold` lowered to **0.05** (NOTEARS edge weights typically sit around 0.10–0.20); added **`visualization.dag_top_n_edges`**.
+
+### Documentation
+- **`README.md`**: NOTEARS feature description, enablement example, and roadmap updated.
+- **`docs/source/quickstart.rst`**: NOTEARS configuration subsection.
+- **`JOSS/paper.md`**: DAG design section documents opt-in NOTEARS alongside triangular default.
+
 ## [1.0.20] - 2026-04-18
 
 ### Fixed

@@ -54,8 +54,9 @@ def get_default_config() -> Dict[str, Any]:
         
         # Visualization settings for DAG network and charts
         'visualization': {
-            'correlation_threshold': 0.30,  # Show edges with >30% probability (was 65% - too high!)
-            'max_edges_per_node': 3,        # Top 3 strongest connections per channel
+            'correlation_threshold': 0.05,  # NOTEARS edge weights often ~0.10–0.20; triangular mode may use higher
+            'dag_top_n_edges': 15,          # Global cap on strongest edges in DAG network plot (NOTEARS)
+            'max_edges_per_node': 3,        # Legacy per-node cap (triangular layouts); NOTEARS uses dag_top_n_edges
             'node_opacity': 0.7,
             'line_opacity': 0.6,
             'fill_opacity': 0.1,
@@ -106,12 +107,16 @@ def get_default_config() -> Dict[str, Any]:
         # acyclicity penalty h(W) = tr(exp(W ⊙ W)) − d optimised under the
         # augmented Lagrangian.
         'dag_mode': 'triangular',          # 'triangular' (default) | 'notears'
-        'notears_lambda1': 0.01,           # L1 sparsity on full W (NOTEARS only)
-        'notears_rho_init': 1.0,           # Initial penalty parameter
-        'notears_alpha_init': 0.0,         # Initial dual variable
-        'notears_rho_max': 1e16,           # Numerical safety cap on rho
-        'notears_dual_update_every': 100,  # Outer-loop cadence (epochs)
-        'notears_threshold': 0.3,          # Final-pass pruning threshold
+        'notears_lambda1': 0.005,        # L1 on W (NOTEARS only); moderate sparsity with contrast
+        'notears_rho_init': 1.0,         # Initial augmented-Lagrangian penalty rho
+        'notears_alpha_init': 0.0,       # Initial dual variable alpha
+        'notears_rho_max': 1e16,         # Numerical safety cap on rho
+        'notears_dual_update_every': 100,# Outer-loop cadence (epochs)
+        'notears_threshold': 0.3,        # Post-training pruning threshold (threshold_dag)
+        'notears_warmup_epochs': 500,    # Huber-only epochs before NOTEARS penalty activates
+        'notears_dual_factor': 3.0,      # rho multiplier per dual update when h stalls
+        'dag_temperature': 0.5,          # <1 sharpens sigmoid edges toward {0,1} (NOTEARS)
+        'notears_group_l1': 0.01,        # Column-group L1: focused parents per channel
         
         # Optimizer settings
         'optimizer': {

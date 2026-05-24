@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use DeepCausalMMM in your research, please cite the JOSS paper below."
 title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"
-version: "1.0.20"
+version: "1.0.21"
 doi: 10.21105/joss.09914
 authors:
   - family-names: Puttaparthi Tirumala
@@ -10,7 +10,7 @@ authors:
     email: puttaparthy.aditya@gmail.com
     affiliation: Independent Researcher
 license: MIT
-date-released: 2026-04-18
+date-released: 2026-05-23
 type: software
 url: https://github.com/adityapt/deepcausalmmm
 repository-code: https://github.com/adityapt/deepcausalmmm

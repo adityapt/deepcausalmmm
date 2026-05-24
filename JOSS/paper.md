@@ -55,7 +55,7 @@ DeepCausalMMM's architecture reflects several key design decisions driven by the
 
 **Neural Architecture**: GRUs were selected over LSTMs and Transformers, providing sufficient temporal modeling while reducing overfitting risk on typical MMM datasets (50-200 weeks).
 
-**DAG Structure Learning**: We adopt an upper triangular adjacency matrix to enforce acyclicity, prioritizing computational efficiency and training stability for production applications. Full NOTEARS implementation is planned for future releases.
+**DAG Structure Learning**: The default **`dag_mode='triangular'`** uses an upper-triangular adjacency mask for acyclicity, prioritising computational efficiency and training stability. An opt-in **NOTEARS** mode (`dag_mode='notears'`) applies the smooth acyclicity penalty from @Zheng2018NOTEARS under an augmented Lagrangian, with Huber-first warmup and per-channel parent blending, so channel ordering can be learned from data without changing the default production path.
 
 **Saturation Function**: Hill equation with constraints ($a \geq 2.0$) reflects marketing science domain knowledge of S-curve diminishing returns, improving generalization and interpretability.
 
