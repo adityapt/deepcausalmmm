@@ -228,7 +228,7 @@ deepcausalmmm/                      # Project root
 ├── README.md                       # This documentation
 ├── LICENSE                         # MIT License
 ├── CHANGELOG.md                    # Version history and changes
-├── RELEASE_NOTES_1.0.19.md         # Latest release notes
+├── release_notes/                  # Release notes (latest: 1.0.21.md; archive/ for older)
 ├── CONTRIBUTING.md                 # Development guidelines
 ├── CODE_OF_CONDUCT.md              # Code of conduct
 ├── CITATION.cff                    # Citation metadata for Zenodo/GitHub
@@ -567,7 +567,7 @@ MIT License - see [LICENSE](LICENSE) file.
 ## Roadmap
 
 ### Version 1.0.21
-- **NOTEARS DAG learning**: `dag_mode='notears'` — augmented-Lagrangian acyclicity, warmup, per-channel parent blending, group L1, temperature-scaled edges (see `CHANGELOG.md`).
+- **NOTEARS DAG learning**: `dag_mode='notears'` — augmented-Lagrangian acyclicity, warmup, per-channel parent blending, group L1, temperature-scaled edges ([release notes](release_notes/1.0.21.md), [CHANGELOG](CHANGELOG.md)).
 
 ### Future
 - **Further causal discovery**: stability selection, interventional validation, and richer DAG post-processing beyond NOTEARS pruning.
@@ -598,6 +598,7 @@ Or click the **"Cite this repository"** button on GitHub for other citation form
 
 ## Quick Links
 
+- **Release notes (v1.0.21)**: [`release_notes/1.0.21.md`](release_notes/1.0.21.md)
 - **Main Dashboard**: `dashboard_rmse_optimized.py` - Complete analysis pipeline
 - **Budget Optimization**: `examples/example_budget_optimization.py` - End-to-end optimization workflow
 - **Core Model**: `deepcausalmmm/core/unified_model.py` - DeepCausalMMM architecture

@@ -37,8 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`docs/source/quickstart.rst`**: NOTEARS configuration subsection.
 - **`docs/source/tutorials/dag_notears.rst`**: full Sphinx guide (config keys, training, inspection).
 - **`docs/source/index.rst`**, **`tutorials/index.rst`**, **`api/core.rst`**: cross-links and NOTEARS coverage.
-- **`JOSS/paper.md`**: Summary, State of the Field, and Software Design aligned with opt-in NOTEARS.
-- **`RELEASE_NOTES_1.0.21.md`**: release summary for v1.0.21.
+- **`release_notes/1.0.21.md`**: release summary; older notes moved to **`release_notes/archive/`**.
 - **`DeepCausalMMM`** / **`get_default_config()`** docstrings updated for autodoc.
 
 ## [1.0.20] - 2026-04-18
