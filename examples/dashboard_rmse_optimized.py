@@ -311,33 +311,24 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
     return train_losses, train_rmses, train_r2s, best_rmse
 
 def _extract_dag_adjacency(model, config, threshold=False):
-    """Extract learned DAG weights aligned with ``DeepCausalMMM`` (mask + temperature).
-
-    When ``threshold=True``, uses ``model.threshold_dag(eps=notears_threshold)`` so
-    network plots and CSV match the documented inspection API.
-    """
+    """Extract learned DAG weights via ``DeepCausalMMM.get_dag_adjacency_matrix``."""
     n_media = getattr(model, 'n_media', None)
-    if not (hasattr(model, 'adj_logits') and hasattr(model, 'threshold_dag')):
+    if not hasattr(model, 'get_dag_adjacency_matrix'):
         n = n_media or 1
         return np.eye(n) * (0.0 if threshold else 0.5)
 
     try:
         if threshold:
             eps = float(config.get('notears_threshold', 0.3))
-            W = model.threshold_dag(eps=eps)
+            W = model.get_dag_adjacency_matrix(eps=eps)
         else:
-            T_dag = max(float(getattr(model, 'dag_temperature', 1.0)), 1e-3)
-            adj = torch.sigmoid(model.adj_logits / T_dag)
-            tri_mask = getattr(model, 'tri_mask', None)
-            if tri_mask is not None:
-                adj = adj * tri_mask
-            W = adj.detach()
+            W = model.get_dag_adjacency_matrix(eps=None)
         matrix = W.cpu().numpy()
         np.fill_diagonal(matrix, 0.0)
         return matrix
     except Exception as e:
         print(f"    Could not extract DAG adjacency ({e})")
-        n = n_media or len(getattr(model, 'adj_logits', [])) or 1
+        n = n_media or 1
         return np.zeros((n, n))
 
 def create_dag_network_visualization(model, media_names, output_path, config):

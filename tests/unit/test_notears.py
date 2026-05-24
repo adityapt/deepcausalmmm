@@ -1,5 +1,6 @@
 """NOTEARS DAG structure-learning smoke tests."""
 
+import numpy as np
 import torch
 import pytest
 
@@ -75,3 +76,41 @@ def test_notears_warmup_gate_disables_dag_penalty():
     warmup_loss = model.get_dag_loss().item()
     # NOTEARS acyclicity term is off; only a tiny L1 on logits may remain.
     assert warmup_loss < active_loss * 0.01
+
+
+def test_get_dag_adjacency_matrix_matches_temperature_and_mask():
+    model = DeepCausalMMM(
+        n_media=4, ctrl_dim=1, n_regions=1,
+        dag_mode='notears', dag_temperature=0.5,
+    )
+    W = model.get_dag_adjacency_matrix(eps=None)
+    T_dag = 0.5
+    expected = torch.sigmoid(model.adj_logits / T_dag) * model.tri_mask
+    assert torch.allclose(W, expected.detach(), atol=1e-6)
+
+    raw = torch.sigmoid(model.adj_logits) * model.tri_mask
+    assert not torch.allclose(W, raw.detach(), atol=1e-3)
+
+    W_thr = model.get_dag_adjacency_matrix(eps=0.3)
+    assert torch.allclose(W_thr, model.threshold_dag(eps=0.3))
+
+
+def test_inference_get_dag_adjacency_matches_model():
+    from deepcausalmmm.core.inference import InferenceManager
+
+    model = DeepCausalMMM(n_media=3, ctrl_dim=1, n_regions=1, dag_temperature=0.5)
+    with pytest.warns(UserWarning, match="Neither pipeline nor scaler"):
+        manager = InferenceManager(model)
+
+    continuous = manager.get_dag_adjacency(threshold=False)
+    pruned = manager.get_dag_adjacency(threshold=True, eps=0.3)
+
+    assert continuous is not None
+    assert np.allclose(
+        continuous,
+        model.get_dag_adjacency_matrix(eps=None).cpu().numpy(),
+    )
+    assert np.allclose(
+        pruned,
+        model.get_dag_adjacency_matrix(eps=0.3).cpu().numpy(),
+    )

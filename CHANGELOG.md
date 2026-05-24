@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`DeepCausalMMM.get_dag_adjacency_matrix()`**: single source of truth for mask + `dag_temperature` adjacency; **`InferenceManager.get_dag_adjacency()`**, **`ComprehensiveAnalyzer`** DAG plots, and the dashboard delegate to it (replacing raw `sigmoid(adj_logits)`).
+
 ## [1.0.21] - 2026-05-23
 
 ### Added

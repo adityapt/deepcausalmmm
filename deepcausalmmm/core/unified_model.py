@@ -1139,19 +1139,35 @@ class DeepCausalMMM(nn.Module):
         }
 
     @torch.no_grad()
+    def get_dag_adjacency_matrix(self, eps: Optional[float] = None) -> torch.Tensor:
+        """Learned adjacency with ``dag_temperature`` and ``tri_mask`` applied.
+
+        Args:
+            eps: If ``None``, return continuous edge weights. If a float, zero
+                entries with ``|w| < eps`` (same rule as ``threshold_dag``).
+
+        Returns:
+            Square adjacency tensor ``[n_media, n_media]``.
+        """
+        if not (self.enable_dag and self.enable_interactions):
+            return torch.zeros(self.n_media, self.n_media,
+                                device=self.global_bias.device)
+        T_dag = max(float(getattr(self, 'dag_temperature', 1.0)), 1e-3)
+        W = torch.sigmoid(self.adj_logits / T_dag) * self.tri_mask
+        if eps is not None:
+            W = W.detach().clone()
+            W[W.abs() < eps] = 0.0
+            return W
+        return W.detach()
+
+    @torch.no_grad()
     def threshold_dag(self, eps: float = 0.3) -> torch.Tensor:
         """Post-training pruning: zero out adjacency entries with |w| < eps.
 
         Returns the thresholded adjacency tensor. For NOTEARS mode this is the
         recommended way to obtain a clean discrete DAG from the continuous W.
         """
-        if not (self.enable_dag and self.enable_interactions):
-            return torch.zeros(self.n_media, self.n_media,
-                                device=self.global_bias.device)
-        T_dag = max(float(getattr(self, 'dag_temperature', 1.0)), 1e-3)
-        W = (torch.sigmoid(self.adj_logits / T_dag) * self.tri_mask).detach().clone()
-        W[W.abs() < eps] = 0.0
-        return W
+        return self.get_dag_adjacency_matrix(eps=eps)
 
     def get_sparsity_loss(self) -> torch.Tensor:
         """Sparsity loss to encourage sparse coefficients."""
