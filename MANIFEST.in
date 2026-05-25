@@ -4,6 +4,7 @@ include CHANGELOG.md
 include LICENSE
 include pyproject.toml
 include Makefile
+recursive-include release_notes *.md
 
 # Include all Python files
 recursive-include deepcausalmmm *.py

@@ -153,6 +153,32 @@ Customize the model for your specific use case:
     trainer.create_optimizer_and_scheduler()
     results = trainer.train(...)
 
+NOTEARS DAG learning (optional)
+--------------------------------
+
+The default ``dag_mode`` is ``'triangular'`` (acyclicity via an upper-triangular mask).
+To learn channel ordering from data with the NOTEARS continuous penalty
+(`Zheng et al., 2018 <https://arxiv.org/abs/1803.01422>`_), opt in explicitly:
+
+.. code-block:: python
+
+    config = get_default_config()
+    config['dag_mode'] = 'notears'
+    # Recommended starting points (see config.py for full list):
+    config['notears_warmup_epochs'] = 500   # Huber-only, then enable penalty
+    config['notears_lambda1'] = 0.005
+    config['dag_temperature'] = 0.5
+    config['notears_group_l1'] = 0.01
+
+    trainer = ModelTrainer(config)
+    # ... train as in Basic Usage ...
+
+After training, inspect the learned adjacency with ``model.threshold_dag()``.
+Verbose training prints ``[NOTEARS]`` warmup and dual-update lines.
+
+For a full guide (config keys, training behaviour, inspection), see
+:doc:`tutorials/dag_notears`.
+
 Model Inference
 ---------------
 

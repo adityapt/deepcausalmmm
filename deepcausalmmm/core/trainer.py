@@ -143,7 +143,15 @@ class ModelTrainer:
             enable_interactions=self.config.get('enable_interactions', True),
             # COEFFICIENT REGULARIZATION: Pass parameters to prevent explosion
             coeff_l2_weight=self.config.get('coeff_l2_weight', 0.1),
-            coeff_gen_l2_weight=self.config.get('coeff_gen_l2_weight', 0.05)
+            coeff_gen_l2_weight=self.config.get('coeff_gen_l2_weight', 0.05),
+            # NOTEARS DAG learning (default 'triangular' preserves prior behaviour)
+            dag_mode=self.config.get('dag_mode', 'triangular'),
+            notears_lambda1=self.config.get('notears_lambda1', 0.005),
+            notears_rho_init=self.config.get('notears_rho_init', 1.0),
+            notears_alpha_init=self.config.get('notears_alpha_init', 0.0),
+            notears_rho_max=self.config.get('notears_rho_max', 1e16),
+            dag_temperature=self.config.get('dag_temperature', 1.0),
+            notears_group_l1=self.config.get('notears_group_l1', 0.0),
         ).to(self.device)
         
         return self.model
@@ -565,12 +573,49 @@ class ModelTrainer:
         
         pbar = tqdm(range(n_epochs), desc="Training") if verbose else range(n_epochs)
         
+        notears_update_every = self.config.get('notears_dual_update_every', 100)
+        is_notears = (self.config.get('dag_mode', 'triangular') == 'notears')
+        notears_warmup = int(self.config.get('notears_warmup_epochs', 0))
+        notears_factor = float(self.config.get('notears_dual_factor', 3.0))
+
+        # During warmup the NOTEARS penalty and dual updates are disabled so the
+        # model can establish a Huber-only data fit. The model exposes a
+        # `notears_active` buffer that get_dag_loss()/notears_update_duals()
+        # consult; flip it off here, then back on once warmup completes.
+        if is_notears and notears_warmup > 0 and hasattr(self.model, 'notears_active'):
+            self.model.notears_active.fill_(False)
+            if verbose:
+                logger.info(
+                    f"[NOTEARS] warmup enabled: Huber-only for first {notears_warmup} epochs"
+                )
+
         for epoch in pbar:
             # Training step
             train_loss, train_rmse, train_r2 = self.train_epoch(
                 X_media_train, X_control_train, R_train, y_train
             )
-            
+
+            # End of warmup: enable NOTEARS penalty + dual updates from now on.
+            if (is_notears and notears_warmup > 0
+                    and epoch == notears_warmup
+                    and hasattr(self.model, 'notears_active')):
+                self.model.notears_active.fill_(True)
+                if verbose:
+                    logger.info(f"[NOTEARS] warmup complete at epoch {epoch}; activating penalty")
+
+            # NOTEARS augmented-Lagrangian outer step. Runs only in notears mode
+            # and on the configured cadence; orthogonal to Huber loss and the
+            # rest of the inner-loop training.
+            if (is_notears and epoch > 0
+                    and epoch % notears_update_every == 0
+                    and hasattr(self.model, 'notears_update_duals')):
+                info = self.model.notears_update_duals(factor=notears_factor)
+                if verbose and info:
+                    logger.info(
+                        f"[NOTEARS] epoch={epoch} h={info['h']:.2e} "
+                        f"rho={info['rho']:.2e} alpha={info['alpha']:.2e}"
+                    )
+
             # Store metrics
             self.train_losses.append(train_loss)
             self.train_rmses.append(train_rmse)

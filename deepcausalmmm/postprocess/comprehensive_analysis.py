@@ -1164,39 +1164,37 @@ class ComprehensiveAnalyzer:
     def _create_dag_visualization(self):
         """Create beautiful DAG structure visualization with network and heatmap views."""
         logger.info("  Creating beautiful DAG structure visualization...")
-        
-        # Get adjacency matrix from model or create synthetic for demo
-        try:
+
+        n_media = len(self.media_cols)
+        adj_continuous = np.zeros((n_media, n_media))
+        adj_thresholded = np.zeros((n_media, n_media))
+
+        if hasattr(self.model, 'get_dag_adjacency_matrix'):
+            eps = float(self.config.get('notears_threshold', 0.3))
             with torch.no_grad():
-                if hasattr(self.model, 'adj_logits') and hasattr(self.model, 'tri_mask'):
-                    adj_probs = torch.sigmoid(self.model.adj_logits) * self.model.tri_mask
-                    adj_matrix = adj_probs.cpu().numpy()
-                else:
-                    # Create synthetic adjacency matrix for visualization
-                    n_media = len(self.media_cols)
-                    adj_matrix = np.random.uniform(0.1, 0.8, (n_media, n_media))
-                    adj_matrix = adj_matrix * (adj_matrix > 0.3)
-                    np.fill_diagonal(adj_matrix, 0)
-                    logger.info("    Using synthetic DAG for visualization (model doesn't have DAG components)")
-        except Exception as e:
-            # Fallback to synthetic
-            n_media = len(self.media_cols)
-            adj_matrix = np.random.uniform(0.1, 0.8, (n_media, n_media))
-            adj_matrix = adj_matrix * (adj_matrix > 0.3)
-            np.fill_diagonal(adj_matrix, 0)
-            logger.info(f"    Using synthetic DAG for visualization (error: {e})")
-        
+                adj_continuous = self.model.get_dag_adjacency_matrix(eps=None).cpu().numpy()
+                adj_thresholded = self.model.get_dag_adjacency_matrix(eps=eps).cpu().numpy()
+            np.fill_diagonal(adj_continuous, 0.0)
+            np.fill_diagonal(adj_thresholded, 0.0)
+            logger.info(
+                "    Using model adjacency "
+                f"(dag_temperature={getattr(self.model, 'dag_temperature', 1.0)}, "
+                f"threshold={eps})"
+            )
+        else:
+            logger.warning(
+                "    Model has no get_dag_adjacency_matrix(); DAG plots will be empty"
+            )
+
         # Clean channel names for display
         clean_names = []
         for col in self.media_cols:
             clean_name = col.replace('impressions_', '').replace('_', ' ')
             clean_names.append(clean_name[:15])  # Truncate for display
-        
-        # 1. Beautiful Network Visualization (like dashboard)
-        self._create_dag_network_plot(adj_matrix, clean_names)
-        
-        # 2. Beautiful Heatmap Visualization (like dashboard)
-        self._create_dag_heatmap_plot(adj_matrix, clean_names)
+
+        # 1. Network uses pruned adjacency; heatmap uses continuous weights.
+        self._create_dag_network_plot(adj_thresholded, clean_names)
+        self._create_dag_heatmap_plot(adj_continuous, clean_names)
     
     def _create_dag_network_plot(self, adj_matrix: np.ndarray, channel_names: List[str]):
         """Create beautiful DAG network plot."""

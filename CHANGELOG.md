@@ -5,6 +5,44 @@ All notable changes to DeepCausalMMM will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **`DeepCausalMMM.get_dag_adjacency_matrix()`**: single source of truth for mask + `dag_temperature` adjacency; **`InferenceManager.get_dag_adjacency()`**, **`ComprehensiveAnalyzer`** DAG plots, and the dashboard delegate to it (replacing raw `sigmoid(adj_logits)`).
+
+## [1.0.21] - 2026-05-23
+
+### Added
+- **NOTEARS DAG learning** (Zheng et al., 2018): opt-in continuous structure learning via `config['dag_mode'] = 'notears'`. Replaces the fixed upper-triangular mask with the smooth acyclicity penalty **h(W) = tr(exp(W ⊙ W)) − d**, optimised under an augmented Lagrangian **0.5·ρ·h(W)² + α·h(W)** plus L1 sparsity on the adjacency. Default **`'dag_mode': 'triangular'`** is unchanged for existing workflows.
+- **`DeepCausalMMM.h_acyclicity()`**, **`notears_update_duals(factor=...)`**, and **`threshold_dag(eps)`** for training-time dual updates and post-training pruned adjacency inspection.
+- **NOTEARS config keys** in **`get_default_config()`**: `notears_lambda1`, `notears_rho_init`, `notears_alpha_init`, `notears_rho_max`, `notears_dual_update_every`, `notears_threshold`, `notears_warmup_epochs`, `notears_dual_factor`, `dag_temperature`, `notears_group_l1`.
+- **Huber-first warmup**: `notears_warmup_epochs` trains with prediction loss only, then enables the NOTEARS penalty via a `notears_active` gate so the fit stabilises before acyclicity pressure.
+- **Column-group L1** (`notears_group_l1`): encourages each channel to depend on a focused parent set rather than uniform weak edges from all channels.
+- **Temperature-scaled DAG edges** (`dag_temperature < 1`): sharpens sigmoid adjacency toward near-{0,1} weights for clearer structure.
+- **Trainer logging**: `[NOTEARS]` messages for warmup start/end and periodic dual updates (h, ρ, α).
+- **`tests/unit/test_notears.py`**: NOTEARS smoke tests (forward/backward, acyclicity, dual updates, warmup gate).
+
+### Fixed
+- **`examples/dashboard_rmse_optimized.py`**: DAG network/CSV use **`model.threshold_dag(eps=notears_threshold)`**; heatmap uses masked temperature-scaled adjacency (aligned with forward pass, not raw `sigmoid(adj_logits)`).
+- **`get_viz_params()`** / heatmap viz defaults: **`correlation_threshold`** fallback **0.05** (was 0.65).
+- **`ModelTrainer`**: fallback defaults for **`notears_lambda1`** and **`notears_dual_factor`** match **`config.py`**.
+
+### Changed
+- **`dag_interaction()`**: load-bearing parent blend per channel — `x_j ← (1 − mix_j)·x_j + mix_j·Σ_i adj[i,j]·x_i` with **per-channel** `mix_j` (replacing a single global scalar and additive `x + w·(x @ adj)`), so gradients target informative parents instead of a uniform adjacency floor.
+- **`interaction_weight`**: one learnable mix scalar per media channel (initialised near 20% DAG blend).
+- **NOTEARS adjacency init**: aligned with triangular-mode scale so edges contribute to predictions from epoch 0; acyclicity is driven down during warmup + outer-loop updates rather than by near-zero initial W.
+- **`ModelTrainer`**: passes `dag_temperature` and `notears_group_l1` into the model; dual updates use configurable `notears_dual_factor` (default gentler than the initial implementation).
+- **`examples/dashboard_rmse_optimized.py` DAG network**: global top-N strongest edges (default 15), weight-normalised arrow sizing, edge strength labels, and optional **`dag_adjacency.csv`** export beside the plot.
+- **Default DAG viz threshold**: `visualization.correlation_threshold` lowered to **0.05** (NOTEARS edge weights typically sit around 0.10–0.20); added **`visualization.dag_top_n_edges`**.
+
+### Documentation
+- **`README.md`**: NOTEARS feature description, enablement example, roadmap, and v1.0.21 API notes.
+- **`docs/source/quickstart.rst`**: NOTEARS configuration subsection.
+- **`docs/source/tutorials/dag_notears.rst`**: full Sphinx guide (config keys, training, inspection).
+- **`docs/source/index.rst`**, **`tutorials/index.rst`**, **`api/core.rst`**: cross-links and NOTEARS coverage.
+- **`release_notes/1.0.21.md`**: release summary; older notes moved to **`release_notes/archive/`**.
+- **`DeepCausalMMM`** / **`get_default_config()`** docstrings updated for autodoc.
+
 ## [1.0.20] - 2026-04-18
 
 ### Fixed
@@ -15,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`examples/dashboard_rmse_optimized.py`**: Holdout **`model(...)`** unpack uses accurate names / discards for unused middle returns (behavior unchanged; clarity only).
 - **`ModelTrainer` final metrics**: Train/holdout reporting trims **`burn_in_weeks`** (aligned with config / pipeline padding) in **scaled** space before **`inverse_transform_target`** and RMSE/R², so scores exclude padded stabilization weeks; holdout scaled-space metrics use the same trim. **`examples/dashboard_rmse_optimized.py`**: holdout scatter matches that evaluation; printed holdout MAE uses **`holdout_mae_orig`**.
 - **`JOSS/paper.bib`**: Wrapped corporate author names in double braces (`{{...}}`) so BibTeX stops reordering them into initials-first form (`Meridian2024`, `PyMCMarketing2024`, `RobynGitHub`); also protected product names (`{Meridian}`, `{PyMC-Marketing}`, `{Robyn}`) in titles. Addresses JOSS review feedback on malformed citations.
+- **`postprocess/analysis.py`**: **`ModelAnalyzer.analyze_predictions`** now calls **`InferenceManager.predict`** with the correct signature (NumPy inputs, optional **`return_media_coefficients=True`** for plots); **`_generate_plots`** uses **`media_contributions`**, **`burn_in_weeks`** from the underlying model, and no longer mis-passes region tensors as keyword arguments.
+- **`examples/example_response_curves.py`**: Forward unpack matches **`(predictions, media_coeffs, media_contributions, outputs)`** with **control** from **`outputs['control_contributions']`**; seasonal slice uses **`outputs['seasonal_contribution']`** (singular key).
+- **`examples/dashboard_rmse_optimized.py`**: Holdout **`model(...)`** unpack uses accurate names / discards for unused middle returns (behavior unchanged; clarity only).
+- **`ModelTrainer` final metrics**: Train/holdout reporting trims **`burn_in_weeks`** (aligned with config / pipeline padding) in **scaled** space before **`inverse_transform_target`** and RMSE/R², so scores exclude padded stabilization weeks; holdout scaled-space metrics use the same trim. **`examples/dashboard_rmse_optimized.py`**: holdout scatter matches that evaluation; printed holdout MAE uses **`holdout_mae_orig`**.
 
 ### Added
 - **`tests/integration/test_dashboard_rmse_optimized.py`**: Regression test that loads `load_real_mmm_data()` on `examples/data/MMM Data.csv` so the dashboard data path stays covered in CI.
@@ -28,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`README.md`** / **`CONTRIBUTING.md`**: Development requirements aligned with **`pyproject.toml`**; **“Dependencies only”** pip snippet uses the same **version specifiers** as **`[project] dependencies`**; **`CONTRIBUTING.md`** no longer references nonexistent **`[dev]`** extra; **Benchmarks** temporal split matches default **12%** holdout (~96 / ~13 weeks on 109 observed weeks).
 - **Sphinx**: Added missing **`docs/source/api/cli.rst`** and **`visualization.rst`** (``deepcausalmmm.cli``, ``deepcausalmmm.core.visualization``); added **`docs/source/examples/retail_mmm.rst`** and **`multi_region.rst`** so API and Examples toctrees resolve; **`docs/requirements.txt`** includes **scipy** for autodoc imports used by optimization/response-curve modules.
 - **JOSS (`paper.md`)**: **Software Design → Implementation Details**: versioning bullet states **semantic versioning** and **documented breaking changes** (notably **v1.0.19** vs **v1.0.18 and earlier**), with pointers to README/CHANGELOG—replacing a blanket “backward compatibility guarantees” phrase that conflicted with published release notes; optional minor/patch milestone wording was removed for brevity.
+- **`deepcausalmmm.core.unified_model.DeepCausalMMM.forward`**: Docstring and examples updated to match the actual return tuple **`(predictions, media_coefficients, media_contributions, outputs)`** and real **`outputs`** keys (`contributions`, `control_contributions`, `seasonal_contribution`, etc.).
 - **JOSS (`paper.md`)**: Comparative **Table 1** on `examples/data/MMM Data.csv` (same split as `pymc_aligned_dcm_config.json`) versus PyMC-Marketing, Meridian, and a national weekly Ridge baseline (Robyn-style inputs; not Meta’s full Robyn unless `robynpy` is used); corrected train/holdout week description (~96 / ~13 observed weeks at 12% holdout); **Research Impact Statement** reframed (niche, reproducible comparison, near-term significance, honest limits on early uptake); **Reproducibility** references `examples/mmm_three_way_benchmark.ipynb` for Table 1.
 - **README.md**: **Development history** note—substantial design/prototyping predates the public GitHub history; bursty commits reflect integration, docs, tests, and packaging.
 - **`CITATION.cff`**: Title aligned with the JOSS `paper.md` title (*"DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"*); version bumped to `1.0.20`; `date-released` updated.

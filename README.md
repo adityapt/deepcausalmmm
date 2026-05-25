@@ -25,7 +25,7 @@ A substantial part of the design and prototyping was done **locally before this 
 ### Architecture
 - **Config-Driven**: Every setting configurable via `config.py`
 - **GRU-Based Temporal Modeling**: Captures complex time-varying effects
-- **DAG Learning**: Discovers causal relationships between channels
+- **DAG Learning**: Discovers causal relationships between channels (upper-triangular mask by default, or **NOTEARS** continuous optimisation for data-driven topology)
 - **Learnable Coefficient Bounds**: Channel-specific, data-driven constraints
 - **Data-Driven Seasonality**: Automatic seasonal decomposition per region
 
@@ -102,6 +102,11 @@ pip install --upgrade git+https://github.com/adityapt/deepcausalmmm.git
 # Option 3: Force reinstall if you have conflicts
 pip install --upgrade --force-reinstall deepcausalmmm
 ```
+
+### API Changes in v1.0.21:
+- **New (opt-in)**: `config['dag_mode'] = 'notears'` — NOTEARS continuous DAG learning with warmup, dual updates, and `model.threshold_dag()`
+- **New config keys**: `notears_warmup_epochs`, `notears_lambda1`, `notears_dual_factor`, `dag_temperature`, `notears_group_l1`, `notears_threshold`, `visualization.dag_top_n_edges`
+- **Default unchanged**: `dag_mode='triangular'` preserves prior acyclicity behaviour
 
 ### API Changes in v1.0.19:
 - **New**: `pipeline` parameter in `ModelTrainer.train()`
@@ -223,7 +228,7 @@ deepcausalmmm/                      # Project root
 ├── README.md                       # This documentation
 ├── LICENSE                         # MIT License
 ├── CHANGELOG.md                    # Version history and changes
-├── RELEASE_NOTES_1.0.19.md         # Latest release notes
+├── release_notes/                  # Release notes (latest: 1.0.21.md; archive/ for older)
 ├── CONTRIBUTING.md                 # Development guidelines
 ├── CODE_OF_CONDUCT.md              # Code of conduct
 ├── CITATION.cff                    # Citation metadata for Zenodo/GitHub
@@ -384,8 +389,72 @@ Key configuration parameters:
 ### Regularization Strategy
 - **Coefficient L2**: Channel-specific regularization
 - **Sparsity Control**: GRU parameter sparsity
-- **DAG Regularization**: Acyclicity constraints
+- **DAG Regularization**: Acyclicity constraints (`triangular` mask by default, or **NOTEARS** augmented Lagrangian — see below)
 - **Gradient Clipping**: Parameter-specific clipping
+
+### NOTEARS causal structure learning (opt-in)
+
+By default, acyclicity is enforced with an **upper-triangular** adjacency mask (`dag_mode: 'triangular'`). To learn channel ordering from data using the [NOTEARS](https://arxiv.org/abs/1803.01422) smooth penalty **h(W) = tr(exp(W ⊙ W)) − d**, set `dag_mode: 'notears'`.
+
+| Mode | Config | When to use |
+|------|--------|-------------|
+| **Triangular** (default) | `dag_mode: 'triangular'` | Stable default; fixed channel order |
+| **NOTEARS** (opt-in) | `dag_mode: 'notears'` | Data-driven causal hierarchy between channels |
+
+```python
+from deepcausalmmm.core import get_default_config
+from deepcausalmmm.core.trainer import ModelTrainer
+from deepcausalmmm.core.data import UnifiedDataPipeline
+
+config = get_default_config()
+config['dag_mode'] = 'notears'
+config['notears_warmup_epochs'] = 500   # Huber-only first, then acyclicity penalty
+config['notears_lambda1'] = 0.005
+config['dag_temperature'] = 0.5
+config['notears_group_l1'] = 0.01
+config['notears_threshold'] = 0.3     # Pruning for plots / export
+
+pipeline = UnifiedDataPipeline(config)
+# ... prepare tensors and train/holdout split ...
+
+trainer = ModelTrainer(config)
+model = trainer.create_model(n_media, n_control, n_regions)
+trainer.create_optimizer_and_scheduler()
+trainer.train(
+    train_tensors['X_media'], train_tensors['X_control'],
+    train_tensors['R'], train_tensors['y'],
+    holdout_tensors['X_media'], holdout_tensors['X_control'],
+    holdout_tensors['R'], holdout_tensors['y'],
+    pipeline=pipeline,
+    verbose=True,  # logs [NOTEARS] warmup and dual updates
+)
+```
+
+**Inspect the learned graph** (canonical adjacency uses mask + temperature; optional pruning):
+
+```python
+W = model.threshold_dag(eps=config['notears_threshold'])
+
+from deepcausalmmm.core.inference import InferenceManager
+manager = InferenceManager(model, config=config)
+adj_pruned = manager.get_dag_adjacency(threshold=True, eps=config['notears_threshold'])
+adj_continuous = manager.get_dag_adjacency(threshold=False)
+```
+
+Huber prediction loss is unchanged; NOTEARS adds terms to **`get_dag_loss()`** only. Dashboard / HTML DAG plots: `python examples/dashboard_rmse_optimized.py` (exports **`dag_adjacency.csv`**).
+
+| Key | Role |
+|-----|------|
+| `dag_mode` | `'triangular'` or `'notears'` |
+| `notears_warmup_epochs` | Fit-only epochs before the DAG penalty activates |
+| `notears_lambda1` | L1 sparsity on adjacency |
+| `notears_dual_update_every` | Augmented-Lagrangian dual update frequency |
+| `notears_dual_factor` | Penalty growth when acyclicity stalls |
+| `notears_threshold` | Pruning cutoff for `threshold_dag()` / exports |
+| `dag_temperature` | Edge sharpness in forward pass and adjacency export |
+| `notears_group_l1` | Focused parent sets per channel |
+
+Full guide: [DAG and NOTEARS structure learning](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/dag_notears.html) · [release_notes/1.0.21.md](release_notes/1.0.21.md)
 
 ### Response Curves
 - **Hill Saturation Modeling**: Non-linear response curves with Hill equations
@@ -541,9 +610,11 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Roadmap
 
-### Version 1.0.22 (planned)
-- **NOTEARS DAG Learning**: Full implementation of the NOTEARS (DAGs with NO TEARS) continuous optimization method for discovering arbitrary DAG structures
-- **Enhanced Causal Discovery**: Move beyond upper triangular constraints to learn more flexible causal relationships between marketing channels
+### Version 1.0.21
+- **NOTEARS DAG learning**: `dag_mode='notears'` — augmented-Lagrangian acyclicity, warmup, per-channel parent blending, group L1, temperature-scaled edges ([release notes](release_notes/1.0.21.md), [CHANGELOG](CHANGELOG.md)).
+
+### Future
+- **Further causal discovery**: stability selection, interventional validation, and richer DAG post-processing beyond NOTEARS pruning.
 
 ## Citation
 
@@ -572,6 +643,7 @@ Or click the **"Cite this repository"** button on GitHub for other citation form
 
 ## Quick Links
 
+- **Release notes (v1.0.21)**: [`release_notes/1.0.21.md`](release_notes/1.0.21.md)
 - **Main Dashboard**: `dashboard_rmse_optimized.py` - Complete analysis pipeline
 - **Budget Optimization**: `examples/example_budget_optimization.py` - End-to-end optimization workflow
 - **Core Model**: `deepcausalmmm/core/unified_model.py` - DeepCausalMMM architecture

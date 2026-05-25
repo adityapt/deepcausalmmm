@@ -38,7 +38,7 @@ def get_viz_params(config):
         'line_opacity': viz_config.get('line_opacity', 0.6),
         'fill_opacity': viz_config.get('fill_opacity', 0.1),
         'marker_size': viz_config.get('marker_size', 8),
-        'correlation_threshold': viz_config.get('correlation_threshold', 0.65),
+        'correlation_threshold': viz_config.get('correlation_threshold', 0.05),
         'edge_width_multiplier': viz_config.get('edge_width_multiplier', 8),
         'subplot_vertical_spacing': viz_config.get('subplot_vertical_spacing', 0.08),
         'subplot_horizontal_spacing': viz_config.get('subplot_horizontal_spacing', 0.06),
@@ -310,30 +310,37 @@ def train_model_with_config(model, X_media_padded, X_control_padded, R, y_padded
     
     return train_losses, train_rmses, train_r2s, best_rmse
 
+def _extract_dag_adjacency(model, config, threshold=False):
+    """Extract learned DAG weights via ``DeepCausalMMM.get_dag_adjacency_matrix``."""
+    n_media = getattr(model, 'n_media', None)
+    if not hasattr(model, 'get_dag_adjacency_matrix'):
+        n = n_media or 1
+        return np.eye(n) * (0.0 if threshold else 0.5)
+
+    try:
+        if threshold:
+            eps = float(config.get('notears_threshold', 0.3))
+            W = model.get_dag_adjacency_matrix(eps=eps)
+        else:
+            W = model.get_dag_adjacency_matrix(eps=None)
+        matrix = W.cpu().numpy()
+        np.fill_diagonal(matrix, 0.0)
+        return matrix
+    except Exception as e:
+        print(f"    Could not extract DAG adjacency ({e})")
+        n = n_media or 1
+        return np.zeros((n, n))
+
 def create_dag_network_visualization(model, media_names, output_path, config):
     """Create DAG network visualization"""
     try:
         # Extract ACTUAL DAG structure from trained model
         n_media = len(media_names)
         viz_config = config.get('visualization', {})
-        
-        # Get actual DAG adjacency matrix from model
-        if hasattr(model, 'adj_logits'):
-            try:
-                # Extract the learned adjacency matrix from adj_logits
-                adj_probs = torch.sigmoid(model.adj_logits)
-                correlation_matrix = adj_probs.detach().cpu().numpy()
-                print(f"    Using ACTUAL DAG structure from model (adj_logits)")
-                print(f"    DAG adjacency range: [{correlation_matrix.min():.3f}, {correlation_matrix.max():.3f}]")
-            except Exception as e:
-                print(f"    Could not extract DAG from model.adj_logits ({e}), using identity structure")
-                correlation_matrix = np.eye(n_media) * 0.5
-        else:
-            print(f"    Model doesn't have adj_logits, using identity structure")
-            correlation_matrix = np.eye(n_media) * 0.5
-        
-        # Ensure diagonal is zero for visualization
-        np.fill_diagonal(correlation_matrix, 0)
+
+        correlation_matrix = _extract_dag_adjacency(model, config, threshold=True)
+        print(f"    Using threshold_dag (eps={config.get('notears_threshold', 0.3)})")
+        print(f"    DAG adjacency range: [{correlation_matrix.min():.3f}, {correlation_matrix.max():.3f}]")
         
         # Create network graph
         G = nx.DiGraph()
@@ -342,26 +349,32 @@ def create_dag_network_visualization(model, media_names, output_path, config):
         for i, name in enumerate(media_names):
             G.add_node(i, name=name, label=name)
         
-        # Add edges based on adjacency matrix - MUCH MORE SELECTIVE
-        # Use higher threshold to show only the strongest relationships
-        correlation_threshold = viz_config.get('correlation_threshold', 0.65)  # Use config threshold for strongest relationships
-        
-        # Alternative: Show only top N strongest connections per node
-        max_edges_per_node = 3  # Maximum outgoing edges per node
-        
-        # Get top connections for each source node
-        for i in range(n_media):
-            # Get all outgoing connections from node i
-            outgoing_weights = [(j, correlation_matrix[i, j]) for j in range(n_media) if i != j]
-            # Sort by weight and take top connections
-            outgoing_weights.sort(key=lambda x: x[1], reverse=True)
-            
-            # Add only the strongest connections (above threshold AND top N)
-            added_edges = 0
-            for j, weight in outgoing_weights:
-                if weight > correlation_threshold and added_edges < max_edges_per_node:
-                    G.add_edge(i, j, weight=weight)
-                    added_edges += 1
+        correlation_threshold = viz_config.get('correlation_threshold', 0.05)
+        # Show the strongest causal edges globally (not top-N per source). This
+        # surfaces real hierarchy from the learned adjacency instead of forcing
+        # every channel to look equally connected.
+        top_n_global = int(viz_config.get('dag_top_n_edges', 15))
+        all_edges = [(i, j, correlation_matrix[i, j])
+                     for i in range(n_media) for j in range(n_media)
+                     if i != j and correlation_matrix[i, j] > correlation_threshold]
+        all_edges.sort(key=lambda e: e[2], reverse=True)
+        top_edges = all_edges[:top_n_global]
+        for i, j, weight in top_edges:
+            G.add_edge(i, j, weight=float(weight))
+        max_edges_per_node = top_n_global  # used in legend text below
+
+        # Persist the learned adjacency for downstream inspection / debugging.
+        try:
+            adj_csv_path = os.path.join(os.path.dirname(output_path), 'dag_adjacency.csv')
+            import pandas as _pd
+            _pd.DataFrame(correlation_matrix,
+                          index=media_names, columns=media_names).to_csv(adj_csv_path)
+            print(f"    Adjacency matrix saved -> {adj_csv_path}")
+            print(f"    Top {min(5, len(top_edges))} edges:")
+            for i, j, w in top_edges[:5]:
+                print(f"      {media_names[i]} -> {media_names[j]}: {w:.4f}")
+        except Exception as _e:
+            print(f"    (adjacency CSV save skipped: {_e})")
         
         # Create layout - more spread out to avoid porcupine effect
         if len(G.edges()) > 0:
@@ -373,60 +386,63 @@ def create_dag_network_visualization(model, media_names, output_path, config):
         # Create Plotly figure
         fig = go.Figure()
         
-        # Add edges with directional arrows
+        # Normalise weights so visual scaling spans the full weight range of
+        # the displayed edges (otherwise everything looks identical when all
+        # weights are clustered well below 1.0, which is the typical sigmoid range).
+        if len(G.edges()) > 0:
+            edge_weights = [G[u][v]['weight'] for u, v in G.edges()]
+            w_min, w_max = min(edge_weights), max(edge_weights)
+            w_span = max(w_max - w_min, 1e-6)
+        else:
+            w_min = w_max = w_span = 1.0
+
+        edge_width_multiplier = viz_config.get('edge_width_multiplier', 8)
+        line_opacity = viz_config.get('line_opacity', 0.6)
+
         for edge in G.edges():
             x0, y0 = pos[edge[0]]
             x1, y1 = pos[edge[1]]
             weight = G[edge[0]][edge[1]]['weight']
-            
-            edge_width_multiplier = viz_config.get('edge_width_multiplier', 8)
-            line_opacity = viz_config.get('line_opacity', 0.6)
-            
-            # Add subtle line for edge (lighter than before)
+            # Linear interpolation in [0, 1] across the visible edge range.
+            wn = (weight - w_min) / w_span
+            arrow_w = 1.5 + wn * (edge_width_multiplier - 1.5)
+            arrow_size = 1.0 + wn * 1.5
+            arrow_alpha = 0.35 + wn * 0.55
+
             fig.add_trace(go.Scatter(
                 x=[x0, x1, None],
                 y=[y0, y1, None],
                 mode='lines',
-                line=dict(width=max(1, weight*2), color=f'rgba(200,200,200,0.3)'),  # Much lighter background line
+                line=dict(width=max(0.5, wn * 1.5),
+                          color='rgba(200,200,200,0.25)'),
                 hoverinfo='none',
                 showlegend=False
             ))
-            
-            # Add arrow that ORIGINATES from source node and points to target
-            # Calculate direction vector
+
             dx = x1 - x0
             dy = y1 - y0
             length = (dx**2 + dy**2)**0.5
-            
             if length > 0:
                 dx_norm = dx / length
                 dy_norm = dy / length
-                
-                # Arrow starts near the source node (not at center)
-                node_radius = 0.05  # Approximate node radius
+                node_radius = 0.05
                 arrow_start_x = x0 + dx_norm * node_radius
                 arrow_start_y = y0 + dy_norm * node_radius
-                
-                # Arrow ends near the target node (not at center)
                 arrow_end_x = x1 - dx_norm * node_radius
                 arrow_end_y = y1 - dy_norm * node_radius
-                
-                # Arrow head size proportional to edge weight
-                arrow_head_size = weight * 20
-                
+
                 fig.add_annotation(
-                    x=arrow_end_x,  # Arrow points TO the target
+                    x=arrow_end_x,
                     y=arrow_end_y,
-                    ax=arrow_start_x,  # Arrow starts FROM the source
+                    ax=arrow_start_x,
                     ay=arrow_start_y,
-                    xref='x',
-                    yref='y',
-                    axref='x',
-                    ayref='y',
+                    xref='x', yref='y', axref='x', ayref='y',
                     arrowhead=2,
-                    arrowsize=1.8,
-                    arrowwidth=max(2, weight * 3),  # Arrow width also proportional to weight
-                    arrowcolor=f'rgba(125,125,125,{line_opacity + 0.4})',
+                    arrowsize=arrow_size,
+                    arrowwidth=arrow_w,
+                    arrowcolor=f'rgba(60,90,200,{arrow_alpha:.2f})',
+                    text=f"{weight:.2f}",
+                    font=dict(size=9, color='rgba(60,60,60,0.9)'),
                     showarrow=True
                 )
         
@@ -462,7 +478,10 @@ def create_dag_network_visualization(model, media_names, output_path, config):
             height=600,
             annotations=list(fig.layout.annotations) + [
                 dict(
-                    text=f"Top {max_edges_per_node} strongest influences per channel<br>Threshold: {correlation_threshold:.1f} • Thicker arrows = Stronger influence",
+                    text=(f"Top {top_n_global} strongest learned causal edges (global)<br>"
+                          f"Threshold: {correlation_threshold:.2f} • "
+                          f"Thicker / darker arrows = Stronger influence • "
+                          f"Edge labels show strength"),
                     showarrow=False,
                     xref="paper", yref="paper",
                     x=0.02, y=0.98, xanchor="left", yanchor="top",
@@ -485,25 +504,10 @@ def create_dag_heatmap_visualization(model, media_names, output_path, config):
     try:
         n_media = len(media_names)
         viz_config = config.get('visualization', {})
-        correlation_threshold = viz_config.get('correlation_threshold', 0.65)
-        
-        # Extract ACTUAL DAG adjacency matrix from trained model
-        if hasattr(model, 'adj_logits'):
-            try:
-                # Extract the learned adjacency matrix from adj_logits
-                adj_probs = torch.sigmoid(model.adj_logits)
-                adj_matrix = adj_probs.detach().cpu().numpy()
-                print(f"    Using ACTUAL DAG adjacency matrix from model (adj_logits)")
-                print(f"    DAG adjacency range: [{adj_matrix.min():.3f}, {adj_matrix.max():.3f}]")
-            except Exception as e:
-                print(f"    Could not extract DAG adjacency from model.adj_logits ({e}), using zeros")
-                adj_matrix = np.zeros((n_media, n_media))
-        else:
-            print(f"    Model doesn't have adj_logits, using zeros")
-            adj_matrix = np.zeros((n_media, n_media))
-        
-        # Ensure diagonal is zero
-        np.fill_diagonal(adj_matrix, 0)
+
+        adj_matrix = _extract_dag_adjacency(model, config, threshold=False)
+        print(f"    Using masked adjacency (dag_temperature={getattr(model, 'dag_temperature', 1.0)})")
+        print(f"    DAG adjacency range: [{adj_matrix.min():.3f}, {adj_matrix.max():.3f}]")
         
         fig = go.Figure(data=go.Heatmap(
             z=adj_matrix,

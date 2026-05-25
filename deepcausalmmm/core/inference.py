@@ -226,21 +226,34 @@ class InferenceManager:
             
         return coefficients
         
-    def get_dag_adjacency(self) -> Optional[np.ndarray]:
+    def get_dag_adjacency(self,
+                          threshold: bool = False,
+                          eps: Optional[float] = None) -> Optional[np.ndarray]:
         """
         Extract DAG adjacency matrix if available.
-        
+
+        Uses the same mask + ``dag_temperature`` scaling as training. Set
+        ``threshold=True`` (or pass ``eps``) to prune weak edges via
+        ``notears_threshold`` from config by default.
+
+        Args:
+            threshold: If True, zero entries below ``eps``.
+            eps: Pruning cutoff; defaults to ``config['notears_threshold']``.
+
         Returns:
             Adjacency matrix or None if DAG is not enabled
         """
-        if hasattr(self.model, 'adj_logits') and self.model.enable_dag:
-            with torch.no_grad():
-                # Apply triangular mask and sigmoid
-                adj_matrix = torch.sigmoid(self.model.adj_logits)
-                if hasattr(self.model, 'tri_mask'):
-                    adj_matrix = adj_matrix * self.model.tri_mask
-                return adj_matrix.cpu().numpy()
-        return None
+        if not (hasattr(self.model, 'get_dag_adjacency_matrix')
+                and self.model.enable_dag):
+            return None
+        with torch.no_grad():
+            if threshold or eps is not None:
+                prune_eps = (eps if eps is not None
+                             else float(self.config.get('notears_threshold', 0.3)))
+                W = self.model.get_dag_adjacency_matrix(eps=prune_eps)
+            else:
+                W = self.model.get_dag_adjacency_matrix(eps=None)
+            return W.cpu().numpy()
         
     def analyze_contributions(self,
                             X_media: np.ndarray,

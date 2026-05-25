@@ -5,6 +5,7 @@ DeepCausalMMM: Deep Learning Marketing Mix Modeling with Causal Structure
 A PyTorch-based implementation of Marketing Mix Modeling that incorporates:
 - GRU-based time-varying coefficients with advanced stabilization
 - DAG (Directed Acyclic Graph) structure for causal relationships
+  (upper-triangular mask by default; opt-in NOTEARS continuous learning)
 - Channel interaction modeling
 - Regional scaling and analysis
 

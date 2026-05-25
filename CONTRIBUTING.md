@@ -63,6 +63,7 @@ deepcausalmmm/                      # Project root
 ├── README.md                       # Documentation
 ├── LICENSE                         # MIT License
 ├── CHANGELOG.md                    # Version history and changes
+├── release_notes/                  # Release notes (see release_notes/README.md)
 ├── CONTRIBUTING.md                 # Development guidelines (this file)
 ├── CODE_OF_CONDUCT.md              # Code of conduct
 ├── CITATION.cff                    # Citation metadata for Zenodo/GitHub
