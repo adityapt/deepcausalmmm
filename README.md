@@ -394,23 +394,67 @@ Key configuration parameters:
 
 ### NOTEARS causal structure learning (opt-in)
 
-By default, acyclicity is enforced with an **upper-triangular** adjacency mask (`dag_mode: 'triangular'`). To learn channel ordering from data using the [NOTEARS](https://arxiv.org/abs/1803.01422) smooth penalty **h(W) = tr(exp(W ⊙ W)) − d**, set:
+By default, acyclicity is enforced with an **upper-triangular** adjacency mask (`dag_mode: 'triangular'`). To learn channel ordering from data using the [NOTEARS](https://arxiv.org/abs/1803.01422) smooth penalty **h(W) = tr(exp(W ⊙ W)) − d**, set `dag_mode: 'notears'`.
+
+| Mode | Config | When to use |
+|------|--------|-------------|
+| **Triangular** (default) | `dag_mode: 'triangular'` | Stable default; fixed channel order |
+| **NOTEARS** (opt-in) | `dag_mode: 'notears'` | Data-driven causal hierarchy between channels |
 
 ```python
 from deepcausalmmm.core import get_default_config
+from deepcausalmmm.core.trainer import ModelTrainer
+from deepcausalmmm.core.data import UnifiedDataPipeline
 
 config = get_default_config()
 config['dag_mode'] = 'notears'
-# Optional tuning (defaults in config.py):
-# config['notears_warmup_epochs'] = 500   # Huber-only, then enable penalty
-# config['notears_lambda1'] = 0.005       # L1 sparsity on adjacency
-# config['dag_temperature'] = 0.5       # Sharper {0,1} edges
-# config['notears_group_l1'] = 0.01       # Focused parents per channel
+config['notears_warmup_epochs'] = 500   # Huber-only first, then acyclicity penalty
+config['notears_lambda1'] = 0.005
+config['dag_temperature'] = 0.5
+config['notears_group_l1'] = 0.01
+config['notears_threshold'] = 0.3     # Pruning for plots / export
+
+pipeline = UnifiedDataPipeline(config)
+# ... prepare tensors and train/holdout split ...
+
+trainer = ModelTrainer(config)
+model = trainer.create_model(n_media, n_control, n_regions)
+trainer.create_optimizer_and_scheduler()
+trainer.train(
+    train_tensors['X_media'], train_tensors['X_control'],
+    train_tensors['R'], train_tensors['y'],
+    holdout_tensors['X_media'], holdout_tensors['X_control'],
+    holdout_tensors['R'], holdout_tensors['y'],
+    pipeline=pipeline,
+    verbose=True,  # logs [NOTEARS] warmup and dual updates
+)
 ```
 
-Training logs `[NOTEARS]` lines for warmup and dual updates. After training, inspect **`model.threshold_dag()`** or the dashboard’s **`dag_adjacency.csv`** (when using `examples/dashboard_rmse_optimized.py`). Huber prediction loss is unchanged; NOTEARS adds terms to **`get_dag_loss()`** only.
+**Inspect the learned graph** (canonical adjacency uses mask + temperature; optional pruning):
 
-Full Sphinx guide: [DAG and NOTEARS structure learning](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/dag_notears.html) (also linked from the quickstart).
+```python
+W = model.threshold_dag(eps=config['notears_threshold'])
+
+from deepcausalmmm.core.inference import InferenceManager
+manager = InferenceManager(model, config=config)
+adj_pruned = manager.get_dag_adjacency(threshold=True, eps=config['notears_threshold'])
+adj_continuous = manager.get_dag_adjacency(threshold=False)
+```
+
+Huber prediction loss is unchanged; NOTEARS adds terms to **`get_dag_loss()`** only. Dashboard / HTML DAG plots: `python examples/dashboard_rmse_optimized.py` (exports **`dag_adjacency.csv`**).
+
+| Key | Role |
+|-----|------|
+| `dag_mode` | `'triangular'` or `'notears'` |
+| `notears_warmup_epochs` | Fit-only epochs before the DAG penalty activates |
+| `notears_lambda1` | L1 sparsity on adjacency |
+| `notears_dual_update_every` | Augmented-Lagrangian dual update frequency |
+| `notears_dual_factor` | Penalty growth when acyclicity stalls |
+| `notears_threshold` | Pruning cutoff for `threshold_dag()` / exports |
+| `dag_temperature` | Edge sharpness in forward pass and adjacency export |
+| `notears_group_l1` | Focused parent sets per channel |
+
+Full guide: [DAG and NOTEARS structure learning](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/dag_notears.html) · [release_notes/1.0.21.md](release_notes/1.0.21.md)
 
 ### Response Curves
 - **Hill Saturation Modeling**: Non-linear response curves with Hill equations
