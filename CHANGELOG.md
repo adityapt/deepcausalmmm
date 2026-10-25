@@ -7,8 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **`DeepCausalMMM.get_dag_adjacency_matrix()`**: single source of truth for mask + `dag_temperature` adjacency; **`InferenceManager.get_dag_adjacency()`**, **`ComprehensiveAnalyzer`** DAG plots, and the dashboard delegate to it (replacing raw `sigmoid(adj_logits)`).
+## [2.0.0] - 2026-10-25
+
+### Added
+- **Post-fit causal scenario layer**: conditional NOTEARS discovers a candidate contemporaneous media DAG after conditioning on measured controls, DMA fixed effects, and Fourier time terms. The predictive GRU MMM is not modified.
+- **Nonlinear structural scenarios**: a monotone outcome equation evaluates observed-versus-``do(channel=0)`` direct, mediated, and total effects in KPI units.
+- **DMA-week-channel output**: the runner writes auditable, time-varying direct, mediated, and total scenario effects plus observed and counterfactual predictions for every DMA × week × channel row.
+- **Causal validation diagnostics**: zero-spend support, future-media lead placebo associations, and optional blocked-time DAG-edge stability screening.
+- **Intervention DAG rendering**: Graphviz output shows the exact positive, cycle-free DAG used by scenario propagation, separate from raw diagnostic edges.
+
+### Changed
+- **NOTEARS objective**: uses the mathematically equivalent innovation covariance form, removing panel-row work from every optimizer evaluation and aligning the scalar least-squares loss with its analytical gradient.
+- **DAG reporting contract**: raw NOTEARS edges are diagnostic-only; attribution and visualization report the same thresholded, positive, exact-DAG projection.
+
+### Breaking changes and limitations
+- The former experimental causal-training configuration is not part of v2. Causal scenarios are an explicit post-fit workflow run with ``examples/run_causal_attribution.py``.
+- Scenario shares are overlapping single-channel interventions, **not additive attribution**. Do not use them as a final budget allocation until an additive allocation method (for example, causal Shapley) is applied.
+- These estimates are assumption-based structural simulations, not experimentally identified incrementality. Passing diagnostics does not prove that unmeasured confounding is absent.
+
+### Documentation
+- Added v2 causal scenario tutorial and migration guide; README now documents outputs, assumptions, Graphviz setup, and stability-screen operation.
 
 ## [1.0.21] - 2026-05-23
 
@@ -437,5 +455,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and how to con
 ## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
-
 

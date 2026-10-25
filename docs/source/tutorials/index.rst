@@ -8,12 +8,14 @@ Step-by-step tutorials for using DeepCausalMMM.
 
    basic_mmm_workflow
    dag_notears
+   causal_scenarios
 
 Available Tutorials
 -------------------
 
 * :doc:`basic_mmm_workflow`: Complete end-to-end MMM workflow with synthetic data
 * :doc:`dag_notears`: DAG structure learning — triangular default and opt-in NOTEARS mode (v1.0.21+)
+* :doc:`causal_scenarios`: post-fit causal scenario workflow, DMA-week outputs, diagnostics, and limits (v2.0+)
 
 Coming Soon
 -----------

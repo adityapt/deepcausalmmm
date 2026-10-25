@@ -38,7 +38,8 @@ between channels through Directed Acyclic Graphs (DAGs).
 
 * **Config-Driven**: Every setting configurable via config.py
 * **GRU-Based Temporal Modeling**: Captures complex time-varying effects  
-* **DAG Learning**: Discovers causal relationships between channels (upper-triangular mask by default, or opt-in **NOTEARS** continuous optimisation — see :doc:`tutorials/dag_notears`)
+* **DAG Learning**: Learns candidate channel dependency structure (upper-triangular mask by default, or opt-in **NOTEARS** continuous optimisation — see :doc:`tutorials/dag_notears`)
+* **Causal scenarios**: Post-fit conditional NOTEARS scenarios with DMA-week outputs and diagnostics — see :doc:`tutorials/causal_scenarios`
 * **Multi-Region Support**: Handle geographic segmentation naturally
 * **Robust Statistical Methods**: Huber loss, comprehensive metrics
 * **Production Ready**: Battle-tested configurations and performance
@@ -69,6 +70,7 @@ between channels through Directed Acyclic Graphs (DAGs).
 
    installation
    quickstart
+   migration_v2
    tutorials/index
    api/index
    examples/index

@@ -25,7 +25,7 @@ A substantial part of the design and prototyping was done **locally before this 
 ### Architecture
 - **Config-Driven**: Every setting configurable via `config.py`
 - **GRU-Based Temporal Modeling**: Captures complex time-varying effects
-- **DAG Learning**: Discovers causal relationships between channels (upper-triangular mask by default, or **NOTEARS** continuous optimisation for data-driven topology)
+- **Post-Fit Causal Scenarios (opt-in)**: Conditional NOTEARS plus a structural outcome model produce DMA-week scenario estimates; observational DAGs are not causal proof.
 - **Learnable Coefficient Bounds**: Channel-specific, data-driven constraints
 - **Data-Driven Seasonality**: Automatic seasonal decomposition per region
 
@@ -75,6 +75,7 @@ pip install \
   "numpy>=1.21,<2.0" \
   "plotly>=5.0" \
   "networkx>=2.6" \
+  "graphviz>=0.20" \
   "scikit-learn>=1.0" \
   "scipy>=1.7" \
   "statsmodels>=0.13" \
@@ -85,7 +86,7 @@ pip install \
 
 ## IMPORTANT: Version Compatibility
 
-**The code examples in this README are for version 1.0.19+**
+**The code examples in this README are for version 2.0.0+.**
 
 If you installed from PyPI previously (`pip install deepcausalmmm`), you might have **v1.0.18** or below which has a **completely different API**. The examples below will NOT work for v1.0.18 and below.
 
@@ -103,10 +104,12 @@ pip install --upgrade git+https://github.com/adityapt/deepcausalmmm.git
 pip install --upgrade --force-reinstall deepcausalmmm
 ```
 
-### API Changes in v1.0.21:
-- **New (opt-in)**: `config['dag_mode'] = 'notears'` — NOTEARS continuous DAG learning with warmup, dual updates, and `model.threshold_dag()`
-- **New config keys**: `notears_warmup_epochs`, `notears_lambda1`, `notears_dual_factor`, `dag_temperature`, `notears_group_l1`, `notears_threshold`, `visualization.dag_top_n_edges`
-- **Default unchanged**: `dag_mode='triangular'` preserves prior acyclicity behaviour
+### v2.0.0 migration note
+
+The predictive GRU API is unchanged. Causal scenario outputs are now produced
+by the separate `examples/run_causal_attribution.py` workflow, rather than
+by adding causal assumptions to GRU training. See
+`docs/source/migration_v2.rst` for migration details and limitations.
 
 ### API Changes in v1.0.19:
 - **New**: `pipeline` parameter in `ModelTrainer.train()`
@@ -188,6 +191,40 @@ results = trainer.train(
 print(f"Training R²: {results['final_train_r2']:.3f}")
 print(f"Holdout R²: {results['final_holdout_r2']:.3f}")
 ```
+
+### Causal scenario layer (v2.0)
+
+The GRU MMM remains the predictive model. The causal scenario layer is a
+separate, opt-in post-fit workflow: it conditions media on measured controls,
+DMA fixed effects, and Fourier time features; learns a contemporaneous media
+DAG with conditional NOTEARS; then evaluates ``do(channel=0)`` scenarios with
+a monotone nonlinear outcome equation. It does **not** retrain or modify the
+GRU.
+
+```bash
+# Requires a cloned repository because the example data lives in examples/data.
+python examples/run_causal_attribution.py
+
+# Optional bounded, warm-started DAG stability screen.
+python examples/run_causal_attribution.py --bootstrap-repetitions 3 --bootstrap-block-size 10
+```
+
+The runner writes:
+
+* `causal_attribution_report.json` — aggregate direct, mediated, and total scenarios plus diagnostics;
+* `causal_attribution_dma_week_channel.csv` — one row per DMA × week × channel, with predicted and counterfactual visits and time-varying effects;
+* `causal_dag_positive.svg` — the exact positive, acyclic intervention DAG used by the scenario calculation.
+
+The output is assumption-based structural simulation, not experimentally
+identified incrementality. The learned graph is observational; passing the
+included support, future-media placebo, or bootstrap checks does not prove
+that unmeasured confounding is absent. Channel ``do(0)`` scenarios also
+overlap, so their shares are **not additive attribution**; use an additive
+Shapley-style allocation before treating them as a budget split.
+
+The SVG renderer requires both the Python dependency and the system Graphviz
+`dot` executable (for example, `brew install graphviz` or your platform's
+equivalent).
 
 ### Running Examples (Requires Cloning Repository)
 
