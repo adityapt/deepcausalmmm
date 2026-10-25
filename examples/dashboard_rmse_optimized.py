@@ -57,7 +57,7 @@ def load_config():
     print(f"    Hidden units: {config['hidden_dim']}, Dropout: {config['dropout']}")
     return config
 
-def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
+def load_real_mmm_data(filepath="examples/data/MMM Data.csv", return_panel_ids=False):
     """Load and process the real MMM Data.csv with robust missing data handling"""
     print(f" Loading Real MMM Data from: {filepath}")
 
@@ -154,6 +154,8 @@ def load_real_mmm_data(filepath="examples/data/MMM Data.csv"):
         print(f"    Visits range: {y.min():,.0f} - {y.max():,.0f}")
         print(f"    Real MMM data successfully loaded!")
 
+        if return_panel_ids:
+            return X_media, X_control, y, media_names, control_names, np.asarray(regions), np.asarray(weeks)
         return X_media, X_control, y, media_names, control_names
 
     except Exception as e:

@@ -7,9 +7,10 @@ causal outcome model before mediated credit is reported.
 """
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy as np
+import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import r2_score
 
@@ -194,12 +195,68 @@ class StructuralCausalAttributor:
 
 @dataclass(frozen=True)
 class NonlinearStructuralCausalEstimate:
-    """Counterfactual effects from a nonlinear structural outcome equation."""
+    """Counterfactual effects from a nonlinear structural outcome equation.
+
+    The three effect tensors have shape ``[DMA, week, channel]``.  They are
+    deliberately retained before aggregation so users can inspect the final
+    scenario estimate at the same DMA-week resolution as the input panel.
+    They are *time-varying effects*, not per-week coefficients: the nonlinear
+    response is conditioned on that row's controls, DMA fixed effect, Fourier
+    time features, and media state.
+    """
 
     attribution: CausalAttributionResult
     outcome_r2_in_sample: float
     outcome_r2_temporal_holdout: float
     dag_acyclicity: float
+    observed_prediction: np.ndarray
+    direct_counterfactual_prediction: np.ndarray
+    total_counterfactual_prediction: np.ndarray
+    direct_effect: np.ndarray
+    mediated_effect: np.ndarray
+    total_effect: np.ndarray
+
+    def dma_week_channel_frame(
+        self,
+        media: np.ndarray,
+        dma_ids: Optional[Sequence[object]] = None,
+        week_ids: Optional[Sequence[object]] = None,
+    ) -> pd.DataFrame:
+        """Return one audit-ready, time-varying scenario row per DMA-week-channel.
+
+        ``total_effect_visits`` is the model prediction difference between the
+        observed row and a ``do(channel=0)`` row with effects propagated along
+        the intervention DAG.  ``direct_effect_visits`` holds descendants
+        fixed; their difference is the mediated component.  This is the final
+        granular output to aggregate by DMA, week, or channel.
+        """
+        media = np.asarray(media, dtype=float)
+        n_dma, weeks, channels = media.shape
+        expected = (n_dma, weeks, channels)
+        if self.total_effect.shape != expected:
+            raise ValueError("media shape does not match this causal estimate")
+        dma_ids = np.asarray(dma_ids if dma_ids is not None else np.arange(n_dma))
+        week_ids = np.asarray(week_ids if week_ids is not None else np.arange(weeks))
+        if dma_ids.shape != (n_dma,) or week_ids.shape != (weeks,):
+            raise ValueError("dma_ids and week_ids must align with media dimensions")
+        dma_grid = np.broadcast_to(dma_ids[:, None, None], expected).reshape(-1)
+        week_grid = np.broadcast_to(week_ids[None, :, None], expected).reshape(-1)
+        channel_grid = np.broadcast_to(np.asarray(self.attribution.channel_names)[None, None, :], expected).reshape(-1)
+        observed_prediction = np.broadcast_to(self.observed_prediction[:, :, None], expected).reshape(-1)
+        return pd.DataFrame(
+            {
+                "dma": dma_grid,
+                "week": week_grid,
+                "channel": channel_grid,
+                "observed_media": media.reshape(-1),
+                "predicted_visits": observed_prediction,
+                "direct_counterfactual_predicted_visits": self.direct_counterfactual_prediction.reshape(-1),
+                "total_counterfactual_predicted_visits": self.total_counterfactual_prediction.reshape(-1),
+                "time_varying_direct_effect_visits": self.direct_effect.reshape(-1),
+                "time_varying_mediated_effect_visits": self.mediated_effect.reshape(-1),
+                "time_varying_total_effect_visits": self.total_effect.reshape(-1),
+            }
+        )
 
 
 class NonlinearStructuralCausalAttributor(StructuralCausalAttributor):
@@ -262,7 +319,8 @@ class NonlinearStructuralCausalAttributor(StructuralCausalAttributor):
 
         model = self._model(design.shape[1]).fit(features, target)
         in_sample_r2 = r2_score(target, model.predict(features))
-        direct, total = np.zeros(channels), np.zeros(channels)
+        direct_cf = np.empty((n_dma * weeks, channels))
+        total_cf = np.empty((n_dma * weeks, channels))
         observed_visits = np.expm1(model.predict(features))
         for channel in range(channels):
             counterfactual_media = dag.intervene(
@@ -273,12 +331,24 @@ class NonlinearStructuralCausalAttributor(StructuralCausalAttributor):
             z_direct[:, channel] = z_total[:, channel]
             direct_features = np.concatenate([design, z_direct], axis=1)
             total_features = np.concatenate([design, z_total], axis=1)
-            direct[channel] = float(np.sum(observed_visits - np.expm1(model.predict(direct_features))))
-            total[channel] = float(np.sum(observed_visits - np.expm1(model.predict(total_features))))
+            direct_cf[:, channel] = np.expm1(model.predict(direct_features))
+            total_cf[:, channel] = np.expm1(model.predict(total_features))
+
+        direct_effect = observed_visits[:, None] - direct_cf
+        total_effect = observed_visits[:, None] - total_cf
+        mediated_effect = total_effect - direct_effect
+        direct = direct_effect.sum(axis=0)
+        total = total_effect.sum(axis=0)
 
         return NonlinearStructuralCausalEstimate(
             attribution=combine_direct_and_total_effects(dag.node_names, direct, total),
             outcome_r2_in_sample=float(in_sample_r2),
             outcome_r2_temporal_holdout=float(cv_r2),
             dag_acyclicity=float(dag.acyclicity),
+            observed_prediction=observed_visits.reshape(n_dma, weeks),
+            direct_counterfactual_prediction=direct_cf.reshape(n_dma, weeks, channels),
+            total_counterfactual_prediction=total_cf.reshape(n_dma, weeks, channels),
+            direct_effect=direct_effect.reshape(n_dma, weeks, channels),
+            mediated_effect=mediated_effect.reshape(n_dma, weeks, channels),
+            total_effect=total_effect.reshape(n_dma, weeks, channels),
         )

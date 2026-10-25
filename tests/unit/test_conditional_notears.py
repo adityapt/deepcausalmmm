@@ -45,3 +45,14 @@ def test_intervention_projects_nearly_acyclic_weights_to_an_exact_dag():
     projected, order = result._thresholded_order(0.1)
     assert len(order) == 3
     assert np.count_nonzero(projected) == 2
+
+
+def test_fit_accepts_a_finite_adjacency_warm_start():
+    rng = np.random.default_rng(17)
+    media = np.exp(rng.normal(size=(5, 10, 2)))
+    controls = rng.normal(size=(5, 10, 1))
+    initial = np.array([[0.0, 0.3], [0.2, 0.0]])
+
+    result = ConditionalNotears(max_outer=2, max_iter=30).fit(media, controls, initial_adjacency=initial)
+
+    assert result.adjacency.shape == initial.shape

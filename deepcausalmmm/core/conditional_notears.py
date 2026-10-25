@@ -190,6 +190,7 @@ class ConditionalNotears:
         media: np.ndarray,
         controls: np.ndarray,
         media_names: Optional[List[str]] = None,
+        initial_adjacency: Optional[np.ndarray] = None,
     ) -> ConditionalNotearsResult:
         media = np.asarray(media, dtype=float)
         controls = np.asarray(controls, dtype=float)
@@ -210,24 +211,42 @@ class ConditionalNotears:
         innovation_mean = residuals.mean(axis=0)
         innovation_scale = residuals.std(axis=0) + 1e-8
         innovations = (residuals - innovation_mean) / innovation_scale
+        # The NOTEARS least-squares term depends on the innovations only
+        # through their covariance.  Keeping the full [DMA-week, channel]
+        # matrix inside every L-BFGS objective call made the 13-node problem
+        # unnecessarily scale with panel rows.  With S = X'X / n:
+        #
+        #   1/(2n) ||X - XW||_F^2 = 1/2 tr((I-W)' S (I-W)).
+        #
+        # This form also makes the analytical gradient below exact.  The
+        # previous scalar objective used ``mean`` over channels while its
+        # gradient used 1/n, a factor-of-d inconsistency.
+        covariance = innovations.T @ innovations / innovations.shape[0]
+        identity = np.eye(d)
         mask = 1.0 - np.eye(d)
         epsilon = 1e-6
-        weights = np.zeros((d, d))
+        if initial_adjacency is None:
+            weights = np.zeros((d, d))
+        else:
+            weights = np.asarray(initial_adjacency, dtype=float).copy()
+            if weights.shape != (d, d) or not np.isfinite(weights).all():
+                raise ValueError("initial_adjacency must be a finite [channel, channel] matrix")
+            weights *= mask
         rho, alpha, previous_h = 1.0, 0.0, np.inf
         objective_history = []
 
         for _ in range(self.max_outer):
             def objective(flat_weights):
                 w = flat_weights.reshape(d, d) * mask
-                residual = innovations - innovations @ w
-                fit_loss = 0.5 * np.mean(residual * residual)
+                residual_factor = identity - w
+                fit_loss = 0.5 * np.trace(residual_factor.T @ covariance @ residual_factor)
                 h = self._acyclicity(w)
                 l1 = np.sum(np.sqrt(w * w + epsilon))
                 objective_value = fit_loss + self.lambda1 * l1 + alpha * h + 0.5 * rho * h * h
 
                 grad_h = 2.0 * (expm(w * w).T * w)
                 gradient = (
-                    -innovations.T @ residual / innovations.shape[0]
+                    covariance @ (w - identity)
                     + self.lambda1 * w / np.sqrt(w * w + epsilon)
                     + (alpha + rho * h) * grad_h
                 ) * mask
