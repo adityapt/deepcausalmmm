@@ -267,10 +267,16 @@ class ModelTrainer:
         csv_path = output_dir / 'causal_attribution_dma_week_channel.csv'
         report_path = output_dir / 'causal_attribution_report.json'
         dot_path = output_dir / 'causal_dag_positive.dot'
+        svg_path = output_dir / 'causal_dag_positive.svg'
         estimate.dma_week_channel_frame(media, panel['dma_ids'], panel['week_ids']).to_csv(csv_path, index=False)
         weights, _ = dag._thresholded_order(threshold, positive_only=True)
         graph = build_constrained_causal_dag(dag, control_names, threshold=threshold, positive_only=True)
         dot_path.write_text(graph.source)
+        try:
+            rendered_svg = Path(graph.render(filename=svg_path.stem, directory=str(output_dir), cleanup=True))
+        except Exception as exc:  # Graphviz's system renderer is optional at runtime.
+            logger.warning("Could not render causal DAG SVG; DOT source remains available: %s", exc)
+            rendered_svg = None
         report = {
             'method': 'mandatory v2 post-fit nonlinear structural scenario model + conditional NOTEARS',
             'dag_acyclicity': estimate.dag_acyclicity,
@@ -283,6 +289,7 @@ class ModelTrainer:
             'validation': validation.to_dict(),
             'dma_week_channel_output': str(csv_path),
             'intervention_dag_dot': str(dot_path),
+            'intervention_dag_svg': str(rendered_svg) if rendered_svg else None,
         }
         report_path.write_text(json.dumps(report, indent=2) + '\n')
         return {'causal_dag': dag, 'causal_estimate': estimate, 'causal_report_path': str(report_path), 'causal_dag_path': str(dot_path)}
@@ -487,8 +494,11 @@ class ModelTrainer:
         # Calculate metrics IN SCALED SPACE (y/y_mean) for training stability
         # Original-space conversion should ONLY be done for final reporting
         with torch.no_grad():
-            y_np = y.detach().cpu().numpy().flatten()
-            pred_np = predictions.detach().cpu().numpy().flatten()
+            burn_in_weeks = int(self.config.get('burn_in_weeks', 0))
+            y_eval = self._trim_burn_in_time(y, burn_in_weeks)
+            prediction_eval = self._trim_burn_in_time(predictions, burn_in_weeks)
+            y_np = y_eval.detach().cpu().numpy().flatten()
+            pred_np = prediction_eval.detach().cpu().numpy().flatten()
             
             rmse = np.sqrt(mean_squared_error(y_np, pred_np))
             r2 = r2_score(y_np, pred_np) if len(np.unique(y_np)) > 1 else 0.0
@@ -548,8 +558,11 @@ class ModelTrainer:
             
             # Calculate metrics IN SCALED SPACE (y/y_mean) for training stability
             # Original-space conversion should ONLY be done for final reporting
-            y_np = y.detach().cpu().numpy().flatten()
-            pred_np = predictions.detach().cpu().numpy().flatten()
+            burn_in_weeks = int(self.config.get('burn_in_weeks', 0))
+            y_eval = self._trim_burn_in_time(y, burn_in_weeks)
+            prediction_eval = self._trim_burn_in_time(predictions, burn_in_weeks)
+            y_np = y_eval.detach().cpu().numpy().flatten()
+            pred_np = prediction_eval.detach().cpu().numpy().flatten()
             
             rmse = np.sqrt(mean_squared_error(y_np, pred_np))
             r2 = r2_score(y_np, pred_np) if len(np.unique(y_np)) > 1 else 0.0
