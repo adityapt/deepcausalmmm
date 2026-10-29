@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **DAG reporting contract**: raw NOTEARS edges are diagnostic-only; attribution and visualization report the same thresholded, positive, exact-DAG projection.
 
 ### Breaking changes and limitations
-- The former experimental causal-training configuration is not part of v2. Causal scenarios are an explicit post-fit workflow run with ``examples/run_causal_attribution.py``.
+- The former experimental causal-training configuration is not part of v2. Causal scenarios are a mandatory post-fit stage of standard ``ModelTrainer.train()`` execution.
 - Scenario shares are overlapping single-channel interventions, **not additive attribution**. Do not use them as a final budget allocation until an additive allocation method (for example, causal Shapley) is applied.
 - These estimates are assumption-based structural simulations, not experimentally identified incrementality. Passing diagnostics does not prove that unmeasured confounding is absent.
 

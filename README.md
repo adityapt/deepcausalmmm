@@ -25,7 +25,7 @@ A substantial part of the design and prototyping was done **locally before this 
 ### Architecture
 - **Config-Driven**: Every setting configurable via `config.py`
 - **GRU-Based Temporal Modeling**: Captures complex time-varying effects
-- **Post-Fit Causal Scenarios (opt-in)**: Conditional NOTEARS plus a structural outcome model produce DMA-week scenario estimates; observational DAGs are not causal proof.
+- **Mandatory Causal Artifacts**: Every standard training run refreshes a conditional NOTEARS DAG and produces DMA-week structural scenario estimates; observational DAGs are not causal proof.
 - **Learnable Coefficient Bounds**: Channel-specific, data-driven constraints
 - **Data-Driven Seasonality**: Automatic seasonal decomposition per region
 
@@ -106,9 +106,10 @@ pip install --upgrade --force-reinstall deepcausalmmm
 
 ### v2.0.0 migration note
 
-The predictive GRU API is unchanged. Causal scenario outputs are now produced
-by the separate `examples/run_causal_attribution.py` workflow, rather than
-by adding causal assumptions to GRU training. See
+The predictive GRU API is unchanged, but standard v2 training requires a
+fitted ``UnifiedDataPipeline`` with raw DMA-week media, outcome, and
+pre-treatment controls. Training always refreshes causal artifacts after the
+GRU fit, rather than adding causal assumptions to the GRU loss. See
 `docs/source/migration_v2.rst` for migration details and limitations.
 
 ### API Changes in v1.0.19:
@@ -195,17 +196,17 @@ print(f"Holdout R²: {results['final_holdout_r2']:.3f}")
 ### Causal scenario layer (v2.0)
 
 The GRU MMM remains the predictive model. The causal scenario layer is a
-separate, opt-in post-fit workflow: it conditions media on measured controls,
+mandatory post-fit stage of standard training: it conditions media on measured controls,
 DMA fixed effects, and Fourier time features; learns a contemporaneous media
 DAG with conditional NOTEARS; then evaluates ``do(channel=0)`` scenarios with
 a monotone nonlinear outcome equation. It does **not** retrain or modify the
 GRU.
 
 ```bash
-# Requires a cloned repository because the example data lives in examples/data.
+# Standalone inspection runner; standard ModelTrainer.train() also writes these artifacts.
 python examples/run_causal_attribution.py
 
-# Optional bounded, warm-started DAG stability screen.
+# Optional bounded, warm-started DAG stability screen added to the mandatory artifacts.
 python examples/run_causal_attribution.py --bootstrap-repetitions 3 --bootstrap-block-size 10
 ```
 

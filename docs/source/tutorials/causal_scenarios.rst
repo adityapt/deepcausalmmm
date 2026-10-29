@@ -1,15 +1,16 @@
 Causal scenario workflow
 ========================
 
-DeepCausalMMM v2 keeps predictive MMM and causal scenario analysis separate.
-The GRU MMM remains responsible for predictive modeling. The causal scenario
-workflow is a post-fit structural analysis for a panel of non-negative media,
-measured controls, and a KPI.
+DeepCausalMMM v2 keeps the GRU prediction loss and causal scenario estimation
+separate, but the causal stage is mandatory in standard training. After every
+``ModelTrainer.train()`` call, the package refreshes the DAG and emits causal
+artifacts for the raw panel of non-negative media, measured controls, and KPI.
 
 Run the example
 ---------------
 
-From a cloned repository, run:
+``ModelTrainer.train()`` writes causal artifacts automatically. From a cloned
+repository, this standalone runner performs the same causal stage directly:
 
 .. code-block:: bash
 

@@ -12,10 +12,11 @@ loss.
 What changed
 ------------
 
-Causal scenario analysis is now an explicit post-fit workflow in
-``examples/run_causal_attribution.py``. It emits a report, an intervention DAG
-SVG, and a DMA-week-channel CSV. This separation protects the predictive GRU
-fit from unvalidated structural assumptions.
+Causal scenario analysis is a mandatory post-fit stage of
+``ModelTrainer.train()``. It emits a report, an intervention DAG DOT file, and
+a DMA-week-channel CSV. This separation protects the predictive GRU fit from
+observational structural assumptions while ensuring every training run refreshes
+the learned graph.
 
 Remove configuration that belonged to the abandoned experimental
 causal-training path, including ``causal_graph_mode``,

@@ -3,6 +3,9 @@ Reusable ModelTrainer class for DeepCausalMMM training.
 Eliminates code duplication and provides consistent training interface.
 """
 
+import json
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -205,6 +208,84 @@ class ModelTrainer:
                 min_lr=scheduler_config.get('min_lr', 1e-8)
             )
             self.warmup_scheduler = None
+
+    def _run_mandatory_causal_stage(self, pipeline: Any) -> Dict[str, Any]:
+        """Learn and persist the v2 causal artifacts for the raw train panel.
+
+        This stage is deliberately post-fit. It refreshes the learned DAG on
+        every call to :meth:`train` without allowing observational structure
+        assumptions to alter the GRU prediction loss.
+        """
+        if pipeline is None or not hasattr(pipeline, 'get_causal_training_panel'):
+            raise ValueError(
+                "v2 training requires a fitted UnifiedDataPipeline so the mandatory causal "
+                "stage can access raw DMA-week media, controls, and outcome data"
+            )
+        panel = pipeline.get_causal_training_panel()
+        media, controls, outcome = panel['media'], panel['controls'], panel['outcome']
+        if media.ndim != 3 or controls.ndim != 3 or outcome.shape != media.shape[:2]:
+            raise ValueError("causal panel must contain aligned [DMA, week] media, controls, and outcome")
+        if media.shape[-1] == 0 or controls.shape[-1] == 0:
+            raise ValueError("v2 causal training requires at least one media channel and pre-treatment control")
+        if np.any(media < 0):
+            raise ValueError("v2 causal training requires non-negative raw media")
+
+        from deepcausalmmm.core.causal_attribution import NonlinearStructuralCausalAttributor
+        from deepcausalmmm.core.causal_validation import CausalValidationSuite
+        from deepcausalmmm.core.causal_visualization import build_constrained_causal_dag
+        from deepcausalmmm.core.conditional_notears import ConditionalNotears
+
+        options = self.config['causal']
+        channel_names = list(self.config.get('media_channel_names') or [f"channel_{index + 1:02d}" for index in range(media.shape[-1])])
+        control_names = list(self.config.get('causal_control_names') or [f"control_{index + 1:02d}" for index in range(controls.shape[-1])])
+        if len(channel_names) != media.shape[-1] or len(control_names) != controls.shape[-1]:
+            raise ValueError("causal channel/control names must align with the raw training panel")
+
+        threshold = float(options['dag_threshold'])
+        dag = ConditionalNotears(
+            lambda1=float(options['dag_lambda1']),
+            max_outer=int(options['dag_max_outer']),
+            max_iter=int(options['dag_max_iter']),
+        ).fit(media, controls, channel_names)
+        estimate = NonlinearStructuralCausalAttributor(
+            max_iter=int(options['outcome_max_iter']),
+            l2_regularization=float(options['outcome_l2_regularization']),
+        ).fit(media, controls, outcome, dag, threshold=threshold)
+        validation = CausalValidationSuite(
+            discovery_lambda1=float(options['dag_lambda1']),
+            discovery_max_outer=int(options['dag_max_outer']),
+            discovery_max_iter=int(options['dag_max_iter']),
+        ).run(
+            media, controls, outcome, dag, threshold=threshold,
+            bootstrap_repetitions=int(options['bootstrap_repetitions']),
+            bootstrap_block_size=options['bootstrap_block_size'],
+            bootstrap_seed=int(options['bootstrap_seed']),
+        )
+
+        output_dir = Path(options['output_dir'])
+        output_dir.mkdir(parents=True, exist_ok=True)
+        csv_path = output_dir / 'causal_attribution_dma_week_channel.csv'
+        report_path = output_dir / 'causal_attribution_report.json'
+        dot_path = output_dir / 'causal_dag_positive.dot'
+        estimate.dma_week_channel_frame(media, panel['dma_ids'], panel['week_ids']).to_csv(csv_path, index=False)
+        weights, _ = dag._thresholded_order(threshold, positive_only=True)
+        graph = build_constrained_causal_dag(dag, control_names, threshold=threshold, positive_only=True)
+        dot_path.write_text(graph.source)
+        report = {
+            'method': 'mandatory v2 post-fit nonlinear structural scenario model + conditional NOTEARS',
+            'dag_acyclicity': estimate.dag_acyclicity,
+            'outcome_r2_in_sample_log_visits': estimate.outcome_r2_in_sample,
+            'outcome_r2_temporal_holdout_log_visits': estimate.outcome_r2_temporal_holdout,
+            'intervention_dag_edges': [
+                {'parent': dag.node_names[parent], 'child': dag.node_names[child], 'weight': float(weights[parent, child])}
+                for parent, child in zip(*np.nonzero(weights))
+            ],
+            'validation': validation.to_dict(),
+            'dma_week_channel_output': str(csv_path),
+            'intervention_dag_dot': str(dot_path),
+        }
+        report_path.write_text(json.dumps(report, indent=2) + '\n')
+        return {'causal_dag': dag, 'causal_estimate': estimate, 'causal_report_path': str(report_path), 'causal_dag_path': str(dot_path)}
         
     def warm_start_training(self, X_media: torch.Tensor, X_control: torch.Tensor, 
                            R: torch.Tensor, y: torch.Tensor, verbose: bool = True) -> None:
@@ -789,6 +870,8 @@ class ModelTrainer:
                 'holdout_r2_scaled': holdout_r2_scaled,         # R² in scaled space (y/mean)
                 'holdout_rmse_scaled': holdout_rmse_scaled,     # RMSE in scaled space (training metric)
             })
+
+        final_results.update(self._run_mandatory_causal_stage(pipeline))
             
         return final_results
     
