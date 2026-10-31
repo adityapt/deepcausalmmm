@@ -37,3 +37,26 @@ Scaling
    :members:
    :undoc-members:
    :show-inheritance:
+
+Causal scenario layer
+---------------------
+
+The causal scenario modules are post-fit tools. They do not alter the GRU
+prediction loss; see :doc:`../tutorials/causal_scenarios` for assumptions and
+interpretation.
+
+.. automodule:: deepcausalmmm.core.conditional_notears
+   :members:
+   :undoc-members:
+
+.. automodule:: deepcausalmmm.core.causal_attribution
+   :members:
+   :undoc-members:
+
+.. automodule:: deepcausalmmm.core.causal_validation
+   :members:
+   :undoc-members:
+
+.. automodule:: deepcausalmmm.core.causal_visualization
+   :members:
+   :undoc-members:

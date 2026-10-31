@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use DeepCausalMMM in your research, please cite the JOSS paper below."
 title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"
-version: "1.0.21"
+version: "2.0.0"
 doi: 10.21105/joss.09914
 authors:
   - family-names: Puttaparthi Tirumala
@@ -10,14 +10,14 @@ authors:
     email: puttaparthy.aditya@gmail.com
     affiliation: Independent Researcher
 license: MIT
-date-released: 2026-05-23
+date-released: 2026-10-28
 type: software
 url: https://github.com/adityapt/deepcausalmmm
 repository-code: https://github.com/adityapt/deepcausalmmm
 identifiers:
   - type: doi
     value: 10.5281/zenodo.16934842
-    description: "Zenodo archive of the software release (v1.0.21)"
+    description: "Zenodo archive of the prior software release (v1.0.21)"
   - type: other
     value: "arXiv:2510.13087"
     description: "arXiv preprint of the JOSS paper"
@@ -29,20 +29,20 @@ keywords:
   - PyTorch
   - GRU
   - DAG
+  - causal discovery
+  - structural causal models
   - response curves
   - saturation modeling
 abstract: |
   DeepCausalMMM is a Python package for Marketing Mix Modeling (MMM) that
-  combines deep learning, causal inference, and marketing science. It uses
-  Gated Recurrent Units (GRUs) to learn temporal patterns such as adstock and
-  lag, while learning statistical dependencies between marketing channels
-  through a Directed Acyclic Graph (DAG) structure with upper triangular
-  constraints. It implements Hill equation saturation curves for diminishing
-  returns and budget optimization. Key features include data-driven
-  hyperparameters, linear mean scaling of the dependent variable, configurable
-  attribution priors with dynamic loss scaling, multi-region modeling with
-  shared and region-specific parameters, robust methods including Huber loss,
-  and response curve analysis.
+  combines deep learning, marketing science, and a mandatory post-fit causal
+  scenario workflow. It uses Gated Recurrent Units (GRUs) to learn temporal
+  patterns such as adstock and lag, then learns a conditional NOTEARS directed
+  acyclic graph among media innovations after adjustment for measured controls,
+  DMA effects, and time features. It emits auditable DMA-week-channel
+  structural scenarios, intervention DAGs, and robustness diagnostics while
+  retaining response curves and budget optimization. Observational DAG outputs
+  remain assumption-based and require external validation for causal claims.
 preferred-citation:
   type: article
   title: "DeepCausalMMM: A Deep Learning Framework for Marketing Mix Modeling with Causal Structure Learning"

@@ -124,6 +124,22 @@ def get_default_config() -> Dict[str, Any]:
         'notears_dual_factor': 3.0,      # rho multiplier per dual update when h stalls
         'dag_temperature': 0.5,          # <1 sharpens sigmoid edges toward {0,1} (NOTEARS)
         'notears_group_l1': 0.01,        # Column-group L1: focused parents per channel
+
+        # Mandatory post-fit causal scenario stage. This is intentionally
+        # separate from the GRU prediction loss: the DAG is learned from the
+        # unscaled panel after predictive training completes.
+        'causal': {
+            'dag_threshold': 0.15,
+            'dag_lambda1': 0.01,
+            'dag_max_outer': 15,
+            'dag_max_iter': 300,
+            'outcome_max_iter': 300,
+            'outcome_l2_regularization': 10.0,
+            'bootstrap_repetitions': 0,
+            'bootstrap_block_size': None,
+            'bootstrap_seed': 42,
+            'output_dir': 'results/causal',
+        },
         
         # Optimizer settings
         'optimizer': {
@@ -207,4 +223,4 @@ def update_config(base_config: Dict[str, Any], updates: Dict[str, Any]) -> Dict[
             config[key].update(value)
         else:
             config[key] = value
-    return config 
+    return config

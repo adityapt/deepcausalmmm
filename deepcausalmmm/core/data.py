@@ -555,6 +555,16 @@ class UnifiedDataPipeline:
             'y': y_padded,
             'R': R
         }
+        # Keep the pre-scaling panel for the mandatory post-fit causal stage.
+        # It must not use burn-in padding or feature-scaled media because
+        # ConditionalNotears models log1p of non-negative observed media.
+        self.causal_train_panel = {
+            'media': np.asarray(train_data['X_media'], dtype=float).copy(),
+            'controls': np.asarray(train_data['X_control'], dtype=float).copy(),
+            'outcome': np.asarray(train_data['y'], dtype=float).copy(),
+            'dma_ids': np.arange(train_data['X_media'].shape[0]),
+            'week_ids': np.arange(train_data['X_media'].shape[1]),
+        }
         
         logger.info(f"   Training data processed:")
         logger.info(f"   Shape: {X_media_padded.shape[0]} regions × {X_media_padded.shape[1]} weeks")
@@ -564,6 +574,12 @@ class UnifiedDataPipeline:
         logger.info(f"   Added {self.padding_weeks} weeks padding")
         
         return self.train_tensors
+
+    def get_causal_training_panel(self) -> Dict[str, np.ndarray]:
+        """Return the raw training panel required by the mandatory DAG stage."""
+        if not hasattr(self, 'causal_train_panel'):
+            raise ValueError("Fit the training panel before requesting causal data")
+        return self.causal_train_panel
     
     def transform_holdout(self, holdout_data: Dict[str, np.ndarray]) -> Dict[str, torch.Tensor]:
         """

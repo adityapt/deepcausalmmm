@@ -3,6 +3,7 @@
 import pytest
 import numpy as np
 import torch
+from pathlib import Path
 from deepcausalmmm import DeepCausalMMM, get_default_config
 from deepcausalmmm.core.trainer import ModelTrainer
 from deepcausalmmm.core.data import UnifiedDataPipeline
@@ -78,6 +79,10 @@ def test_model_trainer_basic_training(synthetic_mmm_data):
     assert 'train_rmses' in results
     assert 'train_r2s' in results
     assert len(results['train_losses']) > 0
+    assert 'causal_dag' in results
+    assert 'causal_estimate' in results
+    assert Path(results['causal_report_path']).exists()
+    assert Path(results['causal_dag_path']).exists()
     
     # Check that loss decreased (basic sanity check)
     initial_loss = results['train_losses'][0]

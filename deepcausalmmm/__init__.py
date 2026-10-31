@@ -35,22 +35,26 @@ def _setup_logging():
 _setup_logging()
 
 try:
-    from importlib.metadata import version
-    __version__ = version("deepcausalmmm")
-except ImportError:
-    # Fallback: read from pyproject.toml using simple parsing
-    try:
-        from pathlib import Path
-        pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-        with open(pyproject_path, "r") as f:
-            for line in f:
-                if line.strip().startswith('version = '):
-                    __version__ = line.split('=')[1].strip().strip('"\'')
-                    break
-            else:
-                __version__ = "unknown"
-    except Exception:
-        __version__ = "unknown"
+    # Prefer local project metadata when imported directly from a checkout.
+    # This keeps the CLI and Sphinx docs aligned with a pending release before
+    # an editable install is refreshed. Installed wheels have no adjacent
+    # pyproject.toml and therefore use distribution metadata below.
+    from pathlib import Path
+
+    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+    if pyproject_path.exists():
+        for line in pyproject_path.read_text().splitlines():
+            if line.strip().startswith('version = '):
+                __version__ = line.split('=', 1)[1].strip().strip('"\'')
+                break
+        else:
+            raise RuntimeError("project version is missing")
+    else:
+        from importlib.metadata import version
+
+        __version__ = version("deepcausalmmm")
+except Exception:
+    __version__ = "unknown"
 
 # Core model (essential)
 from deepcausalmmm.core.unified_model import DeepCausalMMM
