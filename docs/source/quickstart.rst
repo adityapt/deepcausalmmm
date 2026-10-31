@@ -153,8 +153,13 @@ Customize the model for your specific use case:
     trainer.create_optimizer_and_scheduler()
     results = trainer.train(...)
 
-NOTEARS DAG learning (optional)
---------------------------------
+Training-time NOTEARS regularization (optional)
+------------------------------------------------
+
+This is the legacy, predictive-model adjacency regularizer. It is distinct
+from—and does not replace—the mandatory post-fit causal scenario DAG written
+by ``ModelTrainer.train()``. See :doc:`tutorials/causal_scenarios` for that
+workflow and its assumptions.
 
 The default ``dag_mode`` is ``'triangular'`` (acyclicity via an upper-triangular mask).
 To learn channel ordering from data with the NOTEARS continuous penalty

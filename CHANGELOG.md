@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.0] - 2026-10-25
+## [2.0.0] - 2026-10-30
 
 ### Added
 - **Post-fit causal scenario layer**: conditional NOTEARS discovers a candidate contemporaneous media DAG after conditioning on measured controls, DMA fixed effects, and Fourier time terms. The predictive GRU MMM is not modified.
@@ -445,11 +445,10 @@ r2_score = fitter.calculate_r2_and_plot(save_path='response_curve.html')
 - **Transfer Learning**: Pre-trained models for quick deployment
 - **Cloud Integration**: AWS/GCP deployment utilities
 
-### [2.0.0] - Next Generation
-- **Transformer Architecture**: Attention-based temporal modeling
-- **Multi-Modal Learning**: Integration of external data sources
-- **Federated Learning**: Distributed training across datasets
-- **AutoML Integration**: Automated model selection and tuning
+### [2.1.0] - Planned Features
+- **Additive causal allocation**: causal-Shapley allocation for channel shares that reconcile to a total scenario.
+- **Faster stability validation**: parallel and cached blocked-time DAG refits for offline validation.
+- **External calibration**: interfaces for geo-lift, experiments, and other incremental-effect evidence.
 
 ---
 

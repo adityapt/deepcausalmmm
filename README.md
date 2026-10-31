@@ -266,7 +266,7 @@ deepcausalmmm/                      # Project root
 ├── README.md                       # This documentation
 ├── LICENSE                         # MIT License
 ├── CHANGELOG.md                    # Version history and changes
-├── release_notes/                  # Release notes (latest: 1.0.21.md; archive/ for older)
+├── release_notes/                  # Release notes (latest: 2.0.0.md; archive/ for older)
 ├── CONTRIBUTING.md                 # Development guidelines
 ├── CODE_OF_CONDUCT.md              # Code of conduct
 ├── CITATION.cff                    # Citation metadata for Zenodo/GitHub
@@ -287,6 +287,10 @@ deepcausalmmm/                      # Project root
 │   │   ├── scaling.py             # SimpleGlobalScaler for data normalization
 │   │   ├── seasonality.py         # Seasonal decomposition utilities
 │   │   ├── dag_model.py           # DAG learning and causal inference
+│   │   ├── conditional_notears.py # Conditional NOTEARS media-DAG estimator
+│   │   ├── causal_attribution.py  # DMA-week structural do() scenarios
+│   │   ├── causal_validation.py   # Support, placebo, and stability checks
+│   │   ├── causal_visualization.py # Graphviz intervention-DAG renderer
 │   │   ├── inference.py           # Model inference and prediction
 │   │   ├── train_model.py         # Training functions and utilities
 │   │   └── visualization.py       # Core visualization components
@@ -311,6 +315,7 @@ deepcausalmmm/                      # Project root
 │   ├── dashboard_rmse_optimized.py # Comprehensive dashboard with 14+ visualizations
 │   ├── example_response_curves.py  # Response curve fitting examples
 │   ├── example_budget_optimization.py  # Budget optimization workflow
+│   ├── run_causal_attribution.py   # Standalone causal scenario runner
 │   └── data/                      # Example data directory
 │       └── MMM Data.csv           # Anonymized real-world MMM dataset
 │
@@ -492,7 +497,8 @@ Huber prediction loss is unchanged; NOTEARS adds terms to **`get_dag_loss()`** o
 | `dag_temperature` | Edge sharpness in forward pass and adjacency export |
 | `notears_group_l1` | Focused parent sets per channel |
 
-Full guide: [DAG and NOTEARS structure learning](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/dag_notears.html) · [release_notes/1.0.21.md](release_notes/1.0.21.md)
+The optional training-time NOTEARS mode above is distinct from the mandatory
+post-fit causal scenario DAG. See [DAG and NOTEARS structure learning](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/dag_notears.html), the [causal scenario guide](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/causal_scenarios.html), and [v2.0.0 release notes](release_notes/2.0.0.md).
 
 ### Response Curves
 - **Hill Saturation Modeling**: Non-linear response curves with Hill equations
@@ -648,11 +654,12 @@ MIT License - see [LICENSE](LICENSE) file.
 
 ## Roadmap
 
-### Version 1.0.21
-- **NOTEARS DAG learning**: `dag_mode='notears'` — augmented-Lagrangian acyclicity, warmup, per-channel parent blending, group L1, temperature-scaled edges ([release notes](release_notes/1.0.21.md), [CHANGELOG](CHANGELOG.md)).
+### Version 2.0.0
+
+- **Mandatory causal scenario layer**: standard training now produces a conditional NOTEARS intervention DAG, DMA-week-channel structural scenario CSV, JSON diagnostics, and Graphviz SVG. The GRU prediction loss remains unchanged. See the [release notes](release_notes/2.0.0.md) and [causal scenario guide](https://deepcausalmmm.readthedocs.io/en/latest/tutorials/causal_scenarios.html).
 
 ### Future
-- **Further causal discovery**: stability selection, interventional validation, and richer DAG post-processing beyond NOTEARS pruning.
+- **Causal allocation and validation**: additive causal-Shapley allocation, faster parallel stability selection, and calibration against geo-lift or other experiments.
 
 ## Citation
 
@@ -681,7 +688,8 @@ Or click the **"Cite this repository"** button on GitHub for other citation form
 
 ## Quick Links
 
-- **Release notes (v1.0.21)**: [`release_notes/1.0.21.md`](release_notes/1.0.21.md)
+- **Release notes (v2.0.0)**: [`release_notes/2.0.0.md`](release_notes/2.0.0.md)
+- **Causal scenario DAG**: `deepcausalmmm/core/conditional_notears.py` and `deepcausalmmm/core/causal_attribution.py`
 - **Main Dashboard**: `dashboard_rmse_optimized.py` - Complete analysis pipeline
 - **Budget Optimization**: `examples/example_budget_optimization.py` - End-to-end optimization workflow
 - **Core Model**: `deepcausalmmm/core/unified_model.py` - DeepCausalMMM architecture

@@ -14,8 +14,8 @@ Available Tutorials
 -------------------
 
 * :doc:`basic_mmm_workflow`: Complete end-to-end MMM workflow with synthetic data
-* :doc:`dag_notears`: DAG structure learning — triangular default and opt-in NOTEARS mode (v1.0.21+)
-* :doc:`causal_scenarios`: post-fit causal scenario workflow, DMA-week outputs, diagnostics, and limits (v2.0+)
+* :doc:`dag_notears`: legacy predictive-model DAG regularization — triangular default and opt-in NOTEARS mode (v1.0.21+)
+* :doc:`causal_scenarios`: mandatory post-fit conditional NOTEARS DAG, DMA-week outputs, diagnostics, and limits (v2.0+)
 
 Coming Soon
 -----------
